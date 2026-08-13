@@ -1,0 +1,44 @@
+import uuid
+from datetime import datetime, timezone
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table
+from sqlalchemy.orm import relationship
+from app.core.database import Base
+
+class UserRole:
+    SUPER_ADMIN = "SUPER_ADMIN"
+    BRANCH_ADMIN = "BRANCH_ADMIN"
+    CUSTOMER = "CUSTOMER"
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    full_name = Column(String(255), nullable=False)
+    phone = Column(String(50), nullable=True)
+    role = Column(String(50), nullable=False, default=UserRole.CUSTOMER)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    branch_assignments = relationship("BranchUser", back_populates="user", cascade="all, delete-orphan")
+    addresses = relationship("CustomerAddress", back_populates="user", cascade="all, delete-orphan")
+    orders = relationship("Order", back_populates="customer")
+    loyalty_account = relationship("LoyaltyAccount", back_populates="user", uselist=False)
+
+class CustomerAddress(Base):
+    __tablename__ = "customer_addresses"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    label = Column(String(50), default="Home")  # Home, Work, Other
+    address_line1 = Column(String(255), nullable=False)
+    address_line2 = Column(String(255), nullable=True)
+    city = Column(String(100), nullable=False, default="London")
+    postcode = Column(String(20), nullable=False, index=True)
+    phone = Column(String(50), nullable=True)
+    is_default = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="addresses")

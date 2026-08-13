@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400" fill="none">
+  <rect width="600" height="400" fill="#141414"/>
+  <rect x="1" y="1" width="598" height="398" rx="12" stroke="#262626" stroke-width="2"/>
+  <g opacity="0.35" transform="translate(250, 150)">
+    <!-- Minimal Burger Icon -->
+    <path d="M15 45 C15 20, 85 20, 85 45 Z" fill="#9CA3AF" />
+    <rect x="10" y="50" width="80" height="8" rx="4" fill="#FF5500" />
+    <path d="M12 63 L88 63" stroke="#9CA3AF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M15 72 C15 85, 85 85, 85 72 Z" fill="#9CA3AF" />
+  </g>
+  <text x="300" y="260" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#6B7280" text-anchor="middle" letter-spacing="1">PATTY PROJECT</text>
+  <text x="300" y="280" font-family="system-ui, sans-serif" font-size="11" font-weight="500" fill="#4B5563" text-anchor="middle">Product Image Placeholder</text>
+</svg>
