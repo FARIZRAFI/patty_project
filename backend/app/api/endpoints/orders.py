@@ -14,6 +14,7 @@ from app.models.loyalty import LoyaltyAccount, LoyaltyTransaction
 
 router = APIRouter()
 
+@router.post("", response_model=OrderResponse)
 @router.post("/", response_model=OrderResponse)
 def create_order(
     request: OrderCreateRequest,
@@ -93,6 +94,18 @@ def create_order(
     db.refresh(order)
     return order
 
+@router.get("/my-orders", response_model=List[OrderResponse])
+def get_my_orders(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Returns order history for the logged-in customer."""
+    user_email = current_user.email.strip().lower()
+    orders = db.query(Order).filter(
+        (Order.customer_id == current_user.id) | (Order.customer_email == user_email)
+    ).order_by(Order.created_at.desc()).all()
+    return orders
+
 @router.get("/{order_number}", response_model=OrderResponse)
 def get_order_by_number(order_number: str, db: Session = Depends(get_db)):
     """Customer live status tracking for an order by order number."""
@@ -101,6 +114,7 @@ def get_order_by_number(order_number: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
+@router.get("", response_model=List[OrderResponse])
 @router.get("/", response_model=List[OrderResponse])
 def list_admin_orders(
     branch_id: Optional[str] = Query(None),

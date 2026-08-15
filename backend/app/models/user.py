@@ -24,6 +24,7 @@ class User(Base):
     # Relationships
     branch_assignments = relationship("BranchUser", back_populates="user", cascade="all, delete-orphan")
     addresses = relationship("CustomerAddress", back_populates="user", cascade="all, delete-orphan")
+    cards = relationship("CustomerCard", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="customer")
     loyalty_account = relationship("LoyaltyAccount", back_populates="user", uselist=False)
 
@@ -42,3 +43,19 @@ class CustomerAddress(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="addresses")
+
+class CustomerCard(Base):
+    __tablename__ = "customer_cards"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    card_brand = Column(String(50), nullable=False, default="Mastercard")  # Mastercard, Visa, RuPay, etc.
+    last4 = Column(String(4), nullable=False, default="4242")
+    cardholder_name = Column(String(255), nullable=False, default="John Doe")
+    expiry_month = Column(String(2), nullable=False, default="08")
+    expiry_year = Column(String(2), nullable=False, default="27")
+    is_default = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="cards")
+

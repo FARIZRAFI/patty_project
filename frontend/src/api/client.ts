@@ -12,18 +12,30 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-  const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch(() => ({}));
 
-  if (!response.ok) {
-    throw new Error(data.detail || 'An unexpected error occurred');
+    if (!response.ok) {
+      const detailMsg = typeof data.detail === 'string'
+        ? data.detail
+        : Array.isArray(data.detail)
+          ? data.detail.map((e: any) => e.msg || JSON.stringify(e)).join(', ')
+          : 'An unexpected error occurred';
+      throw new Error(detailMsg);
+    }
+
+    return data as T;
+  } catch (err: any) {
+    if (err.name === 'TypeError' && (err.message.includes('fetch') || err.message.includes('NetworkError'))) {
+      throw new Error('Unable to connect to backend server. Please make sure the backend is running.');
+    }
+    throw err;
   }
-
-  return data as T;
 }
 
 export const api = {

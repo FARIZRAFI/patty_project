@@ -21,6 +21,11 @@ class CategoryResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class CategoryCreateRequest(BaseModel):
+    name: str
+    icon: Optional[str] = None
+    display_order: Optional[int] = 0
+
 class ProductResponse(BaseModel):
     id: str
     category_id: str
@@ -28,7 +33,10 @@ class ProductResponse(BaseModel):
     sku: str
     short_description: Optional[str] = None
     full_description: Optional[str] = None
+    allergens: Optional[str] = None
+    ingredients: Optional[str] = None
     image_url: Optional[str] = None
+    images: Optional[List[str]] = []
     base_price: float
     compare_at_price: Optional[float] = None
     rating: float
@@ -46,10 +54,13 @@ class ProductResponse(BaseModel):
 class ProductCreateRequest(BaseModel):
     category_id: str
     name: str
-    sku: str
+    sku: Optional[str] = None
     short_description: Optional[str] = None
     full_description: Optional[str] = None
+    allergens: Optional[str] = None
+    ingredients: Optional[str] = None
     image_url: Optional[str] = None
+    images: Optional[List[str]] = []
     base_price: float
     compare_at_price: Optional[float] = None
     rating: Optional[float] = 4.7
@@ -65,7 +76,10 @@ class ProductUpdateRequest(BaseModel):
     sku: Optional[str] = None
     short_description: Optional[str] = None
     full_description: Optional[str] = None
+    allergens: Optional[str] = None
+    ingredients: Optional[str] = None
     image_url: Optional[str] = None
+    images: Optional[List[str]] = None
     base_price: Optional[float] = None
     compare_at_price: Optional[float] = None
     rating: Optional[float] = None

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Star, ChevronRight, Leaf, Bike, Award } from 'lucide-react';
+import { Star, ChevronRight, Leaf, Bike, Award, Mail, MapPin, Phone } from 'lucide-react';
 import { api } from '../../api/client';
 import { Product } from '../../types';
 import { ProductDetailModal } from './ProductDetailModal';
@@ -36,9 +36,9 @@ export const CustomerHome: React.FC = () => {
   ];
 
   return (
-    <div className="pb-24 space-y-16">
+    <div className="pb-0 space-y-16">
       {/* Hero Section matching exact reference image */}
-      <section className="relative bg-[#070707] min-h-[calc(100vh-65px)] lg:h-[calc(100vh-65px)] flex flex-col justify-between overflow-hidden border-b border-[#141414] px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-6 lg:pt-8 pb-6 lg:pb-8">
+      <section className="relative bg-black min-h-[calc(100vh-65px)] lg:h-[calc(100vh-65px)] flex flex-col justify-between overflow-hidden px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-6 lg:pt-8 pb-6 lg:pb-8">
         
         {/* Full-bleed right side burger background image overlay */}
         <div className="absolute inset-y-0 right-0 w-full lg:w-[62%] xl:w-[66%] pointer-events-none overflow-hidden flex items-center justify-end z-0">
@@ -48,7 +48,7 @@ export const CustomerHome: React.FC = () => {
             className="w-full h-full object-cover object-center lg:object-right select-none opacity-95 lg:opacity-100"
           />
           {/* Left-to-right soft gradient overlay for seamless text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#070707] via-[#070707]/75 lg:via-[#070707]/20 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 lg:via-black/20 to-transparent pointer-events-none" />
         </div>
 
         {/* Top/Middle Hero Content (Headline + Description + Buttons) */}
@@ -100,50 +100,6 @@ export const CustomerHome: React.FC = () => {
               <span>COLLECTION</span>
               <ChevronRight className="w-4 h-4" />
             </button>
-          </div>
-        </div>
-
-        {/* Bottom Feature Highlights Row matching exact reference screenshot */}
-        <div className="relative z-10 pt-8 lg:pt-0">
-          <div className="flex flex-wrap items-center gap-6 sm:gap-8 lg:gap-10">
-            {/* Feature 1 */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full border border-[#FF5500]/60 bg-[#070707]/80 flex items-center justify-center text-[#FF5500] shrink-0">
-                <Leaf className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white leading-tight">Fresh Ingredients</p>
-                <p className="text-[10px] text-[#9CA3AF] mt-0.5">Sourced Daily</p>
-              </div>
-            </div>
-
-            {/* Vertical Divider */}
-            <div className="hidden sm:block w-[1px] h-8 bg-[#262626]" />
-
-            {/* Feature 2 */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full border border-[#FF5500]/60 bg-[#070707]/80 flex items-center justify-center text-[#FF5500] shrink-0">
-                <Bike className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white leading-tight">Fast Delivery</p>
-                <p className="text-[10px] text-[#9CA3AF] mt-0.5">2 Mile Radius</p>
-              </div>
-            </div>
-
-            {/* Vertical Divider */}
-            <div className="hidden sm:block w-[1px] h-8 bg-[#262626]" />
-
-            {/* Feature 3 */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full border border-[#FF5500]/60 bg-[#070707]/80 flex items-center justify-center text-[#FF5500] shrink-0">
-                <Award className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white leading-tight">Loyalty Rewards</p>
-                <p className="text-[10px] text-[#9CA3AF] mt-0.5">Earn & Redeem</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -229,10 +185,20 @@ export const CustomerHome: React.FC = () => {
       </section>
 
       {/* TODAY'S OFFERS SECTION (Matching Screenshot 2 Target Reference) */}
-      <section className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-6 pt-2">
-        <h2 className="text-xl sm:text-2xl font-black text-white tracking-widest uppercase font-hero">
-          TODAY'S OFFERS
-        </h2>
+      <section className="relative w-full rounded-3xl overflow-hidden py-10 bg-[url('/offersbackground.jpg')] bg-cover bg-center bg-no-repeat my-4">
+        {/* Dark overlay backdrop for optimal readability */}
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] pointer-events-none" />
+
+        <div className="relative z-10 w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-widest uppercase font-hero">
+              TODAY'S OFFERS
+            </h2>
+            <Link to="/offers" className="text-xs sm:text-sm font-extrabold text-[#FF5500] hover:underline flex items-center gap-1 uppercase tracking-wider">
+              <span>VIEW ALL OFFERS</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
 
         {/* 3 Large Promotional Banner Cards Grid matching Screenshot 2 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
@@ -290,7 +256,118 @@ export const CustomerHome: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+    </section>
+
+      {/* ORDER ONLINE OR COME VISIT US TODAY BANNER matching Screenshot */}
+      <section className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-4">
+        <div className="bg-[#FF5500] rounded-3xl p-10 sm:p-14 lg:p-16 text-center space-y-6 shadow-2xl shadow-[#FF5500]/20">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white font-hero uppercase tracking-tight leading-none max-w-4xl mx-auto">
+            ORDER ONLINE OR COME VISIT US TODAY
+          </h2>
+          <div>
+            <button
+              onClick={() => {
+                if (selectedBranch) {
+                  navigate('/menu');
+                } else {
+                  navigate('/select-location');
+                }
+              }}
+              className="bg-black hover:bg-[#151515] text-[#FF5500] text-sm sm:text-base font-black px-8 py-3.5 rounded-xl uppercase tracking-wider transition-all shadow-xl hover:scale-105 cursor-pointer"
+            >
+              GET STARTED
+            </button>
+          </div>
+        </div>
       </section>
+
+      {/* FOOTER SECTION matching exact Screenshot */}
+      <footer className="w-full bg-black pt-12 pb-6 text-white">
+        <div className="max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-12">
+          
+          {/* 4-Column Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
+            {/* Column 1: SHOP */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-black text-[#FF5500] uppercase tracking-widest">
+                SHOP
+              </h4>
+              <ul className="space-y-2.5 text-xs text-[#9CA3AF] font-medium">
+                <li><Link to="/menu" className="hover:text-white transition-colors">All Product</Link></li>
+                <li><Link to="/menu" className="hover:text-white transition-colors">Burger</Link></li>
+                <li><Link to="/menu" className="hover:text-white transition-colors">Sides</Link></li>
+                <li><Link to="/menu" className="hover:text-white transition-colors">Drink</Link></li>
+              </ul>
+            </div>
+
+            {/* Column 2: ABOUT US */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-black text-[#FF5500] uppercase tracking-widest">
+                ABOUT US
+              </h4>
+              <ul className="space-y-2.5 text-xs text-[#9CA3AF] font-medium">
+                <li><a href="#story" className="hover:text-white transition-colors">Story Behind</a></li>
+                <li><a href="#reviews" className="hover:text-white transition-colors">Customer Reviews</a></li>
+                <li><a href="#philosophy" className="hover:text-white transition-colors">Packaging Philosophy</a></li>
+                <li><a href="#affiliate" className="hover:text-white transition-colors">Affiliate Program</a></li>
+              </ul>
+            </div>
+
+            {/* Column 3: HELP */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-black text-[#FF5500] uppercase tracking-widest">
+                HELP
+              </h4>
+              <ul className="space-y-2.5 text-xs text-[#9CA3AF] font-medium">
+                <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
+                <li><a href="#where-to-buy" className="hover:text-white transition-colors">Where to Buy</a></li>
+                <li><a href="#shipping" className="hover:text-white transition-colors">Shipping and Returns</a></li>
+                <li><a href="#refunds" className="hover:text-white transition-colors">Return and Refunds</a></li>
+              </ul>
+            </div>
+
+            {/* Column 4: CONTACT */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-black text-[#FF5500] uppercase tracking-widest">
+                CONTACT
+              </h4>
+              <ul className="space-y-3 text-xs text-[#9CA3AF] font-medium">
+                <li className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 text-[#FF5500] shrink-0" />
+                  <a href="mailto:hello@pattyproject.co.uk" className="hover:text-white transition-colors">
+                    hello@pattyproject.co.uk
+                  </a>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-[#FF5500] shrink-0 mt-0.5" />
+                  <a 
+                    href="https://maps.app.goo.gl/ucRr3c94PQKGgq4L7?g_st=aw" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:text-white transition-colors leading-relaxed"
+                  >
+                    4 Market Parade, London N9 9HF, United Kingdom
+                  </a>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 text-[#FF5500] shrink-0" />
+                  <a href="tel:+447417521128" className="hover:text-white transition-colors">
+                    +44 7417 521128
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Sub-Footer Line & Copyright */}
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[#9CA3AF] gap-4">
+            <a href="#privacy" className="hover:text-white transition-colors">Privacy Policy</a>
+            <p className="font-medium text-white">Patty Project © 2026</p>
+            <a href="#terms" className="hover:text-white transition-colors">Term of service</a>
+          </div>
+        </div>
+      </footer>
 
       {/* Product Detail Modal */}
       {selectedProduct && (

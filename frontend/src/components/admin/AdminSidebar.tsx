@@ -23,11 +23,11 @@ export const AdminSidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-64 bg-[#090909] border-r border-[#262626] flex flex-col justify-between h-screen sticky top-0">
+    <aside className="w-64 bg-black border-r border-[#262626] flex flex-col justify-between h-screen sticky top-0">
       <div>
         {/* Brand Logo Header */}
         <div className="p-6 flex items-center gap-3 border-b border-[#1F1F1F]">
-          <img src="/logo.jpeg" alt="Patty Project" className="w-12 h-12 rounded-full object-cover border border-[#FF5500]" />
+          <img src="/logo.jpeg" alt="Patty Project" className="w-12 h-12 rounded-full object-cover" />
           <div>
             <h1 className="text-white font-bold text-lg tracking-wide leading-tight">PATTY PROJECT</h1>
             <p className="text-[#FF5500] text-xs font-semibold uppercase">{user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Branch Admin'}</p>

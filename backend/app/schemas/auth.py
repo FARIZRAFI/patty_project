@@ -13,7 +13,7 @@ class LoginRequest(BaseModel):
 class RegisterRequest(BaseModel):
     full_name: str
     email: EmailStr
-    phone: str
+    phone: Optional[str] = None
     password: str
 
 class UserResponse(BaseModel):

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AdminSidebar } from './components/admin/AdminSidebar';
 import { CustomerHeader } from './components/customer/CustomerHeader';
+import { MobileDrawer } from './components/customer/MobileDrawer';
 import { MobileBottomNav } from './components/customer/MobileBottomNav';
 import { LocationModal } from './components/customer/LocationModal';
 
@@ -23,15 +24,20 @@ import { OrderConfirmation } from './pages/customer/OrderConfirmation';
 import { CustomerLoyaltyPortal } from './pages/customer/CustomerLoyaltyPortal';
 import { CustomerOrderHistory } from './pages/customer/CustomerOrderHistory';
 import { CustomerProfileSettings } from './pages/customer/CustomerProfileSettings';
+import { CustomerAddresses } from './pages/customer/CustomerAddresses';
+import { CustomerPaymentMethods } from './pages/customer/CustomerPaymentMethods';
 import { ProductDetailPage } from './pages/customer/ProductDetailPage';
 import { SelectLocationPage } from './pages/customer/SelectLocationPage';
+import { CustomerLogin } from './pages/customer/CustomerLogin';
+import { CustomerOffers } from './pages/customer/CustomerOffers';
+import { CustomerContact } from './pages/customer/CustomerContact';
 
 const queryClient = new QueryClient();
 
 // Admin Layout Shell
 const AdminLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <div className="min-h-screen bg-[#0B0B0B] text-white flex">
+    <div className="min-h-screen bg-black text-white flex">
       <AdminSidebar />
       <main className="flex-1 min-w-0 overflow-y-auto">
         {children}
@@ -43,18 +49,29 @@ const AdminLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children })
 // Customer Layout Shell
 const CustomerLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+  const location = useLocation();
+  const hideBottomNavPages = ['/', '/contact', '/select-location'];
+  const showBottomNav = !hideBottomNavPages.includes(location.pathname);
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-black text-white flex flex-col justify-between">
       <div>
         <CustomerHeader
           onOpenLocationModal={() => setShowLocationModal(true)}
-          onOpenMobileDrawer={() => {}}
+          onOpenMobileDrawer={() => setShowMobileDrawer(true)}
         />
-        <main>{children}</main>
+        <main className={showBottomNav ? 'pb-16 md:pb-0' : ''}>{children}</main>
       </div>
 
-      <MobileBottomNav />
+      {showBottomNav && <MobileBottomNav />}
+
+      {showMobileDrawer && (
+        <MobileDrawer
+          onClose={() => setShowMobileDrawer(false)}
+          onOpenLocationModal={() => setShowLocationModal(true)}
+        />
+      )}
 
       {showLocationModal && (
         <LocationModal onClose={() => setShowLocationModal(false)} />
@@ -82,6 +99,8 @@ export function App() {
           <Route path="/" element={<CustomerLayoutShell><CustomerHome /></CustomerLayoutShell>} />
           <Route path="/select-location" element={<CustomerLayoutShell><SelectLocationPage /></CustomerLayoutShell>} />
           <Route path="/menu" element={<CustomerLayoutShell><CustomerMenu /></CustomerLayoutShell>} />
+          <Route path="/offers" element={<CustomerLayoutShell><CustomerOffers /></CustomerLayoutShell>} />
+          <Route path="/contact" element={<CustomerLayoutShell><CustomerContact /></CustomerLayoutShell>} />
           <Route path="/product/:productId" element={<CustomerLayoutShell><ProductDetailPage /></CustomerLayoutShell>} />
           <Route path="/cart" element={<CustomerLayoutShell><CustomerCart /></CustomerLayoutShell>} />
           <Route path="/checkout" element={<CustomerLayoutShell><CustomerCheckout /></CustomerLayoutShell>} />
@@ -89,7 +108,9 @@ export function App() {
           <Route path="/loyalty" element={<CustomerLayoutShell><CustomerLoyaltyPortal /></CustomerLayoutShell>} />
           <Route path="/orders" element={<CustomerLayoutShell><CustomerOrderHistory /></CustomerLayoutShell>} />
           <Route path="/profile" element={<CustomerLayoutShell><CustomerProfileSettings /></CustomerLayoutShell>} />
-          <Route path="/login" element={<Navigate to="/admin/login" replace />} />
+          <Route path="/addresses" element={<CustomerLayoutShell><CustomerAddresses /></CustomerLayoutShell>} />
+          <Route path="/payment-methods" element={<CustomerLayoutShell><CustomerPaymentMethods /></CustomerLayoutShell>} />
+          <Route path="/login" element={<CustomerLogin />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

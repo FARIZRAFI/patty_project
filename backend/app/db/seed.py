@@ -51,7 +51,7 @@ def seed_db():
     )
     db.add_all([central_admin, westfield_admin])
 
-    # 3. Create Sample Customer User
+    # 3. Create Sample Customer Users
     customer = User(
         email="john.smith@email.com",
         password_hash=get_password_hash("Customer123!"),
@@ -60,30 +60,64 @@ def seed_db():
         role=UserRole.CUSTOMER,
         is_active=True
     )
-    db.add(customer)
+    customer2 = User(
+        email="johnsmith@email.com",
+        password_hash=get_password_hash("Customer123!"),
+        full_name="John Smith",
+        phone="+44 7123 456789",
+        role=UserRole.CUSTOMER,
+        is_active=True
+    )
+    db.add_all([customer, customer2])
     db.flush()
 
-    # Customer Address
-    address = CustomerAddress(
+    # Customer Addresses matching UI design
+    address1 = CustomerAddress(
         user_id=customer.id,
         label="Home",
-        address_line1="123 Baker Street",
-        address_line2="Near Baker Street Station",
+        address_line1="21 Baker Street, Marylebone",
+        address_line2="",
         city="London",
-        postcode="W1U 6EP",
-        phone="+44 7123 456789",
+        postcode="NW1 6XE",
+        phone="+44 7700 900123",
         is_default=True
     )
-    db.add(address)
+    address2 = CustomerAddress(
+        user_id=customer.id,
+        label="Work",
+        address_line1="Patty Project Office, 12 Food Court",
+        address_line2="King's Cross",
+        city="London",
+        postcode="N1C 4AG",
+        phone="+44 7700 900456",
+        is_default=False
+    )
+    address3 = CustomerAddress(
+        user_id=customer.id,
+        label="Other",
+        address_line1="Flat 5, 88 Brook Green",
+        address_line2="Hammersmith",
+        city="London",
+        postcode="W6 7BJ",
+        phone="+44 7700 900789",
+        is_default=False
+    )
+    db.add_all([address1, address2, address3])
 
-    # Loyalty Account for Customer
+    # Loyalty Account for Customers
     loyalty_acc = LoyaltyAccount(
         user_id=customer.id,
         available_points=1250,
         lifetime_points=2450,
         tier="SILVER"
     )
-    db.add(loyalty_acc)
+    loyalty_acc2 = LoyaltyAccount(
+        user_id=customer2.id,
+        available_points=1250,
+        lifetime_points=2450,
+        tier="SILVER"
+    )
+    db.add_all([loyalty_acc, loyalty_acc2])
 
     # 4. Create Initial UK Branches
     branch_central = Branch(
@@ -251,9 +285,10 @@ def seed_db():
 
     # 8. Create Loyalty Rewards
     db.add_all([
-        LoyaltyReward(title="Free Fries", description="Get a regular fries absolutely free!", points_required=500, reward_type="FREE_ITEM", product_id=p5.id),
-        LoyaltyReward(title="Free Milkshake", description="Get any regular milkshake absolutely free!", points_required=750, reward_type="FREE_ITEM"),
-        LoyaltyReward(title="Free Burger", description="Get any classic burger absolutely free!", points_required=1500, reward_type="FREE_ITEM", product_id=p1.id),
+        LoyaltyReward(title="Free Classic French Fries", description="Get regular crispy fries absolutely free!", points_required=500, reward_type="FREE_ITEM", product_id=p5.id),
+        LoyaltyReward(title="20% Off Entire Order", description="Get 20% off discount code for your next order!", points_required=1000, reward_type="DISCOUNT_AMOUNT", discount_value=20.0),
+        LoyaltyReward(title="Free Gourmet Patty Burger", description="Get any classic burger free on your next meal!", points_required=1500, reward_type="FREE_ITEM", product_id=p1.id),
+        LoyaltyReward(title="Free Family Feast Box", description="Get a free Family Feast Box reward at 2500 points!", points_required=2500, reward_type="FREE_ITEM"),
     ])
 
     # 9. Create Sample Orders

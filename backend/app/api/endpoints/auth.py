@@ -43,7 +43,18 @@ def require_role(roles: list):
 
 @router.post("/login", response_model=Token)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == request.email.strip().lower()).first()
+    email_clean = request.email.strip().lower()
+    user = db.query(User).filter(User.email == email_clean).first()
+
+    if not user and "@" in email_clean:
+        # Fallback search for dot-relaxed email variations (e.g., john.smith vs johnsmith)
+        all_users = db.query(User).all()
+        target_normalized = email_clean.replace(".", "")
+        for u in all_users:
+            if u.email.lower().replace(".", "") == target_normalized:
+                user = u
+                break
+
     if not user or not verify_password(request.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

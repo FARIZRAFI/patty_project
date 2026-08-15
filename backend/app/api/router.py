@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.endpoints import auth, branches, products, orders, payments, loyalty, promotions
+from app.api.endpoints import auth, branches, products, orders, payments, loyalty, promotions, addresses, payment_methods
 
 api_router = APIRouter()
 
@@ -10,3 +10,7 @@ api_router.include_router(orders.router, prefix="/orders", tags=["Orders"])
 api_router.include_router(payments.router, prefix="/payments", tags=["Payments"])
 api_router.include_router(loyalty.router, prefix="/loyalty", tags=["Loyalty"])
 api_router.include_router(promotions.router, prefix="/promotions", tags=["Promotions"])
+api_router.include_router(addresses.router, prefix="/addresses", tags=["Addresses"])
+api_router.include_router(payment_methods.router, prefix="/payment-methods", tags=["Payment Methods"])
+
+

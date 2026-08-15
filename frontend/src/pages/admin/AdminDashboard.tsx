@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronRight, ArrowLeft, Download, Calendar, Plus } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Download, Calendar, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { api } from '../../api/client';
 import { Branch, Order } from '../../types';
+import { AdminCreateBranchModal } from './AdminCreateBranchModal';
 
 export const AdminDashboard: React.FC = () => {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateBranchModal, setShowCreateBranchModal] = useState(false);
+  const [branchToDelete, setBranchToDelete] = useState<Branch | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchBranches();
@@ -34,6 +38,21 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleConfirmDeleteBranch = async () => {
+    if (!branchToDelete) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/branches/${branchToDelete.id}`);
+      setBranchToDelete(null);
+      fetchBranches();
+    } catch (err) {
+      console.error('Failed to delete branch:', err);
+      alert('Failed to delete branch. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       {/* Page Header */}
@@ -42,7 +61,10 @@ export const AdminDashboard: React.FC = () => {
           <h1 className="text-2xl font-bold text-white tracking-wide">Dashboard</h1>
           <p className="text-[#9CA3AF] text-sm mt-0.5">View and manage orders for each branch.</p>
         </div>
-        <button className="bg-[#FF5500] hover:bg-[#E04B00] text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all shadow-md shadow-[#FF5500]/20">
+        <button
+          onClick={() => setShowCreateBranchModal(true)}
+          className="bg-[#FF5500] hover:bg-[#E04B00] text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all shadow-md shadow-[#FF5500]/20 cursor-pointer"
+        >
           <Plus className="w-4 h-4" />
           <span>Create Branch</span>
         </button>
@@ -87,8 +109,23 @@ export const AdminDashboard: React.FC = () => {
                     <td className="px-6 py-4 text-center text-[#10B981] font-semibold">{b.code === 'LC' ? 462 : 308}</td>
                     <td className="px-6 py-4 text-center text-[#EF4444] font-semibold">{b.code === 'LC' ? 20 : 14}</td>
                     <td className="px-6 py-4 text-center text-[#FF5500] font-semibold">{b.code === 'LC' ? 30 : 20}</td>
-                    <td className="px-6 py-4 text-right">
-                      <ChevronRight className="w-5 h-5 text-[#6B7280] inline-block" />
+                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setBranchToDelete(b)}
+                          title="Delete Branch"
+                          className="p-2 text-[#9CA3AF] hover:text-[#EF4444] hover:bg-[#EF4444]/10 rounded-xl transition-all cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleSelectBranch(b)}
+                          title="View Branch Orders"
+                          className="p-2 text-[#9CA3AF] hover:text-white hover:bg-[#1A1A1A] rounded-xl transition-all cursor-pointer"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -179,6 +216,55 @@ export const AdminDashboard: React.FC = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCreateBranchModal && (
+        <AdminCreateBranchModal
+          onClose={() => setShowCreateBranchModal(false)}
+          onSuccess={() => {
+            fetchBranches();
+            setShowCreateBranchModal(false);
+          }}
+        />
+      )}
+
+      {/* Delete Branch Confirmation Dialog Box */}
+      {branchToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#121212] border border-[#262626] rounded-2xl w-full max-w-md shadow-2xl p-6 relative">
+            <div className="flex items-center gap-3 text-[#EF4444] mb-4">
+              <div className="p-3 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-xl">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Delete Branch</h3>
+                <p className="text-xs text-[#9CA3AF]">Confirm branch deletion</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-[#D1D5DB] leading-relaxed mb-6">
+              Are you sure you want to delete <strong className="text-white">{branchToDelete.name}</strong> ({branchToDelete.code})? This will permanently remove the branch.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#262626]">
+              <button
+                onClick={() => setBranchToDelete(null)}
+                disabled={deleting}
+                className="px-4 py-2 bg-[#1A1A1A] hover:bg-[#262626] text-[#9CA3AF] hover:text-white rounded-xl text-xs font-semibold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeleteBranch}
+                disabled={deleting}
+                className="px-5 py-2 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#EF4444]/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{deleting ? 'Deleting...' : 'Delete Branch'}</span>
+              </button>
             </div>
           </div>
         </div>

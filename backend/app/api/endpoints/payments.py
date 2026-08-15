@@ -47,20 +47,43 @@ async def payment_gateway_webhook(request: Request, db: Session = Depends(get_db
             order.status = OrderStatus.PAID
             order.payment_status = PaymentStatus.PAID
             
-            # Award loyalty points if customer account exists
+            # Award loyalty points if customer account exists (matched by customer_id or email)
+            from app.models.user import User
+            user = None
             if order.customer_id:
-                loyalty = db.query(LoyaltyAccount).filter(LoyaltyAccount.user_id == order.customer_id).first()
-                if loyalty:
-                    loyalty.available_points += order.points_earned
-                    loyalty.lifetime_points += order.points_earned
-                    tx = LoyaltyTransaction(
-                        loyalty_account_id=loyalty.id,
-                        order_id=order.id,
-                        points=order.points_earned,
-                        transaction_type="EARNED",
-                        description=f"Points earned from Order {order.order_number}"
-                    )
-                    db.add(tx)
+                user = db.query(User).filter(User.id == order.customer_id).first()
+            elif order.customer_email:
+                user = db.query(User).filter(User.email == order.customer_email.strip().lower()).first()
+
+            if user:
+                loyalty = db.query(LoyaltyAccount).filter(LoyaltyAccount.user_id == user.id).first()
+                if not loyalty:
+                    loyalty = LoyaltyAccount(user_id=user.id, available_points=0, lifetime_points=0, tier="BRONZE")
+                    db.add(loyalty)
+                    db.flush()
+
+                pts = order.points_earned if order.points_earned and order.points_earned > 0 else int(order.total_amount * 10)
+                loyalty.available_points += pts
+                loyalty.lifetime_points += pts
+
+                # Auto-upgrade tier based on lifetime_points
+                if loyalty.lifetime_points >= 5000:
+                    loyalty.tier = "PLATINUM"
+                elif loyalty.lifetime_points >= 2500:
+                    loyalty.tier = "GOLD"
+                elif loyalty.lifetime_points >= 1000:
+                    loyalty.tier = "SILVER"
+                else:
+                    loyalty.tier = "BRONZE"
+
+                tx = LoyaltyTransaction(
+                    loyalty_account_id=loyalty.id,
+                    order_id=order.id,
+                    points=pts,
+                    transaction_type="EARNED",
+                    description=f"Points earned from Order {order.order_number}"
+                )
+                db.add(tx)
 
             db.commit()
 

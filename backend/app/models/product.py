@@ -25,7 +25,10 @@ class Product(Base):
     sku = Column(String(50), unique=True, index=True, nullable=False)
     short_description = Column(String(500), nullable=True)
     full_description = Column(String(2000), nullable=True)
+    allergens = Column(String(500), nullable=True)
+    ingredients = Column(String(500), nullable=True)  # Removable ingredients list
     image_url = Column(String(500), nullable=True)
+    images = Column(JSON, nullable=True)  # List of preview photo URLs
     base_price = Column(Float, nullable=False)  # e.g. 8.95
     compare_at_price = Column(Float, nullable=True)
     rating = Column(Float, default=4.7)

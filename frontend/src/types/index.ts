@@ -40,7 +40,9 @@ export interface Product {
   sku: string;
   short_description?: string;
   full_description?: string;
+  allergens?: string;
   image_url?: string;
+  images?: string[];
   base_price: number;
   compare_at_price?: number;
   rating: number;
