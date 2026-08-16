@@ -47,9 +47,7 @@ export const CustomerOffers: React.FC = () => {
   ];
 
   return (
-    <div className="relative min-h-screen text-white bg-[#070707] bg-[url('/offersbackground.jpg')] bg-cover bg-center bg-fixed bg-no-repeat flex flex-col justify-between">
-      {/* Dark overlay backdrop for readable text & contrast */}
-      <div className="absolute inset-0 bg-black/85 backdrop-blur-[2px] pointer-events-none z-0" />
+    <div className="min-h-screen text-white bg-[#070707] flex flex-col justify-between">
 
       <div className="relative z-10 w-full max-w-[1450px] mx-auto px-4 sm:px-10 lg:px-12 py-6 sm:py-10 pb-36 space-y-10">
         {/* Header Section */}

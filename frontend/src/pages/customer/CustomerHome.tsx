@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Star, ChevronRight, Leaf, Bike, Award, Mail, MapPin, Phone } from 'lucide-react';
+import { Star, ChevronRight, Leaf, Bike, Award, Mail, MapPin, Phone, Wheat, Sparkles } from 'lucide-react';
 import { api } from '../../api/client';
 import { Product } from '../../types';
 import { ProductDetailModal } from './ProductDetailModal';
@@ -104,92 +104,241 @@ export const CustomerHome: React.FC = () => {
         </div>
       </section>
 
-      {/* BEST SELLERS SECTION (Matching Screenshot 2 Target Reference) */}
-      <section className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-6 pt-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-widest uppercase font-hero">
-            BEST SELLERS
-          </h2>
-          <Link to="/menu" className="text-xs sm:text-sm font-extrabold text-[#FF5500] hover:underline flex items-center gap-1 uppercase tracking-wider">
-            <span>VIEW ALL</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
+      {/* WELCOME TO PATTY PROJECT BRAND INTRODUCTION SECTION */}
+      <section className="w-full max-w-[1280px] mx-auto px-6 sm:px-10 lg:px-16 pt-10 pb-0 text-center text-white space-y-6">
+        {/* Top 3 Stars */}
+        <div className="flex items-center justify-center gap-1.5 text-[#FF5500]">
+          <Star className="w-4 h-4 fill-[#FF5500]" />
+          <Star className="w-5 h-5 fill-[#FF5500]" />
+          <Star className="w-4 h-4 fill-[#FF5500]" />
         </div>
 
-        {/* 6 Column Desktop Grid with full container width & edge-to-edge product cards matching Screenshot 2 */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 lg:gap-6">
-          {(
-            products.filter((p) => p.is_bestseller).length > 0
-              ? products.filter((p) => p.is_bestseller).slice(0, 6)
-              : products.length > 0
-              ? products.slice(0, 6)
-              : bestSellers.map((b) => ({
-                  id: b.id,
-                  name: b.name,
-                  base_price: b.price,
-                  rating: b.rating,
-                  image_url: '/placeholder-burger.svg',
-                  sku: `BURG00${b.id}`,
-                  short_description: `${b.name} made fresh daily`,
-                  full_description: `${b.name} served fresh with signature sauce`,
-                  category_id: 'burgers',
-                  compare_at_price: null,
-                  reviews_count: 120,
-                  is_bestseller: true,
-                  has_tax: true,
-                  has_service_charge: false,
-                  vat_category: 'STANDARD_20',
-                  is_active: true,
-                  modifiers: []
-                }))
-          ).map((p) => {
-            const displayPrice = 'base_price' in p ? p.base_price : (p as any).price;
-            const displayImg = p.image_url || '/placeholder-burger.svg';
+        {/* Tagline */}
+        <p className="text-xs font-black tracking-[0.25em] uppercase text-white font-hero">
+          WELCOME TO <span className="text-[#FF5500]">PATTY PROJECT</span>
+        </p>
 
-            return (
-              <div
-                key={p.id}
-                onClick={() => setSelectedProduct(p as Product)}
-                className="bg-[#101010] border border-[#1F1F1F] hover:border-[#FF5500]/60 rounded-2xl overflow-hidden cursor-pointer transition-all hover:scale-[1.02] shadow-xl group flex flex-col justify-between"
-              >
-                {/* Product Image Area occupying upper 60-65% of card and touching edges */}
-                <div className="w-full h-44 sm:h-48 lg:h-52 overflow-hidden bg-[#090909]">
-                  <img
-                    src={displayImg}
-                    alt={p.name}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = '/placeholder-burger.svg';
-                    }}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+        {/* Serif Headline */}
+        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-serif text-white tracking-tight leading-tight font-normal">
+          Good Food. Great Times.
+        </h2>
 
-                {/* Card Content Area */}
-                <div className="p-3.5 sm:p-4 space-y-2.5 bg-[#101010]">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-bold text-white text-xs sm:text-sm truncate">{p.name}</h3>
-                    <span className="font-bold text-white text-xs sm:text-sm shrink-0">£{displayPrice.toFixed(2)}</span>
-                  </div>
+        {/* Description Paragraph */}
+        <p className="text-xs sm:text-sm text-[#9CA3AF] max-w-xl mx-auto font-medium leading-relaxed">
+          Rooted in classic Native flavors with a modern twist.<br className="hidden sm:inline" />
+          Join us for lunch, dinner, or your next celebration.
+        </p>
 
-                  <div className="flex items-center gap-1 text-[#FF5500] pt-2 border-t border-[#1C1C1C]">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3 h-3 fill-[#FF5500] text-[#FF5500]" />
-                    ))}
-                    <span className="text-[11px] font-bold text-[#9CA3AF] ml-1.5">{p.rating || 4.7}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        {/* 3 Pillars Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10 pt-2 max-w-5xl mx-auto">
+          {/* Pillar 1 */}
+          <div className="flex flex-col items-center text-center space-y-2.5">
+            <div className="w-20 h-20 rounded-full bg-[#121212] border border-[#282828] flex items-center justify-center text-[#FF5500] shadow-xl">
+              <Wheat className="w-9 h-9 text-[#FF5500]" />
+            </div>
+            <h3 className="text-xs sm:text-sm font-black tracking-widest text-white uppercase pt-1">
+              QUALITY INGREDIENTS
+            </h3>
+            <p className="text-xs text-[#9CA3AF] font-medium leading-relaxed max-w-[260px]">
+              We source locally and seasonally, bringing out the best in every dish.
+            </p>
+          </div>
+
+          {/* Pillar 2 (Featured Glowing Center Circle) */}
+          <div className="flex flex-col items-center text-center space-y-2.5">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#FF5500] to-[#FFAA00] flex items-center justify-center text-white shadow-2xl shadow-[#FF5500]/40 scale-105">
+              <Star className="w-10 h-10 text-white stroke-[1.5]" />
+            </div>
+            <h3 className="text-xs sm:text-sm font-black tracking-widest text-white uppercase pt-1">
+              MADE WITH CARE
+            </h3>
+            <p className="text-xs text-[#9CA3AF] font-medium leading-relaxed max-w-[260px]">
+              From scratch kitchens and signature recipes made just for you.
+            </p>
+          </div>
+
+          {/* Pillar 3 */}
+          <div className="flex flex-col items-center text-center space-y-2.5">
+            <div className="w-20 h-20 rounded-full bg-[#121212] border border-[#282828] flex items-center justify-center text-[#FF5500] shadow-xl">
+              <Sparkles className="w-9 h-9 text-[#FF5500]" />
+            </div>
+            <h3 className="text-xs sm:text-sm font-black tracking-widest text-white uppercase pt-1">
+              WARM HOSPITALITY
+            </h3>
+            <p className="text-xs text-[#9CA3AF] font-medium leading-relaxed max-w-[260px]">
+              A cozy vibe, a friendly team, and great vibes always.
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* TODAY'S OFFERS SECTION (Matching Screenshot 2 Target Reference) */}
-      <section className="relative w-full rounded-3xl overflow-hidden py-10 bg-[url('/offersbackground.jpg')] bg-cover bg-center bg-no-repeat my-4">
-        {/* Dark overlay backdrop for optimal readability */}
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] pointer-events-none" />
+      {/* DELIVERY PROMO BANNER: CRAVING IT? WE'RE ALREADY ON OUR WAY */}
+      <section className="w-full -my-14 sm:-my-20 lg:-my-28 xl:-my-32 overflow-hidden">
+        <img
+          src="/banner.png"
+          alt="Hot & Special Food - Craving It? We're Already On Our Way."
+          className="w-full h-auto block select-none"
+        />
+      </section>
 
-        <div className="relative z-10 w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-6">
+      {/* SIGNATURE BURGERS & TODAY'S OFFERS SECTION */}
+      <section className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-12 -mt-10 sm:-mt-14 lg:-mt-20">
+        {/* SIGNATURE BURGERS SHOWCASE SECTION (Full Width & Large Scale matching reference poster) */}
+        <div className="space-y-10 sm:space-y-12">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-widest uppercase font-hero">
+              SIGNATURE BURGERS
+            </h2>
+            <Link to="/menu" className="text-xs sm:text-sm font-extrabold text-[#FF5500] hover:underline flex items-center gap-1 uppercase tracking-wider">
+              <span>VIEW ALL</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* Top Row: 3 Signature Burgers spanning full width */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10 xl:gap-14">
+            {/* 1. MC PROJECT */}
+            <div
+              onClick={() => {
+                const prod = products.find(p => p.name.toLowerCase().includes('mc project')) || products[0];
+                if (prod) setSelectedProduct(prod);
+              }}
+              className="flex items-center gap-5 sm:gap-6 group cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 hover:bg-white/[0.03] border border-transparent hover:border-[#FF5500]/40 transition-all duration-300"
+            >
+              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
+                <img
+                  src="/burger_mc_project.jpg"
+                  alt="MC Project"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="space-y-2.5">
+                <h3 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-serif font-black tracking-wide uppercase leading-tight">
+                  <span className="text-white">MC </span>
+                  <br className="hidden sm:inline" />
+                  <span className="text-[#FF5500]">PROJECT</span>
+                </h3>
+                <p className="text-xs sm:text-sm lg:text-base text-[#D1D5DB] font-medium leading-relaxed max-w-[280px] sm:max-w-[320px]">
+                  Double beef, double American cheese, burger sauce, lettuce, onion & gherkins
+                </p>
+              </div>
+            </div>
+
+            {/* 2. OUTLAW PROJECT */}
+            <div
+              onClick={() => {
+                const prod = products.find(p => p.name.toLowerCase().includes('outlaw')) || products[1] || products[0];
+                if (prod) setSelectedProduct(prod);
+              }}
+              className="flex items-center gap-5 sm:gap-6 group cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 hover:bg-white/[0.03] border border-transparent hover:border-[#FF5500]/40 transition-all duration-300"
+            >
+              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
+                <img
+                  src="/burger_outlaw_project.jpg"
+                  alt="Outlaw Project"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="space-y-2.5">
+                <h3 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-serif font-black tracking-wide uppercase leading-tight">
+                  <span className="text-white">OUTLAW </span>
+                  <br className="hidden sm:inline" />
+                  <span className="text-[#FF5500]">PROJECT</span>
+                </h3>
+                <p className="text-xs sm:text-sm lg:text-base text-[#D1D5DB] font-medium leading-relaxed max-w-[280px] sm:max-w-[320px]">
+                  Double beef, mature cheddar, bacon, smoky BBQ, jalapeños & jalapeño mayo
+                </p>
+              </div>
+            </div>
+
+            {/* 3. PASTRAMI BURGER */}
+            <div
+              onClick={() => {
+                const prod = products.find(p => p.name.toLowerCase().includes('pastrami')) || products[2] || products[0];
+                if (prod) setSelectedProduct(prod);
+              }}
+              className="flex items-center gap-5 sm:gap-6 group cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 hover:bg-white/[0.03] border border-transparent hover:border-[#FF5500]/40 transition-all duration-300"
+            >
+              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
+                <img
+                  src="/burger_pastrami_burger.jpg"
+                  alt="Pastrami Burger"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="space-y-2.5">
+                <h3 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-serif font-black tracking-wide uppercase leading-tight">
+                  <span className="text-white">PASTRAMI </span>
+                  <br className="hidden sm:inline" />
+                  <span className="text-[#FF5500]">BURGER</span>
+                </h3>
+                <p className="text-xs sm:text-sm lg:text-base text-[#D1D5DB] font-medium leading-relaxed max-w-[280px] sm:max-w-[320px]">
+                  Pastrami, Emmental, Russian sauce & pickled gherkins
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row: 2 Signature Burgers Large Centered */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 xl:gap-28 max-w-5xl lg:max-w-6xl mx-auto pt-4 sm:pt-8">
+            {/* 4. FRIED CHICKEN SANDO */}
+            <div
+              onClick={() => {
+                const prod = products.find(p => p.name.toLowerCase().includes('chicken')) || products[3] || products[0];
+                if (prod) setSelectedProduct(prod);
+              }}
+              className="flex items-center gap-5 sm:gap-6 group cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 hover:bg-white/[0.03] border border-transparent hover:border-[#FF5500]/40 transition-all duration-300"
+            >
+              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
+                <img
+                  src="/burger_fried_chicken_sando.jpg"
+                  alt="Fried Chicken Sando"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="space-y-2.5">
+                <h3 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-serif font-black tracking-wide uppercase leading-tight">
+                  <span className="text-white">FRIED CHICKEN </span>
+                  <br className="hidden sm:inline" />
+                  <span className="text-[#FF5500]">SANDO</span>
+                </h3>
+                <p className="text-xs sm:text-sm lg:text-base text-[#D1D5DB] font-medium leading-relaxed max-w-[280px] sm:max-w-[320px]">
+                  Buffalo buttermilk chicken, coleslaw, lime mayo & gherkins
+                </p>
+              </div>
+            </div>
+
+            {/* 5. HALLOUMI BURGER */}
+            <div
+              onClick={() => {
+                const prod = products.find(p => p.name.toLowerCase().includes('halloumi')) || products[4] || products[0];
+                if (prod) setSelectedProduct(prod);
+              }}
+              className="flex items-center gap-5 sm:gap-6 group cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 hover:bg-white/[0.03] border border-transparent hover:border-[#FF5500]/40 transition-all duration-300"
+            >
+              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
+                <img
+                  src="/burger_halloumi_burger.jpg"
+                  alt="Halloumi Burger"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="space-y-2.5">
+                <h3 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-serif font-black tracking-wide uppercase leading-tight">
+                  <span className="text-white">HALLOUMI </span>
+                  <br className="hidden sm:inline" />
+                  <span className="text-[#FF5500]">BURGER</span>
+                </h3>
+                <p className="text-xs sm:text-sm lg:text-base text-[#D1D5DB] font-medium leading-relaxed max-w-[280px] sm:max-w-[320px]">
+                  Halloumi, guacamole, tomato, pickled onion & hot-honey ketchup
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* TODAY'S OFFERS SUB-SECTION */}
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-widest uppercase font-hero">
               TODAY'S OFFERS
@@ -200,85 +349,95 @@ export const CustomerHome: React.FC = () => {
             </Link>
           </div>
 
-        {/* 3 Large Promotional Banner Cards Grid matching Screenshot 2 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
-          {/* Offer Card 1: BURGER COMBO */}
-          <div className="bg-[#120B07] border border-[#2A1810] hover:border-[#FF5500]/60 rounded-3xl p-6 flex items-center justify-between relative overflow-hidden shadow-2xl transition-all hover:scale-[1.02] cursor-pointer group min-h-[180px] sm:min-h-[200px]">
-            <div className="space-y-3 relative z-10 max-w-[55%]">
-              <h3 className="font-black text-white text-xl sm:text-2xl tracking-wide uppercase font-hero leading-tight">
-                BURGER COMBO
-              </h3>
-              <p className="text-xs sm:text-sm text-[#9CA3AF] font-medium">Burger + Fries + Drink</p>
-              <div className="pt-1">
-                <span className="inline-block px-4 py-2 bg-[#FF5500] text-white text-xs font-extrabold rounded-xl uppercase tracking-wider shadow-lg shadow-[#FF5500]/30">
-                  SAVE 15%
-                </span>
+          {/* 3 Large Promotional Banner Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
+            {/* Offer Card 1: BURGER COMBO */}
+            <div className="bg-[#120B07] border border-[#2A1810] hover:border-[#FF5500]/60 rounded-3xl p-6 flex items-center justify-between relative overflow-hidden shadow-2xl transition-all hover:scale-[1.02] cursor-pointer group min-h-[180px] sm:min-h-[200px]">
+              <div className="space-y-3 relative z-10 max-w-[55%]">
+                <h3 className="font-black text-white text-xl sm:text-2xl tracking-wide uppercase font-hero leading-tight">
+                  BURGER COMBO
+                </h3>
+                <p className="text-xs sm:text-sm text-[#9CA3AF] font-medium">Burger + Fries + Drink</p>
+                <div className="pt-1">
+                  <span className="inline-block px-4 py-2 bg-[#FF5500] text-white text-xs font-extrabold rounded-xl uppercase tracking-wider shadow-lg shadow-[#FF5500]/30">
+                    SAVE 15%
+                  </span>
+                </div>
               </div>
+              <img
+                src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=500&q=80"
+                alt="Burger Combo"
+                className="w-36 sm:w-44 lg:w-48 xl:w-52 h-32 sm:h-36 lg:h-40 object-cover rounded-2xl border border-[#262626] shadow-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
+              />
             </div>
-            <img
-              src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=500&q=80"
-              alt="Burger Combo"
-              className="w-36 sm:w-44 lg:w-48 xl:w-52 h-32 sm:h-36 lg:h-40 object-cover rounded-2xl border border-[#262626] shadow-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
-            />
-          </div>
 
-          {/* Offer Card 2: WING WEDNESDAY */}
-          <div className="bg-[#120B07] border border-[#2A1810] hover:border-[#FF5500]/60 rounded-3xl p-6 flex items-center justify-between relative overflow-hidden shadow-2xl transition-all hover:scale-[1.02] cursor-pointer group min-h-[180px] sm:min-h-[200px]">
-            <div className="space-y-2 relative z-10 max-w-[55%]">
-              <h3 className="font-black text-white text-xl sm:text-2xl tracking-wide uppercase font-hero leading-tight">
-                WING WEDNESDAY
-              </h3>
-              <p className="text-xs sm:text-sm text-[#FF5500] font-extrabold uppercase tracking-wider pt-0.5">20% OFF</p>
-              <p className="text-xs sm:text-sm text-[#9CA3AF] font-medium">On All Wings</p>
-            </div>
-            <img
-              src="https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&w=500&q=80"
-              alt="Wings"
-              className="w-36 sm:w-44 lg:w-48 xl:w-52 h-32 sm:h-36 lg:h-40 object-cover rounded-2xl border border-[#262626] shadow-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
-            />
-          </div>
-
-          {/* Offer Card 3: STUDENT OFFER */}
-          <div className="bg-[#120B07] border border-[#2A1810] hover:border-[#FF5500]/60 rounded-3xl p-6 flex items-center justify-between relative overflow-hidden shadow-2xl transition-all hover:scale-[1.02] cursor-pointer group min-h-[180px] sm:min-h-[200px]">
-            <div className="space-y-2 relative z-10 max-w-[55%]">
-              <h3 className="font-black text-white text-xl sm:text-2xl tracking-wide uppercase font-hero leading-tight">
-                STUDENT OFFER
-              </h3>
-              <p className="text-xs sm:text-sm text-[#FF5500] font-extrabold uppercase tracking-wider pt-0.5">10% OFF</p>
-              <p className="text-xs sm:text-sm text-[#9CA3AF] font-medium">On All Orders</p>
-            </div>
-            <div className="w-36 sm:w-44 lg:w-48 xl:w-52 h-32 sm:h-36 lg:h-40 bg-[#161616] border border-[#262626] rounded-2xl p-3 flex flex-col items-center justify-center text-center shadow-xl shrink-0 group-hover:border-[#FF5500]/40 transition-colors">
-              <div className="w-10 h-10 rounded-full bg-[#FF5500]/20 border border-[#FF5500]/40 flex items-center justify-center text-[#FF5500] font-extrabold text-xs mb-1.5 shadow-md">
-                ID
+            {/* Offer Card 2: WING WEDNESDAY */}
+            <div className="bg-[#120B07] border border-[#2A1810] hover:border-[#FF5500]/60 rounded-3xl p-6 flex items-center justify-between relative overflow-hidden shadow-2xl transition-all hover:scale-[1.02] cursor-pointer group min-h-[180px] sm:min-h-[200px]">
+              <div className="space-y-2 relative z-10 max-w-[55%]">
+                <h3 className="font-black text-white text-xl sm:text-2xl tracking-wide uppercase font-hero leading-tight">
+                  WING WEDNESDAY
+                </h3>
+                <p className="text-xs sm:text-sm text-[#FF5500] font-extrabold uppercase tracking-wider pt-0.5">20% OFF</p>
+                <p className="text-xs sm:text-sm text-[#9CA3AF] font-medium">On All Wings</p>
               </div>
-              <span className="text-[11px] font-extrabold text-white uppercase tracking-wider">STUDENT OFFER</span>
-              <span className="text-[9px] text-[#6B7280] mt-0.5">PATTY PROJECT - LONDON</span>
+              <img
+                src="https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&w=500&q=80"
+                alt="Wings"
+                className="w-36 sm:w-44 lg:w-48 xl:w-52 h-32 sm:h-36 lg:h-40 object-cover rounded-2xl border border-[#262626] shadow-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+
+            {/* Offer Card 3: STUDENT OFFER */}
+            <div className="bg-[#120B07] border border-[#2A1810] hover:border-[#FF5500]/60 rounded-3xl p-6 flex items-center justify-between relative overflow-hidden shadow-2xl transition-all hover:scale-[1.02] cursor-pointer group min-h-[180px] sm:min-h-[200px]">
+              <div className="space-y-2 relative z-10 max-w-[55%]">
+                <h3 className="font-black text-white text-xl sm:text-2xl tracking-wide uppercase font-hero leading-tight">
+                  STUDENT OFFER
+                </h3>
+                <p className="text-xs sm:text-sm text-[#FF5500] font-extrabold uppercase tracking-wider pt-0.5">10% OFF</p>
+                <p className="text-xs sm:text-sm text-[#9CA3AF] font-medium">On All Orders</p>
+              </div>
+              <div className="w-36 sm:w-44 lg:w-48 xl:w-52 h-32 sm:h-36 lg:h-40 bg-[#161616] border border-[#262626] rounded-2xl p-3 flex flex-col items-center justify-center text-center shadow-xl shrink-0 group-hover:border-[#FF5500]/40 transition-colors">
+                <div className="w-10 h-10 rounded-full bg-[#FF5500]/20 border border-[#FF5500]/40 flex items-center justify-center text-[#FF5500] font-extrabold text-xs mb-1.5 shadow-md">
+                  ID
+                </div>
+                <span className="text-[11px] font-extrabold text-white uppercase tracking-wider">STUDENT OFFER</span>
+                <span className="text-[9px] text-[#6B7280] mt-0.5">PATTY PROJECT - LONDON</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-      {/* ORDER ONLINE OR COME VISIT US TODAY BANNER matching Screenshot */}
-      <section className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-4">
-        <div className="bg-[#FF5500] rounded-3xl p-10 sm:p-14 lg:p-16 text-center space-y-6 shadow-2xl shadow-[#FF5500]/20">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white font-hero uppercase tracking-tight leading-none max-w-4xl mx-auto">
-            ORDER ONLINE OR COME VISIT US TODAY
-          </h2>
-          <div>
-            <button
-              onClick={() => {
-                if (selectedBranch) {
-                  navigate('/menu');
-                } else {
-                  navigate('/select-location');
-                }
-              }}
-              className="bg-black hover:bg-[#151515] text-[#FF5500] text-sm sm:text-base font-black px-8 py-3.5 rounded-xl uppercase tracking-wider transition-all shadow-xl hover:scale-105 cursor-pointer"
-            >
-              GET STARTED
-            </button>
-          </div>
+      {/* HUNGRY? UNLOCK YOUR PATTYPROJECT MEAL BANNER matching Screenshot */}
+      <section className="w-full max-w-[1450px] mx-auto px-6 sm:px-10 lg:px-16 py-12 text-center text-white space-y-6">
+        {/* Main 2-Line Headline in Serif */}
+        <h2 className="text-3xl sm:text-5xl lg:text-6xl font-serif tracking-wide leading-tight max-w-4xl mx-auto uppercase">
+          <span className="text-white">HUNGRY? </span>
+          <span className="text-[#FF5500]">UNLOCK YOUR</span>
+          <br />
+          <span className="text-white">PATTYPROJECT MEAL</span>
+        </h2>
+
+        {/* Subtext Paragraph */}
+        <p className="text-xs sm:text-sm text-[#9CA3AF] max-w-2xl mx-auto font-medium leading-relaxed">
+          Don’t just eat — experience.{' '}
+          <span className="text-[#FF5500] font-bold">Order online</span> and get your project-crafted meal delivered to your door, piping hot and packed with flavor.
+        </p>
+
+        {/* GET STARTED Pill Button */}
+        <div className="pt-3">
+          <button
+            onClick={() => {
+              if (selectedBranch) {
+                navigate('/menu');
+              } else {
+                navigate('/select-location');
+              }
+            }}
+            className="bg-[#FF5500] hover:bg-[#E04B00] text-white text-xs sm:text-sm font-black uppercase tracking-widest px-10 py-4 rounded-full shadow-2xl shadow-[#FF5500]/30 transition-all hover:scale-105 cursor-pointer"
+          >
+            GET STARTED
+          </button>
         </div>
       </section>
 
