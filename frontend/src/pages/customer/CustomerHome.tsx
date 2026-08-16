@@ -5,6 +5,7 @@ import { api } from '../../api/client';
 import { Product } from '../../types';
 import { ProductDetailModal } from './ProductDetailModal';
 import { useCartStore } from '../../store/cartStore';
+import bannerImg from '../../assets/banner.png';
 
 export const CustomerHome: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -175,7 +176,7 @@ export const CustomerHome: React.FC = () => {
       {/* DELIVERY PROMO BANNER: CRAVING IT? WE'RE ALREADY ON OUR WAY */}
       <section className="w-full -my-14 sm:-my-20 lg:-my-28 xl:-my-32 overflow-hidden">
         <img
-          src="/banner.png"
+          src={bannerImg}
           alt="Hot & Special Food - Craving It? We're Already On Our Way."
           className="w-full h-auto block select-none"
         />
