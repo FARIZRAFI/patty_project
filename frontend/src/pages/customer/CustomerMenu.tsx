@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Star, Plus, Bike, LayoutGrid, Beef, Drumstick, UtensilsCrossed, Flame, CupSoda, Utensils } from 'lucide-react';
+import { Star, Plus, LayoutGrid, Beef, Drumstick, UtensilsCrossed, Flame, CupSoda, Utensils } from 'lucide-react';
 import { api } from '../../api/client';
 import { Product, Category } from '../../types';
 import { ProductDetailModal } from './ProductDetailModal';
@@ -46,34 +46,38 @@ export const CustomerMenu: React.FC = () => {
     drinks: <CupSoda className="w-4 h-4" />,
   };
 
-  const getCategoryIcon = (slugName: string) => {
+  const getCategoryIcon = (slugName: string, isSelected: boolean) => {
     const key = slugName.toLowerCase();
-    return categoryIcons[key] || <UtensilsCrossed className="w-4 h-4" />;
+    const iconElement = (categoryIcons[key] || <UtensilsCrossed className="w-4 h-4" />) as React.ReactElement<{ className?: string }>;
+    return React.cloneElement(iconElement, {
+      className: `w-4 h-4 ${isSelected ? 'text-white' : 'text-[#71717A]'}`
+    });
+
   };
 
   return (
-    <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 py-6 sm:py-8 pb-36 space-y-6">
-      {/* Menu Header matching Image 2 */}
-      <div>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white font-hero tracking-tight">
+    <div className="w-full max-w-[1260px] mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 text-[#F5F5F5]">
+      {/* Page Heading & Subtitle */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-[#F5F5F5] tracking-tight">
           Our Menu
         </h1>
-        <p className="text-sm sm:text-base text-[#9CA3AF] font-medium mt-1">
+        <p className="text-sm text-[#A1A1AA] mt-1.5 font-normal">
           Burgers, sides and more. Made fresh to order.
         </p>
       </div>
 
-      {/* Horizontal Category Pill Tabs Bar matching Image 2 */}
-      <div className="flex items-center gap-3 pt-2 pb-4 overflow-x-auto scrollbar-none">
+      {/* Horizontal Category Navigation Bar */}
+      <div className="flex items-center gap-2.5 pb-3 mb-8 overflow-x-auto scrollbar-none scroll-smooth">
         <button
           onClick={() => setSelectedCategory('ALL')}
-          className={`px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2.5 transition-all shrink-0 cursor-pointer border ${
+          className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors shrink-0 cursor-pointer border ${
             selectedCategory === 'ALL'
-              ? 'bg-[#FF5500] text-white border-[#FF5500] shadow-lg shadow-[#FF5500]/25 scale-[1.02]'
-              : 'bg-[#101010] text-[#9CA3AF] border-[#262626] hover:text-white hover:bg-[#161616] hover:border-[#404040]'
+              ? 'bg-[#FF5A00] text-white border-[#FF5A00] shadow-sm'
+              : 'bg-[#0D0D0D] text-[#A1A1AA] border-[#242424] hover:text-[#F5F5F5] hover:bg-[#151515] hover:border-[#333333]'
           }`}
         >
-          {categoryIcons['all']}
+          {getCategoryIcon('all', selectedCategory === 'ALL')}
           <span>All Items</span>
         </button>
 
@@ -83,59 +87,73 @@ export const CustomerMenu: React.FC = () => {
             <button
               key={c.id}
               onClick={() => setSelectedCategory(c.id)}
-              className={`px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2.5 transition-all shrink-0 cursor-pointer border ${
+              className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors shrink-0 cursor-pointer border ${
                 isSelected
-                  ? 'bg-[#FF5500] text-white border-[#FF5500] shadow-lg shadow-[#FF5500]/25 scale-[1.02]'
-                  : 'bg-[#101010] text-[#9CA3AF] border-[#262626] hover:text-white hover:bg-[#161616] hover:border-[#404040]'
+                  ? 'bg-[#FF5A00] text-white border-[#FF5A00] shadow-sm'
+                  : 'bg-[#0D0D0D] text-[#A1A1AA] border-[#242424] hover:text-[#F5F5F5] hover:bg-[#151515] hover:border-[#333333]'
               }`}
             >
-              {getCategoryIcon(c.slug || c.name)}
+              {getCategoryIcon(c.slug || c.name, isSelected)}
               <span>{c.name}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Full-width 4-Column Product Grid matching Image 2 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+      {/* Responsive Product Grid: 4 cols desktop, 3 cols med, 2 cols sm, 1 col mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
         {filteredProducts.map((p) => {
           const displayImg = p.image_url || '/placeholder-burger.svg';
+
+          // Extract dietary labels if present in product name
+          const isVeg = p.name.includes('[VEG]');
+          const isVegan = p.name.includes('[VEGAN]');
+          const cleanName = p.name.replace('[VEG]', '').replace('[VEGAN]', '').trim();
 
           return (
             <div
               key={p.id}
               onClick={() => setSelectedProduct(p)}
-              className="bg-[#101010] border border-[#1F1F1F] hover:border-[#FF5500]/60 rounded-2xl overflow-hidden cursor-pointer transition-all hover:scale-[1.02] shadow-xl group flex flex-col justify-between"
+              className="bg-[#0D0D0D] border border-[#242424] hover:border-[#FF5A00]/50 rounded-[10px] overflow-hidden cursor-pointer transition-all duration-200 group flex flex-col justify-between"
             >
-              {/* Top Image Area */}
-              <div className="w-full h-44 sm:h-48 lg:h-52 overflow-hidden bg-[#090909]">
+              {/* Product Image Area (4/3 Aspect Ratio) */}
+              <div className="w-full aspect-[4/3] overflow-hidden bg-[#111111] relative border-b border-[#1C1C1C]">
                 <img
                   src={displayImg}
                   alt={p.name}
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).src = '/placeholder-burger.svg';
                   }}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
                 />
+
+                {/* Dietary Badges */}
+                {(isVeg || isVegan) && (
+                  <span className="absolute top-2.5 left-2.5 bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E] text-[10px] font-semibold px-2 py-0.5 rounded-md backdrop-blur-sm">
+                    {isVegan ? 'VEGAN' : 'VEG'}
+                  </span>
+                )}
               </div>
 
-              {/* Bottom Content Area */}
-              <div className="p-3.5 sm:p-4 space-y-3 bg-[#101010]">
-                {/* Name & Price */}
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-bold text-white text-xs sm:text-sm truncate">{p.name}</h3>
-                  <span className="font-bold text-white text-xs sm:text-sm shrink-0">
+              {/* Product Information Area */}
+              <div className="p-4 space-y-3 bg-[#0D0D0D]">
+                {/* Product Name & Price Row */}
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-[#F5F5F5] text-sm leading-snug line-clamp-2 min-h-[40px]">
+                    {cleanName}
+                  </h3>
+                  <span className="font-semibold text-[#F5F5F5] text-sm shrink-0">
                     £{p.base_price.toFixed(2)}
                   </span>
                 </div>
 
-                {/* Rating & Add Button */}
-                <div className="flex items-center justify-between pt-2 border-t border-[#1C1C1C]">
-                  <div className="flex items-center gap-1 text-[#FF5500]">
+                {/* Rating & Add Action Button Row */}
+                <div className="flex items-center justify-between pt-2.5 border-t border-[#1C1C1C]">
+                  <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3 h-3 fill-[#FF5500] text-[#FF5500]" />
+                      <Star key={i} className="w-3.5 h-3.5 fill-[#FF5A00] text-[#FF5A00]" />
                     ))}
-                    <span className="text-[11px] font-bold text-[#9CA3AF] ml-1.5">
+                    <span className="text-xs text-[#A1A1AA] font-normal ml-1">
                       {p.rating || 4.7}
                     </span>
                   </div>
@@ -146,7 +164,8 @@ export const CustomerMenu: React.FC = () => {
                       setSelectedProduct(p);
                     }}
                     title="Customize & Add"
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl border border-[#FF5500] text-[#FF5500] hover:bg-[#FF5500] hover:text-white flex items-center justify-center transition-all font-bold shadow-md shadow-[#FF5500]/20"
+                    aria-label={`Add ${p.name} to order`}
+                    className="w-9 h-9 rounded-lg border border-[#FF5A00] text-[#FF5A00] hover:bg-[#FF5A00] hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0 focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -157,16 +176,16 @@ export const CustomerMenu: React.FC = () => {
         })}
       </div>
 
-      {/* Footer Note matching Screenshot 2 */}
-      <div className="pt-16">
+      {/* Footer Note */}
+      <div className="pt-16 pb-4 text-center">
         <div className="flex items-center justify-center gap-4 pb-3">
-          <div className="h-[1px] bg-[#222222] flex-1 max-w-[200px]" />
-          <div className="w-8 h-8 rounded-full border border-[#FF5500]/40 bg-[#FF5500]/10 flex items-center justify-center text-[#FF5500]">
+          <div className="h-[1px] bg-[#242424] flex-1 max-w-[180px]" />
+          <div className="w-8 h-8 rounded-full border border-[#242424] bg-[#121212] flex items-center justify-center text-[#FF5A00]">
             <Utensils className="w-4 h-4" />
           </div>
-          <div className="h-[1px] bg-[#222222] flex-1 max-w-[200px]" />
+          <div className="h-[1px] bg-[#242424] flex-1 max-w-[180px]" />
         </div>
-        <p className="text-center text-xs text-[#6B7280]">
+        <p className="text-xs text-[#71717A]">
           More items and customisations available in-store.
         </p>
       </div>

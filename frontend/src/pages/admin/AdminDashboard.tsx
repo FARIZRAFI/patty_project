@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronRight, ArrowLeft, Download, Calendar, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Download, Calendar, Plus, Trash2, AlertTriangle, ExternalLink } from 'lucide-react';
 import { api } from '../../api/client';
 import { Branch, Order } from '../../types';
 import { AdminCreateBranchModal } from './AdminCreateBranchModal';
@@ -54,16 +54,16 @@ export const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="w-full max-w-[1220px] mx-auto px-6 sm:px-8 py-8 space-y-6 text-[#F5F5F5]">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Dashboard</h1>
-          <p className="text-[#9CA3AF] text-sm mt-0.5">View and manage orders for each branch.</p>
+          <h1 className="text-3xl font-bold text-[#F5F5F5] tracking-tight">Dashboard</h1>
+          <p className="text-sm text-[#A1A1AA] font-normal mt-1">View and manage orders for each branch.</p>
         </div>
         <button
           onClick={() => setShowCreateBranchModal(true)}
-          className="bg-[#FF5500] hover:bg-[#E04B00] text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all shadow-md shadow-[#FF5500]/20 cursor-pointer"
+          className="h-10 px-4 bg-[#FF5A00] hover:bg-[#E84F00] text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Create Branch</span>
@@ -72,63 +72,85 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Main Branch Summary Table */}
       {!selectedBranch ? (
-        <div className="bg-[#121212] border border-[#262626] rounded-2xl overflow-hidden shadow-xl">
-          <div className="p-6 border-b border-[#1F1F1F]">
-            <h2 className="text-lg font-bold text-white">All Branches Overview</h2>
+        <div className="bg-[#0D0D0D] border border-[#242424] rounded-xl overflow-hidden shadow-sm">
+          <div className="p-5 border-b border-[#1C1C1C] flex items-center justify-between">
+            <h2 className="text-base font-semibold text-[#F5F5F5]">All Branches Overview</h2>
+            <span className="text-xs text-[#71717A] font-medium">{branches.length} Locations Total</span>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-[#1A1A1A] text-[#9CA3AF] uppercase text-xs font-semibold border-b border-[#262626]">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-[#171717] text-[#A1A1AA] uppercase text-[11px] font-semibold border-b border-[#1C1C1C]">
                 <tr>
-                  <th className="px-6 py-4">Branch Name</th>
-                  <th className="px-6 py-4 text-center">Total Orders</th>
-                  <th className="px-6 py-4 text-center">Completed Orders</th>
-                  <th className="px-6 py-4 text-center">Cancelled Orders</th>
-                  <th className="px-6 py-4 text-center">Pending Orders</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-5 py-3.5">Branch Name</th>
+                  <th className="px-5 py-3.5 text-center">Total Orders</th>
+                  <th className="px-5 py-3.5 text-center">Completed Orders</th>
+                  <th className="px-5 py-3.5 text-center">Cancelled Orders</th>
+                  <th className="px-5 py-3.5 text-center">Pending Orders</th>
+                  <th className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1F1F1F]">
-                {branches.map((b) => (
-                  <tr
-                    key={b.id}
-                    onClick={() => handleSelectBranch(b)}
-                    className="hover:bg-[#1A1A1A] cursor-pointer transition-colors"
-                  >
-                    <td className="px-6 py-4 flex items-center gap-3">
-                      <span className="w-10 h-10 rounded-xl bg-[#FF5500]/10 text-[#FF5500] font-bold flex items-center justify-center border border-[#FF5500]/30">
-                        {b.code}
-                      </span>
-                      <div>
-                        <p className="font-semibold text-white">{b.name}</p>
-                        <p className="text-xs text-[#9CA3AF]">{b.postcode}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center font-semibold text-white">{b.code === 'LC' ? 512 : 342}</td>
-                    <td className="px-6 py-4 text-center text-[#10B981] font-semibold">{b.code === 'LC' ? 462 : 308}</td>
-                    <td className="px-6 py-4 text-center text-[#EF4444] font-semibold">{b.code === 'LC' ? 20 : 14}</td>
-                    <td className="px-6 py-4 text-center text-[#FF5500] font-semibold">{b.code === 'LC' ? 30 : 20}</td>
-                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setBranchToDelete(b)}
-                          title="Delete Branch"
-                          className="p-2 text-[#9CA3AF] hover:text-[#EF4444] hover:bg-[#EF4444]/10 rounded-xl transition-all cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleSelectBranch(b)}
-                          title="View Branch Orders"
-                          className="p-2 text-[#9CA3AF] hover:text-white hover:bg-[#1A1A1A] rounded-xl transition-all cursor-pointer"
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </button>
-                      </div>
+              <tbody className="divide-y divide-[#1C1C1C] bg-[#0D0D0D]">
+                {loading ? (
+                  [...Array(3)].map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="px-5 py-4"><div className="h-4 bg-[#151515] rounded w-32" /></td>
+                      <td className="px-5 py-4 text-center"><div className="h-4 bg-[#151515] rounded w-12 mx-auto" /></td>
+                      <td className="px-5 py-4 text-center"><div className="h-4 bg-[#151515] rounded w-12 mx-auto" /></td>
+                      <td className="px-5 py-4 text-center"><div className="h-4 bg-[#151515] rounded w-12 mx-auto" /></td>
+                      <td className="px-5 py-4 text-center"><div className="h-4 bg-[#151515] rounded w-12 mx-auto" /></td>
+                      <td className="px-5 py-4 text-right"><div className="h-4 bg-[#151515] rounded w-16 ml-auto" /></td>
+                    </tr>
+                  ))
+                ) : branches.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-12 text-center text-[#71717A]">
+                      No branches found. Click "Create Branch" to add your first outlet.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  branches.map((b) => (
+                    <tr
+                      key={b.id}
+                      onClick={() => handleSelectBranch(b)}
+                      className="hover:bg-[#121212] cursor-pointer transition-colors h-14"
+                    >
+                      <td className="px-5 py-3 flex items-center gap-3">
+                        <span className="w-9 h-9 rounded-lg bg-[#241209] border border-[#6B2A0D] text-[#FF5A00] font-semibold text-xs flex items-center justify-center shrink-0">
+                          {b.code}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-[#F5F5F5] truncate">{b.name}</p>
+                          <p className="text-xs text-[#71717A] truncate">{b.address_line1}, {b.postcode}</p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-center font-semibold text-[#F5F5F5]">{b.code === 'LC' ? 512 : 342}</td>
+                      <td className="px-5 py-3 text-center text-[#22C55E] font-semibold">{b.code === 'LC' ? 462 : 308}</td>
+                      <td className="px-5 py-3 text-center text-[#EF4444] font-semibold">{b.code === 'LC' ? 20 : 14}</td>
+                      <td className="px-5 py-3 text-center text-[#F59E0B] font-semibold">{b.code === 'LC' ? 30 : 20}</td>
+                      <td className="px-5 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setBranchToDelete(b)}
+                            title="Delete Branch"
+                            aria-label="Delete branch"
+                            className="w-8 h-8 rounded-lg bg-[#151515] border border-[#242424] text-[#71717A] hover:text-[#EF4444] hover:border-[#EF4444]/40 hover:bg-[#EF4444]/10 flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleSelectBranch(b)}
+                            title="View Branch Orders"
+                            aria-label="View branch orders"
+                            className="w-8 h-8 rounded-lg bg-[#151515] border border-[#242424] text-[#A1A1AA] hover:text-[#F5F5F5] hover:border-[#333333] flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -138,78 +160,85 @@ export const AdminDashboard: React.FC = () => {
         <div className="space-y-6">
           <button
             onClick={() => setSelectedBranch(null)}
-            className="flex items-center gap-2 text-[#9CA3AF] hover:text-white transition-colors text-sm font-medium"
+            className="flex items-center gap-1.5 text-[#A1A1AA] hover:text-[#F5F5F5] transition-colors text-xs font-medium cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Branches</span>
+            <ArrowLeft className="w-4 h-4 text-[#FF5A00]" />
+            <span>Back to All Branches</span>
           </button>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="w-12 h-12 rounded-xl bg-[#FF5500]/10 text-[#FF5500] font-bold text-lg flex items-center justify-center border border-[#FF5500]/30">
+            <div className="flex items-center gap-3.5">
+              <span className="w-10 h-10 rounded-lg bg-[#241209] border border-[#6B2A0D] text-[#FF5A00] font-bold text-sm flex items-center justify-center shrink-0">
                 {selectedBranch.code}
               </span>
               <div>
-                <h2 className="text-2xl font-bold text-white">{selectedBranch.name}</h2>
-                <p className="text-[#9CA3AF] text-sm">512 Total Orders</p>
+                <h2 className="text-xl font-bold text-[#F5F5F5]">{selectedBranch.name}</h2>
+                <p className="text-[#A1A1AA] text-xs">512 Total Orders Recorded</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button className="bg-[#1A1A1A] border border-[#262626] text-[#9CA3AF] hover:text-white px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span>6 May 2025 - 6 May 2025</span>
+            <div className="flex items-center gap-2.5">
+              <button className="h-9 px-3.5 bg-[#151515] border border-[#242424] text-[#A1A1AA] hover:text-[#F5F5F5] rounded-lg text-xs font-medium flex items-center gap-2 transition-colors">
+                <Calendar className="w-3.5 h-3.5 text-[#FF5A00]" />
+                <span>Today</span>
               </button>
-              <button className="bg-[#1A1A1A] border border-[#262626] text-[#9CA3AF] hover:text-white px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2">
-                <Download className="w-4 h-4" />
+              <button className="h-9 px-3.5 bg-[#151515] border border-[#242424] text-[#A1A1AA] hover:text-[#F5F5F5] rounded-lg text-xs font-medium flex items-center gap-2 transition-colors">
+                <Download className="w-3.5 h-3.5 text-[#FF5A00]" />
                 <span>Export</span>
               </button>
             </div>
           </div>
 
           {/* Orders Table */}
-          <div className="bg-[#121212] border border-[#262626] rounded-2xl overflow-hidden shadow-xl">
+          <div className="bg-[#0D0D0D] border border-[#242424] rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#1A1A1A] text-[#9CA3AF] uppercase text-xs font-semibold border-b border-[#262626]">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-[#171717] text-[#A1A1AA] uppercase text-[11px] font-semibold border-b border-[#1C1C1C]">
                   <tr>
-                    <th className="px-6 py-4">Order ID</th>
-                    <th className="px-6 py-4">Customer</th>
-                    <th className="px-6 py-4">Items</th>
-                    <th className="px-6 py-4">Amount</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Ordered On</th>
+                    <th className="px-5 py-3.5">Order ID</th>
+                    <th className="px-5 py-3.5">Customer</th>
+                    <th className="px-5 py-3.5">Items</th>
+                    <th className="px-5 py-3.5">Amount</th>
+                    <th className="px-5 py-3.5">Status</th>
+                    <th className="px-5 py-3.5 text-right">Ordered On</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1F1F1F]">
+                <tbody className="divide-y divide-[#1C1C1C] bg-[#0D0D0D]">
                   {orders.length > 0 ? (
                     orders.map((o) => (
-                      <tr key={o.id} className="hover:bg-[#1A1A1A] transition-colors">
-                        <td className="px-6 py-4 font-bold text-[#FF5500]">{o.order_number}</td>
-                        <td className="px-6 py-4 text-white font-medium">{o.customer_name}</td>
-                        <td className="px-6 py-4 text-[#9CA3AF]">
-                          {o.items.map((i) => `${i.product_name} (${i.quantity})`).join(', ') || 'Classic Beef Burger, French Fries'}
+                      <tr key={o.id} className="hover:bg-[#121212] transition-colors h-14">
+                        <td className="px-5 py-3 font-semibold text-[#FF5A00]">{o.order_number}</td>
+                        <td className="px-5 py-3 text-[#F5F5F5] font-medium">{o.customer_name}</td>
+                        <td className="px-5 py-3 text-[#A1A1AA] max-w-xs truncate">
+                          {o.items.map((i) => `${i.product_name} (x${i.quantity})`).join(', ') || 'Classic Beef Burger, French Fries'}
                         </td>
-                        <td className="px-6 py-4 font-semibold text-white">£{o.total_amount.toFixed(2)}</td>
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-3 font-semibold text-[#F5F5F5]">£{o.total_amount.toFixed(2)}</td>
+                        <td className="px-5 py-3">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                              o.status === 'PREPARING'
-                                ? 'bg-[#FF5500]/10 text-[#FF5500] border-[#FF5500]/30'
+                            className={`px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border ${
+                              o.status === 'INCOMING'
+                                ? 'bg-[#FF5A00]/15 text-[#FF5A00] border-[#FF5A00]/40'
+                                : o.status === 'ACCEPTED'
+                                ? 'bg-[#06B6D4]/15 text-[#06B6D4] border-[#06B6D4]/40'
+                                : o.status === 'PREPARING'
+                                ? 'bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/40'
+                                : o.status === 'READY'
+                                ? 'bg-[#10B981]/15 text-[#10B981] border-[#10B981]/40'
                                 : o.status === 'DELIVERED'
-                                ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30'
-                                : 'bg-[#3B82F6]/10 text-[#3B82F6] border-[#3B82F6]/30'
+                                ? 'bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/40'
+                                : 'bg-[#151515] text-[#A1A1AA] border-[#242424]'
                             }`}
                           >
                             {o.status}
                           </span>
+
                         </td>
-                        <td className="px-6 py-4 text-[#9CA3AF]">{o.created_at ? new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '10:15 AM'}</td>
+                        <td className="px-5 py-3 text-right text-[#71717A]">{o.created_at ? new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '10:15 AM'}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-[#6B7280]">
+                      <td colSpan={6} className="px-5 py-12 text-center text-[#71717A]">
                         No orders recorded for this branch yet.
                       </td>
                     </tr>
@@ -221,6 +250,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Create Branch Modal */}
       {showCreateBranchModal && (
         <AdminCreateBranchModal
           onClose={() => setShowCreateBranchModal(false)}
@@ -231,38 +261,38 @@ export const AdminDashboard: React.FC = () => {
         />
       )}
 
-      {/* Delete Branch Confirmation Dialog Box */}
+      {/* Delete Branch Dialog */}
       {branchToDelete && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#121212] border border-[#262626] rounded-2xl w-full max-w-md shadow-2xl p-6 relative">
-            <div className="flex items-center gap-3 text-[#EF4444] mb-4">
-              <div className="p-3 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-xl">
-                <AlertTriangle className="w-6 h-6" />
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0D0D0D] border border-[#242424] rounded-xl w-full max-w-md shadow-2xl p-6 relative text-[#F5F5F5] space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/30 flex items-center justify-center text-[#EF4444] shrink-0">
+                <AlertTriangle className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Delete Branch</h3>
-                <p className="text-xs text-[#9CA3AF]">Confirm branch deletion</p>
+                <h3 className="text-base font-semibold text-[#F5F5F5]">Delete Branch</h3>
+                <p className="text-xs text-[#A1A1AA]">Confirm branch deletion</p>
               </div>
             </div>
 
-            <p className="text-sm text-[#D1D5DB] leading-relaxed mb-6">
-              Are you sure you want to delete <strong className="text-white">{branchToDelete.name}</strong> ({branchToDelete.code})? This will permanently remove the branch.
+            <p className="text-xs text-[#A1A1AA] leading-relaxed">
+              Are you sure you want to delete <strong className="text-[#F5F5F5]">{branchToDelete.name}</strong> ({branchToDelete.code})? This will permanently remove the branch.
             </p>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#262626]">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#1C1C1C]">
               <button
                 onClick={() => setBranchToDelete(null)}
                 disabled={deleting}
-                className="px-4 py-2 bg-[#1A1A1A] hover:bg-[#262626] text-[#9CA3AF] hover:text-white rounded-xl text-xs font-semibold cursor-pointer"
+                className="h-9 px-4 bg-[#151515] border border-[#242424] hover:border-[#333333] text-[#A1A1AA] hover:text-[#F5F5F5] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDeleteBranch}
                 disabled={deleting}
-                className="px-5 py-2 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#EF4444]/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="h-9 px-4 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-lg text-xs font-semibold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
                 <span>{deleting ? 'Deleting...' : 'Delete Branch'}</span>
               </button>
             </div>

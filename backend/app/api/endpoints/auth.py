@@ -31,6 +31,20 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login", auto_error=False)
+
+def get_optional_current_user(token: str = Depends(oauth2_scheme_optional), db: Session = Depends(get_db)):
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id:
+            return db.query(User).filter(User.id == user_id).first()
+    except Exception:
+        return None
+    return None
+
 def require_role(roles: list):
     def role_checker(current_user: User = Depends(get_current_user)):
         if current_user.role not in roles:
@@ -40,6 +54,7 @@ def require_role(roles: list):
             )
         return current_user
     return role_checker
+
 
 @router.post("/login", response_model=Token)
 def login(request: LoginRequest, db: Session = Depends(get_db)):

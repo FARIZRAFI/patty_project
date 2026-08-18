@@ -43,9 +43,10 @@ async def payment_gateway_webhook(request: Request, db: Session = Depends(get_db
 
     if order_id:
         order = db.query(Order).filter(Order.id == order_id).first()
-        if order and order.status == OrderStatus.PENDING_PAYMENT:
-            order.status = OrderStatus.PAID
+        if order and order.status in [OrderStatus.PENDING_PAYMENT, OrderStatus.INCOMING]:
+            order.status = OrderStatus.INCOMING
             order.payment_status = PaymentStatus.PAID
+
             
             # Award loyalty points if customer account exists (matched by customer_id or email)
             from app.models.user import User

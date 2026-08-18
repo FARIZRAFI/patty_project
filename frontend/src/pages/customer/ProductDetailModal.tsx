@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Star, ArrowLeft, ChevronLeft, ChevronRight, Bike, Leaf, Award, Flame } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Share2, X, Check } from 'lucide-react';
 import { Product, ProductModifier } from '../../types';
 import { useCartStore } from '../../store/cartStore';
 
@@ -10,60 +9,35 @@ interface Props {
 }
 
 export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
-  const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<'DESCRIPTION' | 'INGREDIENTS' | 'NUTRITION' | 'ALLERGENS'>('DESCRIPTION');
-  const navigate = useNavigate();
+  const [selectedModifiers, setSelectedModifiers] = useState<ProductModifier[]>([]);
+  const { addItem, setProductModalOpen } = useCartStore();
 
-  // Default add-ons fallback matching Screenshot 2 reference if product has no modifiers
-  const availableModifiers: ProductModifier[] =
+  // Set modal open state in store on mount, reset on unmount
+  useEffect(() => {
+    setProductModalOpen(true);
+    return () => {
+      setProductModalOpen(false);
+    };
+  }, [setProductModalOpen]);
+
+  // Fallback options list matching reference structure
+  const availableModifiers: (ProductModifier & { is_out_of_stock?: boolean; is_veg?: boolean })[] =
     product.modifiers && product.modifiers.length > 0
       ? product.modifiers
       : [
-          { id: 'mod-1', name: 'Extra Beef Patty', price: 2.00 },
-          { id: 'mod-2', name: 'Bacon', price: 1.50 },
-          { id: 'mod-3', name: 'Jalapeños', price: 0.80 },
-          { id: 'mod-4', name: 'Extra Cheese', price: 0.80 },
+          { id: 'mod-1', name: 'Coke Zero', price: 0.00, is_required: false, is_active: true, is_out_of_stock: true, is_veg: true },
+          { id: 'mod-2', name: 'Coke', price: 1.50, is_required: false, is_active: true, is_veg: true },
+          { id: 'mod-3', name: 'Thums Up', price: 1.50, is_required: false, is_active: true, is_veg: true },
+          { id: 'mod-4', name: 'Lemon Flippinade', price: 2.00, is_required: false, is_active: true, is_veg: true },
+          { id: 'mod-5', name: 'Cranberry Flippinade', price: 2.00, is_required: false, is_active: true, is_veg: true },
+          { id: 'mod-6', name: 'Passionfruit Flippinade', price: 2.00, is_required: false, is_active: true, is_veg: true },
+          { id: 'mod-7', name: 'Fries', price: 2.50, is_required: false, is_active: true, is_veg: true },
+          { id: 'mod-8', name: 'Potato Wedges', price: 2.50, is_required: false, is_active: true, is_veg: true },
+          { id: 'mod-9', name: 'Peri Fries', price: 2.80, is_required: false, is_active: true, is_veg: true },
         ];
 
-  const [selectedModifiers, setSelectedModifiers] = useState<ProductModifier[]>([]);
-
-  // Extract removable ingredients list from product.ingredients or default fallback
-  const rawIngredientsList = product.ingredients
-    ? product.ingredients.split(',').map((s) => s.trim()).filter(Boolean)
-    : ['Beef Patty', 'American Cheese', 'Lettuce', 'Tomato', 'Onion', 'Pickles', 'Special Sauce'];
-
-  const [removedIngredients, setRemovedIngredients] = useState<string[]>([]);
-
-  const toggleRemoveIngredient = (ing: string) => {
-    if (removedIngredients.includes(ing)) {
-      setRemovedIngredients(removedIngredients.filter((i) => i !== ing));
-    } else {
-      setRemovedIngredients([...removedIngredients, ing]);
-    }
-  };
-
-  // Product image gallery array - fallback to rich burger photo if placeholder
-  const defaultImg =
-    product.image_url && !product.image_url.includes('placeholder')
-      ? product.image_url
-      : 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80';
-
-  const galleryImages =
-    product.images && product.images.length > 0
-      ? product.images
-      : [
-          defaultImg,
-          'https://images.unsplash.com/photo-1585109649139-366815a0d713?auto=format&fit=crop&w=600&q=80',
-          'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=600&q=80',
-          'https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&w=600&q=80',
-        ];
-
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const activeImage = galleryImages[activeImageIndex] || galleryImages[0];
-
-  const { addItem } = useCartStore();
-
-  const toggleModifier = (mod: ProductModifier) => {
+  const toggleModifier = (mod: ProductModifier & { is_out_of_stock?: boolean }) => {
+    if (mod.is_out_of_stock) return;
     if (selectedModifiers.some((m) => m.id === mod.id)) {
       setSelectedModifiers(selectedModifiers.filter((m) => m.id !== mod.id));
     } else {
@@ -72,356 +46,208 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
   };
 
   const modTotal = selectedModifiers.reduce((sum, m) => sum + m.price, 0);
-  const unitPrice = product.base_price + modTotal;
-  const totalPrice = unitPrice * quantity;
+  const totalPrice = product.base_price + modTotal;
 
   const handleAddToCart = () => {
-    const finalModifiers = [...selectedModifiers];
-    removedIngredients.forEach((ing) => {
-      finalModifiers.push({
-        id: `no-${ing.toLowerCase().replace(/\s+/g, '-')}`,
-        name: `NO ${ing.toUpperCase()}`,
-        price: 0.0,
-        is_required: false,
-        is_active: true,
-      });
-    });
-
-    addItem(product, quantity, finalModifiers);
+    addItem(product, 1, selectedModifiers);
     onClose();
-    navigate('/cart');
   };
 
-  return (
-    <div className="fixed inset-0 z-40 bg-[#0B0B0B] overflow-y-auto w-full min-h-screen text-white animate-in fade-in duration-200">
-      <div className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 py-8 pb-36">
-        
-        {/* Back to Menu Navigation Button matching Screenshot 2 */}
-        <button
-          onClick={onClose}
-          className="flex items-center gap-2 text-sm text-[#9CA3AF] hover:text-white font-semibold transition-colors mb-6 cursor-pointer group"
-        >
-          <ArrowLeft className="w-4 h-4 text-[#FF5500] group-hover:-translate-x-1 transition-transform" />
-          <span>Back to Menu</span>
-        </button>
+  const isVegProduct =
+    product.name.toLowerCase().includes('veg') ||
+    product.name.toLowerCase().includes('cheese') ||
+    product.name.toLowerCase().includes('halloumi') ||
+    product.name.toLowerCase().includes('fries') ||
+    product.name.toLowerCase().includes('drink') ||
+    product.name.toLowerCase().includes('coke');
 
-        {/* Main 2-Column Desktop Grid matching Screenshot 2 */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          
-          {/* LEFT COLUMN: Large Image, Gallery Carousel & Features Row (~58% Width) */}
-          <div className="lg:col-span-7 space-y-6">
+  const defaultImg =
+    product.image_url && !product.image_url.includes('placeholder')
+      ? product.image_url
+      : 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80';
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto animate-in fade-in duration-150">
+      {/* Click Outside Backdrop Listener */}
+      <div className="fixed inset-0" onClick={onClose} />
+
+      {/* Main Modal Surface (12px Radius, 1px #242424 Border, Max 90vh Height) */}
+      <div className="bg-[#0D0D0D] text-[#F5F5F5] rounded-t-[12px] sm:rounded-[12px] max-w-3xl xl:max-w-4xl w-full shadow-2xl overflow-hidden relative z-10 border border-[#242424] flex flex-col md:flex-row max-h-[90vh] animate-in zoom-in-95 duration-150">
+        
+        {/* LEFT COLUMN: Product Image & Details */}
+        <div className="w-full md:w-1/2 flex flex-col justify-between border-b md:border-b-0 md:border-r border-[#242424] bg-[#0D0D0D] overflow-y-auto">
+          <div className="p-5 sm:p-6 space-y-4">
             
-            {/* Main Product Image Container */}
-            <div className="relative w-full h-[380px] sm:h-[460px] lg:h-[500px] rounded-3xl overflow-hidden border border-[#1F1F1F] bg-[#101010] shadow-2xl group">
+            {/* Top Action Header with Share & Close buttons */}
+            <div className="flex items-center justify-between pb-1">
+              {/* Veg / Non-Veg Indicator */}
+              {isVegProduct ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded border border-[#22C55E] flex items-center justify-center p-0.5">
+                    <div className="w-2 h-2 rounded-full bg-[#22C55E]" />
+                  </div>
+                  <span className="text-xs text-[#A1A1AA] font-medium">Vegetarian</span>
+                </div>
+              ) : (
+                <div />
+              )}
+
+              {/* Control Action Buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({ title: product.name, url: window.location.href }).catch(() => {});
+                    }
+                  }}
+                  className="w-9 h-9 rounded-lg bg-[#151515] border border-[#242424] text-[#A1A1AA] hover:text-[#F5F5F5] hover:border-[#FF5A00] flex items-center justify-center transition-colors cursor-pointer"
+                  title="Share"
+                  aria-label="Share product"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-9 h-9 rounded-lg bg-[#151515] border border-[#242424] text-[#A1A1AA] hover:text-[#F5F5F5] hover:border-[#FF5A00] flex items-center justify-center transition-colors cursor-pointer"
+                  title="Close modal"
+                  aria-label="Close modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Product Image (4:3 Aspect Ratio) */}
+            <div className="w-full aspect-[4/3] bg-[#111111] rounded-lg overflow-hidden border border-[#1C1C1C] relative shrink-0">
               <img
-                src={activeImage}
+                src={defaultImg}
                 alt={product.name}
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = '/placeholder-burger.svg';
+                  (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80';
                 }}
-                className="w-full h-full object-cover transition-all duration-300"
+                className="w-full h-full object-cover"
               />
-
-              {/* Data-driven BESTSELLER Badge Pill */}
-              {product.is_bestseller && (
-                <div className="absolute top-5 right-5 bg-[#070707]/85 backdrop-blur-md border border-[#FF5500] text-[#FF5500] text-xs font-black px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-                  <Star className="w-3.5 h-3.5 fill-[#FF5500]" />
-                  <span>BESTSELLER</span>
-                </div>
-              )}
             </div>
 
-            {/* Horizontal Product Image Gallery Slider */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() =>
-                  setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : galleryImages.length - 1))
-                }
-                className="p-2.5 rounded-xl bg-[#101010] border border-[#1F1F1F] text-[#9CA3AF] hover:text-white hover:border-[#FF5500]/50 transition-all shrink-0 cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <div className="flex items-center gap-3 overflow-x-auto py-1 scrollbar-none flex-1">
-                {galleryImages.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImageIndex(idx)}
-                    className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 transition-all shrink-0 bg-[#101010] cursor-pointer ${
-                      activeImageIndex === idx
-                        ? 'border-[#FF5500] scale-[1.03] shadow-lg shadow-[#FF5500]/20'
-                        : 'border-[#1F1F1F] opacity-70 hover:opacity-100 hover:border-[#333]'
-                    }`}
-                  >
-                    <img
-                      src={img}
-                      alt={`Thumbnail ${idx + 1}`}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = '/placeholder-burger.svg';
-                      }}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+            {/* Product Info */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-lg sm:text-xl font-bold text-[#F5F5F5] leading-snug">
+                  {product.name}
+                </h2>
+                <span className="text-lg font-bold text-[#FF5A00] shrink-0">
+                  £{product.base_price.toFixed(2)}
+                </span>
               </div>
 
-              <button
-                onClick={() =>
-                  setActiveImageIndex((prev) => (prev < galleryImages.length - 1 ? prev + 1 : 0))
-                }
-                className="p-2.5 rounded-xl bg-[#101010] border border-[#1F1F1F] text-[#9CA3AF] hover:text-white hover:border-[#FF5500]/50 transition-all shrink-0 cursor-pointer"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Benefits / Features Bar matching Screenshot 2 */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-[#1A1A1A]">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full border border-[#FF5500]/50 bg-[#FF5500]/10 flex items-center justify-center text-[#FF5500] shrink-0">
-                  <Leaf className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-white leading-tight">Fresh Ingredients</p>
-                  <p className="text-[10px] text-[#9CA3AF] mt-0.5">Sourced Daily</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full border border-[#FF5500]/50 bg-[#FF5500]/10 flex items-center justify-center text-[#FF5500] shrink-0">
-                  <Flame className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-white leading-tight">Bold Flavours</p>
-                  <p className="text-[10px] text-[#9CA3AF] mt-0.5">Made to Crave</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full border border-[#FF5500]/50 bg-[#FF5500]/10 flex items-center justify-center text-[#FF5500] shrink-0">
-                  <Bike className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-white leading-tight">Fast Delivery</p>
-                  <p className="text-[10px] text-[#9CA3AF] mt-0.5">2 Mile Radius</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full border border-[#FF5500]/50 bg-[#FF5500]/10 flex items-center justify-center text-[#FF5500] shrink-0">
-                  <Award className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-white leading-tight">Loyalty Rewards</p>
-                  <p className="text-[10px] text-[#9CA3AF] mt-0.5">Earn & Redeem</p>
-                </div>
-              </div>
+              <p className="text-xs sm:text-sm text-[#A1A1AA] font-normal leading-relaxed">
+                {product.short_description ||
+                  product.full_description ||
+                  'Made fresh to order with top-tier premium ingredients.'}
+              </p>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Product Info, Add-ons & Add to Cart CTA (~42% Width) */}
-          <div className="lg:col-span-5 space-y-6">
-            
-            {/* Title, Price & Description */}
-            <div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white font-hero tracking-tight">
-                {product.name}
-              </h1>
-              <p className="text-2xl sm:text-3xl font-extrabold text-[#FF5500] mt-2">
-                £{product.base_price.toFixed(2)}
-              </p>
-              <p className="text-sm text-[#9CA3AF] font-medium leading-relaxed mt-3 mb-4">
-                {product.short_description ||
-                  product.full_description ||
-                  'Double beef, double American cheese, burger sauce, lettuce, onion & gherkins.'}
-              </p>
-
-              {/* Star Rating Row */}
-              <div className="flex items-center gap-2 text-[#FF5500]">
-                <div className="flex items-center gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-[#FF5500] text-[#FF5500]" />
-                  ))}
-                </div>
-                <span className="text-sm font-bold text-white ml-1">{product.rating || 4.7}</span>
-                <span className="text-xs text-[#6B7280]">({product.reviews_count || 312} reviews)</span>
-              </div>
-            </div>
-
-            {/* CUSTOMIZE INGREDIENTS Section (Remove Unwanted Ingredients) */}
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-extrabold text-[#9CA3AF] tracking-widest uppercase">
-                  CUSTOMIZE INGREDIENTS
-                </h3>
-                {removedIngredients.length > 0 && (
-                  <span className="text-[10px] bg-[#EF4444]/20 text-[#EF4444] border border-[#EF4444]/40 px-2.5 py-0.5 rounded-full font-bold">
-                    {removedIngredients.length} Removed
-                  </span>
-                )}
-              </div>
-
-              <p className="text-xs text-[#6B7280]">
-                Tap any ingredient to remove it from your order:
-              </p>
-
-              <div className="flex flex-wrap gap-2">
-                {rawIngredientsList.map((ing) => {
-                  const isRemoved = removedIngredients.includes(ing);
-                  return (
-                    <button
-                      key={ing}
-                      type="button"
-                      onClick={() => toggleRemoveIngredient(ing)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
-                        isRemoved
-                          ? 'bg-[#2A1215] text-[#EF4444] border-[#EF4444]/50 line-through opacity-80 shadow-inner'
-                          : 'bg-[#101010] text-white border-[#1F1F1F] hover:border-[#FF5500]/50 hover:bg-[#161616]'
-                      }`}
-                    >
-                      <span>{isRemoved ? `✕ No ${ing}` : `✓ ${ing}`}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ADD-ONS Section matching Screenshot 2 */}
-            <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-extrabold text-[#9CA3AF] tracking-widest uppercase">
-                ADD-ONS
-              </h3>
-
-              <div className="bg-[#101010] border border-[#1F1F1F] rounded-2xl divide-y divide-[#1C1C1C] overflow-hidden shadow-xl">
-                {availableModifiers.map((mod) => {
-                  const isSelected = selectedModifiers.some((m) => m.id === mod.id);
-                  return (
-                    <div
-                      key={mod.id}
-                      onClick={() => toggleModifier(mod)}
-                      className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
-                        isSelected
-                          ? 'bg-[#FF5500]/10 text-white'
-                          : 'hover:bg-[#161616] text-[#9CA3AF]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {}}
-                          className="w-4 h-4 rounded bg-[#121212] border-[#262626] accent-[#FF5500] cursor-pointer"
-                        />
-                        <span className="text-xs sm:text-sm font-bold text-white">{mod.name}</span>
-                      </div>
-                      <span className="text-xs sm:text-sm font-bold text-white">
-                        +£{mod.price.toFixed(2)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* QUANTITY Section matching Screenshot 2 */}
-            <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-extrabold text-[#9CA3AF] tracking-widest uppercase">
-                QUANTITY
-              </h3>
-
-              <div className="flex items-center justify-between bg-[#101010] border border-[#1F1F1F] rounded-xl px-4 py-2.5 w-36 text-white shadow-md">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="text-lg font-bold text-[#9CA3AF] hover:text-white px-2 cursor-pointer"
-                >
-                  −
-                </button>
-                <span className="font-bold text-base">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="text-lg font-bold text-[#9CA3AF] hover:text-white px-2 cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Large Sticky ADD TO CART CTA Button */}
+          {/* Desktop Bottom Action CTA Bar */}
+          <div className="hidden md:block p-5 bg-[#0D0D0D] border-t border-[#242424] shrink-0">
             <button
               onClick={handleAddToCart}
-              className="w-full bg-[#FF5500] hover:bg-[#E04B00] text-white text-sm sm:text-base font-black uppercase tracking-wider py-4 px-8 rounded-2xl shadow-2xl shadow-[#FF5500]/30 transition-all hover:scale-[1.01] mt-6 flex items-center justify-center gap-2 cursor-pointer"
+              className="h-12 bg-[#FF5A00] hover:bg-[#E84F00] active:scale-[0.99] text-white rounded-lg px-5 flex items-center justify-between font-semibold text-sm transition-all cursor-pointer w-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
             >
-              <span>ADD TO CART</span>
-              <span>•</span>
               <span>£{totalPrice.toFixed(2)}</span>
+              <span>Add to cart</span>
             </button>
           </div>
         </div>
 
-        {/* BOTTOM INFORMATION TABS PANEL matching Screenshot 2 */}
-        <div className="bg-[#101010] border border-[#1F1F1F] rounded-3xl p-6 sm:p-8 mt-12 space-y-6 shadow-xl">
-          {/* Tabs Navigation Header */}
-          <div className="flex items-center gap-8 border-b border-[#1F1F1F] pb-4 overflow-x-auto">
-            {(['DESCRIPTION', 'INGREDIENTS', 'NUTRITION', 'ALLERGENS'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`text-xs sm:text-sm font-black tracking-wider uppercase transition-all pb-4 -mb-4 cursor-pointer ${
-                  activeTab === tab
-                    ? 'text-white border-b-2 border-[#FF5500]'
-                    : 'text-[#6B7280] hover:text-white'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+        {/* RIGHT COLUMN: Customization Options List */}
+        <div className="w-full md:w-1/2 flex flex-col bg-[#121212] overflow-hidden flex-1">
+          
+          {/* Customization Section Header */}
+          <div className="p-4 sm:p-5 border-b border-[#242424] flex items-center justify-between bg-[#121212] sticky top-0 z-10 shrink-0">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-base text-[#F5F5F5]">
+                  Make it a combo
+                </h3>
+                <span className="text-[11px] font-medium text-[#A1A1AA] bg-[#151515] border border-[#242424] px-2 py-0.5 rounded">
+                  Optional
+                </span>
+              </div>
+              <p className="text-xs text-[#71717A] mt-0.5">
+                Choose options to customize your meal
+              </p>
+            </div>
           </div>
 
-          {/* Tab Content Display */}
-          <div className="pt-2">
-            {activeTab === 'DESCRIPTION' && (
-              <p className="text-sm text-[#9CA3AF] leading-relaxed max-w-3xl">
-                {product.full_description ||
-                  product.short_description ||
-                  'Our signature double-stack burger. Two smashed beef patties, melty American cheese, crisp lettuce, onions, pickles and our house burger sauce in a toasted brioche bun.'}
-              </p>
-            )}
+          {/* Scrollable Option Cards List */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-2.5 bg-[#121212]">
+            {availableModifiers.map((mod) => {
+              const isSelected = selectedModifiers.some((m) => m.id === mod.id);
+              const isOutOfStock = mod.is_out_of_stock;
 
-            {activeTab === 'INGREDIENTS' && (
-              <p className="text-sm text-[#9CA3AF] leading-relaxed max-w-3xl">
-                {product.ingredients ||
-                  '100% British Beef patties, Toasted Brioche Bun (Wheat, Milk, Eggs), Cheddar Cheese (Milk), Fresh Crisp Iceberg Lettuce, Sliced Tomatoes, Red Onions, Pickles, Signature House Patty Sauce.'}
-              </p>
-            )}
+              return (
+                <div
+                  key={mod.id}
+                  onClick={() => toggleModifier(mod)}
+                  className={`border rounded-lg p-3.5 min-h-[56px] flex items-center justify-between transition-all select-none ${
+                    isOutOfStock
+                      ? 'border-[#242424] bg-[#151515]/50 opacity-40 cursor-not-allowed'
+                      : isSelected
+                      ? 'border-[#6B2A0D] bg-[#241209] text-[#F5F5F5] cursor-pointer'
+                      : 'border-[#242424] bg-[#151515] hover:border-[#333333] hover:bg-[#181818] text-[#A1A1AA] cursor-pointer'
+                  }`}
+                >
+                  {/* Left Option Info */}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shrink-0 ${
+                        isSelected
+                          ? 'border-[#FF5A00] bg-[#FF5A00] text-white'
+                          : 'border-[#242424] bg-[#0D0D0D]'
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                    </div>
 
-            {activeTab === 'NUTRITION' && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-3xl">
-                <div className="bg-[#080808] border border-[#1F1F1F] p-4 rounded-2xl">
-                  <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">CALORIES</p>
-                  <p className="text-lg font-black text-white mt-1">850 kcal</p>
-                </div>
-                <div className="bg-[#080808] border border-[#1F1F1F] p-4 rounded-2xl">
-                  <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">PROTEIN</p>
-                  <p className="text-lg font-black text-white mt-1">48g</p>
-                </div>
-                <div className="bg-[#080808] border border-[#1F1F1F] p-4 rounded-2xl">
-                  <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">CARBS</p>
-                  <p className="text-lg font-black text-white mt-1">42g</p>
-                </div>
-                <div className="bg-[#080808] border border-[#1F1F1F] p-4 rounded-2xl">
-                  <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">FAT</p>
-                  <p className="text-lg font-black text-white mt-1">52g</p>
-                </div>
-              </div>
-            )}
+                    <div>
+                      <p className={`text-sm font-medium ${isSelected ? 'text-[#F5F5F5]' : 'text-[#F5F5F5]'}`}>
+                        {mod.name}
+                      </p>
+                      {isOutOfStock && (
+                        <span className="text-[11px] font-semibold text-[#EF4444] block mt-0.5">
+                          OUT OF STOCK
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-            {activeTab === 'ALLERGENS' && (
-              <p className="text-sm text-[#9CA3AF] leading-relaxed max-w-3xl">
-                Contains: <strong className="text-white">Wheat (Gluten), Milk, Eggs, Mustard, Sesame</strong>. Prepared in a kitchen environment that handles nuts and celery.
-              </p>
-            )}
+                  {/* Right Option Price */}
+                  {!isOutOfStock && mod.price > 0 && (
+                    <span className="text-xs font-semibold text-[#FF5A00] shrink-0">
+                      +£{mod.price.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Mobile Bottom Action CTA Bar (Pinned at bottom) */}
+          <div className="md:hidden p-4 bg-[#0D0D0D] border-t border-[#242424] shrink-0 sticky bottom-0 z-30">
+            <button
+              onClick={handleAddToCart}
+              className="h-12 bg-[#FF5A00] hover:bg-[#E84F00] active:scale-[0.99] text-white rounded-lg px-5 flex items-center justify-between font-semibold text-sm transition-all cursor-pointer w-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
+            >
+              <span>£{totalPrice.toFixed(2)}</span>
+              <span>Add to cart</span>
+            </button>
           </div>
         </div>
+
       </div>
     </div>
   );

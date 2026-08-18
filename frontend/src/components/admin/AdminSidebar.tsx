@@ -23,19 +23,21 @@ export const AdminSidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-64 bg-black border-r border-[#262626] flex flex-col justify-between h-screen sticky top-0">
+    <aside className="fixed top-0 left-0 bottom-0 w-56 bg-[#080808] border-r border-[#1C1C1C] flex flex-col justify-between h-screen shrink-0 select-none z-40 overflow-y-auto">
       <div>
-        {/* Brand Logo Header */}
-        <div className="p-6 flex items-center gap-3 border-b border-[#1F1F1F]">
-          <img src="/logo.jpeg" alt="Patty Project" className="w-12 h-12 rounded-full object-cover" />
-          <div>
-            <h1 className="text-white font-bold text-lg tracking-wide leading-tight">PATTY PROJECT</h1>
-            <p className="text-[#FF5500] text-xs font-semibold uppercase">{user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Branch Admin'}</p>
+        {/* Brand Header */}
+        <div className="p-4 flex items-center gap-3 border-b border-[#1C1C1C] h-16 shrink-0 bg-[#080808] sticky top-0 z-10">
+          <img src="/logo.jpeg" alt="Patty Project" className="w-9 h-9 rounded-full object-cover border border-[#242424] shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-[#F5F5F5] font-bold text-sm tracking-tight truncate leading-tight">PATTY PROJECT</h1>
+            <p className="text-[#FF5A00] text-[10px] font-semibold uppercase tracking-wider mt-0.5">
+              {user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Branch Admin'}
+            </p>
           </div>
         </div>
 
         {/* Navigation Menu */}
-        <nav className="p-4 space-y-1.5 mt-2">
+        <nav className="p-3 space-y-1 mt-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -43,15 +45,15 @@ export const AdminSidebar: React.FC = () => {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  `h-10 flex items-center gap-3 px-3.5 rounded-lg text-xs font-medium transition-colors ${
                     isActive
-                      ? 'bg-[#1A1A1A] text-[#FF5500] border-l-4 border-[#FF5500] shadow-sm'
-                      : 'text-[#9CA3AF] hover:text-white hover:bg-[#141414]'
+                      ? 'bg-[#1A1A1A] text-[#FF5A00] border-l-[3px] border-[#FF5A00]'
+                      : 'text-[#A1A1AA] hover:text-[#F5F5F5] hover:bg-[#121212]'
                   }`
                 }
               >
-                <Icon className="w-5 h-5" />
-                <span>{item.label}</span>
+                <Icon className="w-4.5 h-4.5 shrink-0" />
+                <span className="truncate">{item.label}</span>
               </NavLink>
             );
           })}
@@ -59,12 +61,12 @@ export const AdminSidebar: React.FC = () => {
       </div>
 
       {/* Logout Footer */}
-      <div className="p-4 border-t border-[#1F1F1F]">
+      <div className="p-3 border-t border-[#1C1C1C] bg-[#080808] sticky bottom-0 z-10">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-[#EF4444] hover:bg-[#1F1212] transition-colors"
+          className="w-full h-10 flex items-center gap-3 px-3.5 rounded-lg text-xs font-medium text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors cursor-pointer"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-4.5 h-4.5 shrink-0" />
           <span>Logout</span>
         </button>
       </div>

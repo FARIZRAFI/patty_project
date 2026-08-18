@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CustomerHeader } from './components/customer/CustomerHeader';
+import { OrderingHeader } from './components/customer/OrderingHeader';
 import { MobileDrawer } from './components/customer/MobileDrawer';
 import { MobileBottomNav } from './components/customer/MobileBottomNav';
 import { LocationModal } from './components/customer/LocationModal';
+import { FloatingCartBar } from './components/customer/FloatingCartBar';
 
 import { CustomerHome } from './pages/customer/CustomerHome';
 import { CustomerMenu } from './pages/customer/CustomerMenu';
+import { PublicMenuPage } from './pages/customer/PublicMenuPage';
 import { CustomerCart } from './pages/customer/CustomerCart';
 import { CustomerCheckout } from './pages/customer/CustomerCheckout';
 import { OrderConfirmation } from './pages/customer/OrderConfirmation';
@@ -29,20 +32,29 @@ const CustomerLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
   const location = useLocation();
-  const hideBottomNavPages = ['/', '/contact', '/select-location'];
+
+  const orderingPortalPages = ['/order', '/cart', '/checkout', '/orders', '/profile', '/addresses', '/payment-methods'];
+  const isOrderingPortal = orderingPortalPages.includes(location.pathname) || location.pathname.startsWith('/order-confirmation');
+
+  const hideBottomNavPages = ['/', '/contact', '/select-location', '/menu'];
   const showBottomNav = !hideBottomNavPages.includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between">
       <div>
-        <CustomerHeader
-          onOpenLocationModal={() => setShowLocationModal(true)}
-          onOpenMobileDrawer={() => setShowMobileDrawer(true)}
-        />
+        {isOrderingPortal ? (
+          <OrderingHeader onOpenLocationModal={() => setShowLocationModal(true)} />
+        ) : (
+          <CustomerHeader
+            onOpenLocationModal={() => setShowLocationModal(true)}
+            onOpenMobileDrawer={() => setShowMobileDrawer(true)}
+          />
+        )}
         <main className={showBottomNav ? 'pb-16 md:pb-0' : ''}>{children}</main>
       </div>
 
       {showBottomNav && <MobileBottomNav />}
+      <FloatingCartBar />
 
       {showMobileDrawer && (
         <MobileDrawer
@@ -66,7 +78,8 @@ export function App() {
           {/* Customer Routes Only */}
           <Route path="/" element={<CustomerLayoutShell><CustomerHome /></CustomerLayoutShell>} />
           <Route path="/select-location" element={<CustomerLayoutShell><SelectLocationPage /></CustomerLayoutShell>} />
-          <Route path="/menu" element={<CustomerLayoutShell><CustomerMenu /></CustomerLayoutShell>} />
+          <Route path="/menu" element={<CustomerLayoutShell><PublicMenuPage /></CustomerLayoutShell>} />
+          <Route path="/order" element={<CustomerLayoutShell><CustomerMenu /></CustomerLayoutShell>} />
           <Route path="/offers" element={<CustomerLayoutShell><CustomerOffers /></CustomerLayoutShell>} />
           <Route path="/contact" element={<CustomerLayoutShell><CustomerContact /></CustomerLayoutShell>} />
           <Route path="/product/:productId" element={<CustomerLayoutShell><ProductDetailPage /></CustomerLayoutShell>} />

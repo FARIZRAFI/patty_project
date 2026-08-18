@@ -22,8 +22,10 @@ export interface Branch {
   collection_enabled: boolean;
   ordering_enabled: boolean;
   delivery_radius_miles: number;
+  opening_hours?: any;
   is_active: boolean;
 }
+
 
 export interface ProductModifier {
   id: string;
@@ -41,7 +43,9 @@ export interface Product {
   short_description?: string;
   full_description?: string;
   allergens?: string;
+  ingredients?: string[];
   image_url?: string;
+
   images?: string[];
   base_price: number;
   compare_at_price?: number;

@@ -23,11 +23,17 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     if (!response.ok) {
       const detailMsg = typeof data.detail === 'string'
         ? data.detail
-        : Array.isArray(data.detail)
-          ? data.detail.map((e: any) => e.msg || JSON.stringify(e)).join(', ')
-          : 'An unexpected error occurred';
-      throw new Error(detailMsg);
+        : data.detail && typeof data.detail === 'object' && data.detail.message
+          ? data.detail.message
+          : Array.isArray(data.detail)
+            ? data.detail.map((e: any) => e.msg || JSON.stringify(e)).join(', ')
+            : 'An unexpected error occurred';
+      const customErr: any = new Error(detailMsg);
+      customErr.detail = data.detail;
+      customErr.data = data;
+      throw customErr;
     }
+
 
     return data as T;
   } catch (err: any) {
@@ -41,6 +47,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 export const api = {
   get: <T>(endpoint: string) => request<T>(endpoint, { method: 'GET' }),
   post: <T>(endpoint: string, body: any) => request<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
-  patch: <T>(endpoint: string, body: any) => request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(body) }),
+  put: <T>(endpoint: string, body?: any) => request<T>(endpoint, { method: 'PUT', body: body ? JSON.stringify(body) : undefined }),
+  patch: <T>(endpoint: string, body?: any) => request<T>(endpoint, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),
 };

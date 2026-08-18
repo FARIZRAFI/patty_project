@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Ticket, Plus, AlertCircle } from 'lucide-react';
+import { X, Ticket, Plus } from 'lucide-react';
 import { api } from '../../api/client';
 
 interface AdminCreateCouponModalProps {
@@ -51,40 +51,40 @@ export const AdminCreateCouponModal: React.FC<AdminCreateCouponModalProps> = ({ 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[#121212] border border-[#262626] rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl space-y-6">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-[#0D0D0D] border border-[#242424] rounded-xl w-full max-w-md shadow-2xl p-6 relative text-[#F5F5F5] animate-in fade-in duration-150 space-y-4">
         
         {/* Header */}
-        <div className="p-6 border-b border-[#1F1F1F] flex items-center justify-between bg-[#171717]">
+        <div className="flex items-center justify-between pb-3 border-b border-[#1C1C1C] mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#FF5500]/10 border border-[#FF5500]/30 flex items-center justify-center text-[#FF5500]">
-              <Ticket className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-lg bg-[#241209] border border-[#6B2A0D] flex items-center justify-center text-[#FF5A00] shrink-0">
+              <Ticket className="w-4.5 h-4.5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white leading-tight">Create Coupon</h2>
-              <p className="text-xs text-[#9CA3AF]">Add a new promo code or discount offer</p>
+              <h2 className="text-base font-semibold text-[#F5F5F5]">Create Coupon</h2>
+              <p className="text-xs text-[#A1A1AA]">Add a new promo code or discount offer</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-[#9CA3AF] hover:text-white p-2 hover:bg-[#262626] rounded-xl transition-colors"
+            aria-label="Close modal"
+            className="p-1 text-[#A1A1AA] hover:text-[#F5F5F5] rounded-lg transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {error && (
-          <div className="mx-6 p-4 bg-[#2A1212] border border-[#EF4444]/40 text-[#EF4444] rounded-2xl text-xs font-semibold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
+          <div className="p-3 bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] rounded-lg text-xs font-medium">
+            {error}
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 pt-0 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase mb-1">
+              <label className="block text-[11px] font-semibold text-[#A1A1AA] uppercase mb-1">
                 Coupon Code *
               </label>
               <input
@@ -92,13 +92,13 @@ export const AdminCreateCouponModal: React.FC<AdminCreateCouponModalProps> = ({ 
                 placeholder="e.g. SUMMER20"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className="w-full bg-[#1A1A1A] border border-[#262626] rounded-xl py-2.5 px-3.5 text-xs text-white uppercase font-mono font-bold focus:outline-none focus:border-[#FF5500]"
+                className="w-full h-10 bg-[#151515] border border-[#242424] focus:border-[#FF5A00] rounded-lg px-3 text-xs text-[#F5F5F5] uppercase font-mono font-semibold focus:outline-none transition-colors"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase mb-1">
+              <label className="block text-[11px] font-semibold text-[#A1A1AA] uppercase mb-1">
                 Coupon Name *
               </label>
               <input
@@ -106,20 +106,20 @@ export const AdminCreateCouponModal: React.FC<AdminCreateCouponModalProps> = ({ 
                 placeholder="e.g. Summer Special"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-[#1A1A1A] border border-[#262626] rounded-xl py-2.5 px-3.5 text-xs text-white focus:outline-none focus:border-[#FF5500]"
+                className="w-full h-10 bg-[#151515] border border-[#242424] focus:border-[#FF5A00] rounded-lg px-3 text-xs text-[#F5F5F5] focus:outline-none transition-colors"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase mb-1">
+            <label className="block text-[11px] font-semibold text-[#A1A1AA] uppercase mb-1">
               Discount Type *
             </label>
             <select
               value={couponType}
               onChange={(e: any) => setCouponType(e.target.value)}
-              className="w-full bg-[#1A1A1A] border border-[#262626] rounded-xl py-2.5 px-3.5 text-xs text-white focus:outline-none focus:border-[#FF5500]"
+              className="w-full h-10 bg-[#151515] border border-[#242424] focus:border-[#FF5A00] rounded-lg px-3 text-xs text-[#F5F5F5] focus:outline-none transition-colors"
             >
               <option value="PERCENTAGE">Percentage (% OFF)</option>
               <option value="FIXED_AMOUNT">Fixed Amount (£ OFF)</option>
@@ -129,7 +129,7 @@ export const AdminCreateCouponModal: React.FC<AdminCreateCouponModalProps> = ({ 
 
           {couponType !== 'FREE_SHIPPING' && (
             <div>
-              <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase mb-1">
+              <label className="block text-[11px] font-semibold text-[#A1A1AA] uppercase mb-1">
                 Discount Value * {couponType === 'PERCENTAGE' ? '(%)' : '(£)'}
               </label>
               <input
@@ -138,15 +138,15 @@ export const AdminCreateCouponModal: React.FC<AdminCreateCouponModalProps> = ({ 
                 placeholder={couponType === 'PERCENTAGE' ? 'e.g. 20' : 'e.g. 5.00'}
                 value={discountValue}
                 onChange={(e) => setDiscountValue(e.target.value)}
-                className="w-full bg-[#1A1A1A] border border-[#262626] rounded-xl py-2.5 px-3.5 text-xs text-white focus:outline-none focus:border-[#FF5500]"
+                className="w-full h-10 bg-[#151515] border border-[#242424] focus:border-[#FF5A00] rounded-lg px-3 text-xs text-[#F5F5F5] focus:outline-none transition-colors"
                 required
               />
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase mb-1">
+              <label className="block text-[11px] font-semibold text-[#A1A1AA] uppercase mb-1">
                 Min. Order Value (£)
               </label>
               <input
@@ -155,12 +155,12 @@ export const AdminCreateCouponModal: React.FC<AdminCreateCouponModalProps> = ({ 
                 placeholder="e.g. 15.00"
                 value={minOrderValue}
                 onChange={(e) => setMinOrderValue(e.target.value)}
-                className="w-full bg-[#1A1A1A] border border-[#262626] rounded-xl py-2.5 px-3.5 text-xs text-white focus:outline-none focus:border-[#FF5500]"
+                className="w-full h-10 bg-[#151515] border border-[#242424] focus:border-[#FF5A00] rounded-lg px-3 text-xs text-[#F5F5F5] focus:outline-none transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-[#9CA3AF] uppercase mb-1">
+              <label className="block text-[11px] font-semibold text-[#A1A1AA] uppercase mb-1">
                 Usage Limit
               </label>
               <input
@@ -168,23 +168,23 @@ export const AdminCreateCouponModal: React.FC<AdminCreateCouponModalProps> = ({ 
                 placeholder="e.g. 1000"
                 value={usageLimit}
                 onChange={(e) => setUsageLimit(e.target.value)}
-                className="w-full bg-[#1A1A1A] border border-[#262626] rounded-xl py-2.5 px-3.5 text-xs text-white focus:outline-none focus:border-[#FF5500]"
+                className="w-full h-10 bg-[#151515] border border-[#242424] focus:border-[#FF5A00] rounded-lg px-3 text-xs text-[#F5F5F5] focus:outline-none transition-colors"
               />
             </div>
           </div>
 
-          <div className="pt-4 flex items-center justify-end gap-3 border-t border-[#1F1F1F]">
+          <div className="pt-4 mt-5 flex items-center justify-end gap-2.5 border-t border-[#1C1C1C]">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 bg-[#1A1A1A] hover:bg-[#262626] text-white rounded-xl text-xs font-bold transition-colors"
+              className="h-9 px-4 bg-[#151515] border border-[#242424] hover:border-[#333333] text-[#A1A1AA] hover:text-[#F5F5F5] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2.5 bg-[#FF5500] hover:bg-[#E04B00] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#FF5500]/30 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              className="h-9 px-4 bg-[#FF5A00] hover:bg-[#E84F00] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>{loading ? 'Creating...' : 'Create Coupon'}</span>

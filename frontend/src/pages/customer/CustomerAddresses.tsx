@@ -107,7 +107,7 @@ export const CustomerAddresses: React.FC = () => {
     }
   };
 
-  const handleSetDefault = async (addressId: str) => {
+  const handleSetDefault = async (addressId: string) => {
     try {
       await api.patch(`/addresses/${addressId}/default`, {});
       fetchAddresses();
@@ -116,10 +116,11 @@ export const CustomerAddresses: React.FC = () => {
     }
   };
 
-  const handleDelete = async (addressId: str) => {
+  const handleDelete = async (addressId: string) => {
     if (!window.confirm('Are you sure you want to delete this address?')) return;
     try {
       await api.delete(`/addresses/${addressId}`);
+
       fetchAddresses();
     } catch (err: any) {
       setError(err?.message || 'Failed to delete address');

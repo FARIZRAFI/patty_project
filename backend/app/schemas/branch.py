@@ -33,6 +33,8 @@ class NearestBranchRequest(BaseModel):
 
 class NearestBranchResponse(BaseModel):
     assigned_branch: Optional[BranchResponse] = None
+    nearest_branch: Optional[BranchResponse] = None
     distance_miles: Optional[float] = None
+    is_delivery_eligible: bool = False
     status: str
     message: Optional[str] = None

@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 class OrderStatus:
+    INCOMING = "INCOMING"
     PENDING_PAYMENT = "PENDING_PAYMENT"
     PAID = "PAID"
     ACCEPTED = "ACCEPTED"
@@ -18,6 +19,7 @@ class OrderStatus:
     CANCELLED = "CANCELLED"
     REFUND_PENDING = "REFUND_PENDING"
     REFUNDED = "REFUNDED"
+
 
 class OrderType:
     DELIVERY = "DELIVERY"

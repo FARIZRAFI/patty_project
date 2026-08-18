@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, User, MapPin, Menu as MenuIcon } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
@@ -13,6 +13,7 @@ export const CustomerHeader: React.FC<Props> = ({ onOpenLocationModal, onOpenMob
   const { items, selectedBranch } = useCartStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const totalCartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -46,51 +47,41 @@ export const CustomerHeader: React.FC<Props> = ({ onOpenLocationModal, onOpenMob
           </Link>
         </div>
 
-        {/* Center Desktop Navigation Links matching navbar.png */}
-        <nav className="hidden md:flex items-center gap-10">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.path}
-              to={link.path}
-              className={({ isActive }) =>
-                `text-xs font-extrabold tracking-widest transition-all py-1 relative ${
-                  isActive
-                    ? 'text-white border-b-2 border-[#FF5500] pb-1'
-                    : 'text-[#9CA3AF] hover:text-white'
-                }`
-              }
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
+        {/* Center Desktop Navigation Links (Hidden on /select-location) */}
+        {location.pathname !== '/select-location' && (
+          <nav className="hidden md:flex items-center gap-10">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.path}
+                to={link.path}
+                className={({ isActive }) =>
+                  `text-xs font-extrabold tracking-widest transition-all py-1 relative ${
+                    isActive
+                      ? 'text-white border-b-2 border-[#FF5500] pb-1'
+                      : 'text-[#9CA3AF] hover:text-white'
+                  }`
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        )}
 
         {/* Right Action Controls matching navbar.png */}
         <div className="flex items-center gap-3 sm:gap-5">
-          {/* Branch Location Switcher */}
-          <button
-            onClick={() => navigate('/select-location')}
-            className="flex items-center gap-1.5 bg-[#121212] hover:bg-[#1A1A1A] border border-[#222222] px-2.5 sm:px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold text-[#9CA3AF] hover:text-white transition-all cursor-pointer"
-          >
-            <MapPin className="w-3.5 h-3.5 text-[#FF5500] shrink-0" />
-            <span className="truncate max-w-[85px] sm:max-w-[130px]">
-              {selectedBranch ? selectedBranch.name : 'Outlet'}
-            </span>
-          </button>
-
-          {/* Cart Icon with badge */}
-          <Link
-            to="/cart"
-            className="relative p-1.5 text-white hover:text-[#FF5500] transition-colors flex items-center justify-center"
-            title="Shopping Cart"
-          >
-            <ShoppingBag className="w-5 h-5" />
-            {totalCartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#FF5500] text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
-                {totalCartCount}
+          {/* Branch Location Switcher (Hidden on /select-location) */}
+          {location.pathname !== '/select-location' && (
+            <button
+              onClick={() => navigate('/select-location')}
+              className="flex items-center gap-1.5 bg-[#121212] hover:bg-[#1A1A1A] border border-[#222222] px-2.5 sm:px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold text-[#9CA3AF] hover:text-white transition-all cursor-pointer"
+            >
+              <MapPin className="w-3.5 h-3.5 text-[#FF5500] shrink-0" />
+              <span className="truncate max-w-[85px] sm:max-w-[130px]">
+                {selectedBranch ? selectedBranch.name : 'Outlet'}
               </span>
-            )}
-          </Link>
+            </button>
+          )}
 
           {/* User Auth Link matching LOGIN button in navbar.png */}
           {user ? (

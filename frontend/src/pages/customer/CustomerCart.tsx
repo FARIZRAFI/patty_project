@@ -40,132 +40,138 @@ export const CustomerCart: React.FC = () => {
   const total = getTotal();
 
   return (
-    <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 py-6 sm:py-8 pb-36 text-white">
+    <div className="w-full max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-20 text-[#F5F5F5]">
       {/* Header Bar */}
-      <div className="flex items-center justify-between pb-6 mb-8 border-b border-[#1A1A1A]">
+      <div className="flex items-center justify-between pb-6 mb-8 border-b border-[#1C1C1C]">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white font-hero tracking-tight">
-            YOUR CART
+          <h1 className="text-3xl font-bold text-[#F5F5F5] tracking-tight">
+            Your Cart
           </h1>
-          <p className="text-sm text-[#9CA3AF] font-medium mt-1">
+          <p className="text-sm text-[#A1A1AA] font-normal mt-1">
             Review your selected items and options before checkout.
           </p>
         </div>
 
         <Link
-          to="/menu"
-          className="flex items-center gap-2 text-sm text-[#9CA3AF] hover:text-white font-semibold transition-colors group"
+          to="/order"
+          className="flex items-center gap-1.5 text-sm text-[#A1A1AA] hover:text-[#F5F5F5] font-medium transition-colors group"
         >
-          <ArrowLeft className="w-4 h-4 text-[#FF5500] group-hover:-translate-x-1 transition-transform" />
+          <ArrowLeft className="w-4 h-4 text-[#FF5A00] group-hover:-translate-x-1 transition-transform" />
           <span>Continue Shopping</span>
         </Link>
       </div>
 
       {items.length === 0 ? (
         /* Empty Cart State */
-        <div className="bg-[#101010] border border-[#1F1F1F] rounded-3xl p-12 sm:p-16 text-center space-y-6 max-w-xl mx-auto shadow-2xl my-12">
-          <div className="w-16 h-16 rounded-full bg-[#FF5500]/10 border border-[#FF5500]/30 flex items-center justify-center text-[#FF5500] mx-auto">
-            <ShoppingBag className="w-8 h-8" />
+        <div className="bg-[#0D0D0D] border border-[#242424] rounded-[10px] p-10 sm:p-14 text-center space-y-5 max-w-md mx-auto my-12 shadow-xl">
+          <div className="w-14 h-14 rounded-lg bg-[#151515] border border-[#242424] flex items-center justify-center text-[#FF5A00] mx-auto">
+            <ShoppingBag className="w-7 h-7" />
           </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold text-white">Your cart is currently empty</h2>
-            <p className="text-xs text-[#9CA3AF] leading-relaxed">
-              Looks like you haven't added any burgers or sides to your order yet.
+          <div className="space-y-1.5">
+            <h2 className="text-lg font-semibold text-[#F5F5F5]">Your cart is empty</h2>
+            <p className="text-xs text-[#A1A1AA] leading-relaxed">
+              Looks like you haven't added any items to your cart yet.
             </p>
           </div>
           <Link
-            to="/menu"
-            className="inline-block bg-[#FF5500] hover:bg-[#E04B00] text-white px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider shadow-xl shadow-[#FF5500]/30 transition-all hover:scale-[1.02]"
+            to="/order"
+            className="inline-flex h-11 items-center justify-center bg-[#FF5A00] hover:bg-[#E84F00] text-white px-6 rounded-lg text-sm font-semibold transition-all shadow-md cursor-pointer"
           >
-            BROWSE MENU
+            Browse Menu
           </Link>
         </div>
       ) : (
         /* 2-Column Main Desktop Layout */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* LEFT COLUMN: Cart Items List (~66% Width) */}
-          <div className="lg:col-span-8 space-y-4">
+          {/* LEFT COLUMN: Cart Items List */}
+          <div className="lg:col-span-7 space-y-3.5">
             {items.map((item, idx) => {
               const displayImg = item.product.image_url || '/placeholder-burger.svg';
 
               return (
                 <div
                   key={idx}
-                  className="bg-[#101010] border border-[#1F1F1F] hover:border-[#FF5500]/40 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-xl transition-all"
+                  className="bg-[#0D0D0D] border border-[#242424] hover:border-[#333333] rounded-[10px] p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors"
                 >
-                  {/* Product Image */}
-                  <img
-                    src={displayImg}
-                    alt={item.product.name}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = '/placeholder-burger.svg';
-                    }}
-                    className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-2xl border border-[#262626] shrink-0 bg-[#090909]"
-                  />
+                  {/* Product Image & Info Container */}
+                  <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                    <img
+                      src={displayImg}
+                      alt={item.product.name}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/placeholder-burger.svg';
+                      }}
+                      className="w-20 h-20 object-cover rounded-lg border border-[#1C1C1C] shrink-0 bg-[#111111]"
+                    />
 
-                  {/* Product Details & Selected Add-ons */}
-                  <div className="flex-1 min-w-0 space-y-1.5">
-                    <h3 className="font-extrabold text-white text-base sm:text-lg truncate">
-                      {item.product.name}
-                    </h3>
-                    <p className="text-xs font-semibold text-[#FF5500]">
-                      Base price: £{item.product.base_price.toFixed(2)}
-                    </p>
+                    {/* Product Details & Selected Modifiers */}
+                    <div className="min-w-0 space-y-1">
+                      <h3 className="font-semibold text-[#F5F5F5] text-base truncate">
+                        {item.product.name}
+                      </h3>
+                      <p className="text-xs font-semibold text-[#FF5A00]">
+                        £{item.product.base_price.toFixed(2)}
+                      </p>
 
-                    {item.selectedModifiers && item.selectedModifiers.length > 0 && (
-                      <div className="pt-1.5 space-y-1">
-                        <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">
-                          Selected Add-ons:
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {item.selectedModifiers.map((mod, i) => (
-                            <span
-                              key={i}
-                              className="text-[11px] bg-[#1A1A1A] border border-[#262626] text-[#D1D5DB] px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5"
-                            >
-                              <span className="text-[#FF5500]">•</span>
-                              <span>{mod.name} (+£{mod.price.toFixed(2)})</span>
-                            </span>
-                          ))}
+                      {item.selectedModifiers && item.selectedModifiers.length > 0 && (
+                        <div className="pt-1 space-y-0.5">
+                          <span className="text-[11px] font-medium text-[#71717A] block">
+                            Add-ons:
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {item.selectedModifiers.map((mod, i) => (
+                              <span
+                                key={i}
+                                className="text-xs bg-[#151515] border border-[#242424] text-[#A1A1AA] px-2 py-0.5 rounded font-normal"
+                              >
+                                {mod.name} (+£{mod.price.toFixed(2)})
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
-                  {/* Quantity Controls, Line Total & Delete Button */}
-                  <div className="flex items-center gap-4 sm:gap-6 self-end sm:self-center shrink-0">
-                    {/* Quantity Selector */}
-                    <div className="flex items-center bg-[#161616] border border-[#262626] rounded-xl px-3 py-1.5 text-white shadow-inner font-bold">
+                  {/* Quantity Controls, Line Total & Remove Action */}
+                  <div className="flex items-center gap-4 self-end sm:self-center shrink-0">
+                    {/* Quantity Control (Height 36px, 8px Radius) */}
+                    <div className="flex items-center bg-[#151515] border border-[#242424] rounded-lg h-9 px-1 text-[#F5F5F5]">
                       <button
                         onClick={() => updateQuantity(idx, item.quantity - 1)}
-                        className="text-base font-bold px-2 text-[#9CA3AF] hover:text-white cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F5] rounded transition-colors cursor-pointer"
+                        aria-label="Decrease quantity"
                       >
                         −
                       </button>
-                      <span className="px-3 font-extrabold text-sm">{item.quantity}</span>
+                      <span className="px-2.5 font-semibold text-xs min-w-[24px] text-center">
+                        {item.quantity}
+                      </span>
                       <button
                         onClick={() => updateQuantity(idx, item.quantity + 1)}
-                        className="text-base font-bold px-2 text-[#9CA3AF] hover:text-white cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center text-[#A1A1AA] hover:text-[#F5F5F5] rounded transition-colors cursor-pointer"
+                        aria-label="Increase quantity"
                       >
                         +
                       </button>
                     </div>
 
                     {/* Line Total */}
-                    <div className="text-right min-w-[70px]">
-                      <p className="font-black text-white text-base sm:text-lg">
+                    <div className="text-right min-w-[65px]">
+                      <p className="font-semibold text-[#F5F5F5] text-base">
                         £{item.lineTotal.toFixed(2)}
                       </p>
                     </div>
 
-                    {/* Remove Action */}
+                    {/* Remove Item Button */}
                     <button
                       onClick={() => removeItem(idx)}
                       title="Remove item"
-                      className="p-2 text-[#6B7280] hover:text-[#EF4444] rounded-xl hover:bg-[#1A1A1A] transition-all cursor-pointer"
+                      aria-label="Remove item"
+                      className="p-2 text-[#71717A] hover:text-[#EF4444] rounded-lg hover:bg-[#EF4444]/10 transition-colors cursor-pointer"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -173,77 +179,77 @@ export const CustomerCart: React.FC = () => {
             })}
           </div>
 
-          {/* RIGHT COLUMN: Promo Code & Order Summary Cards (~34% Width) */}
-          <div className="lg:col-span-4 space-y-6">
+          {/* RIGHT COLUMN: Promo Code & Order Summary Cards */}
+          <div className="lg:col-span-5 space-y-5 sticky top-24">
             
-            {/* Promo Code Input Card */}
-            <div className="bg-[#101010] border border-[#1F1F1F] p-5 rounded-3xl space-y-3 shadow-xl">
+            {/* Promo Code Card */}
+            <div className="bg-[#0D0D0D] border border-[#242424] p-5 rounded-[10px] space-y-3">
               <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-[#FF5500]" />
-                <h3 className="text-xs font-extrabold text-white tracking-widest uppercase">
-                  PROMO CODE
+                <Tag className="w-4 h-4 text-[#FF5A00]" />
+                <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider">
+                  Promo Code
                 </h3>
               </div>
 
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Enter code (e.g. WELCOME10)"
+                  placeholder="Enter promo code"
                   value={promoInput}
                   onChange={(e) => setPromoInput(e.target.value)}
-                  className="flex-1 bg-[#161616] border border-[#262626] rounded-xl py-2.5 px-3 text-xs text-white uppercase placeholder-[#6B7280] focus:outline-none focus:border-[#FF5500]"
+                  className="flex-1 h-10 bg-[#151515] border border-[#242424] rounded-lg px-3 text-xs text-[#F5F5F5] uppercase placeholder-[#71717A] focus:outline-none focus:border-[#FF5A00] transition-colors"
                 />
                 <button
                   onClick={handleApplyPromo}
-                  className="bg-[#FF5500] hover:bg-[#E04B00] text-white px-5 py-2.5 rounded-xl text-xs font-extrabold tracking-wider uppercase shadow-md shadow-[#FF5500]/20 cursor-pointer"
+                  className="h-10 px-4 bg-[#151515] border border-[#242424] hover:border-[#FF5A00] text-[#FF5A00] hover:bg-[#FF5A00] hover:text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shrink-0"
                 >
-                  APPLY
+                  Apply
                 </button>
               </div>
 
               {promoMsg && (
-                <p className="text-[11px] text-[#FF5500] font-semibold">{promoMsg}</p>
+                <p className="text-xs text-[#FF5A00] font-medium">{promoMsg}</p>
               )}
             </div>
 
-            {/* Order Summary Card matching Screenshot 2 */}
-            <div className="bg-[#101010] border border-[#1F1F1F] p-6 rounded-3xl space-y-4 shadow-2xl">
-              <h3 className="text-xs font-extrabold text-[#9CA3AF] tracking-widest uppercase">
-                ORDER SUMMARY
-              </h3>
+            {/* Order Summary Card */}
+            <div className="bg-[#0D0D0D] border border-[#242424] p-6 rounded-[10px] space-y-4">
+              <h2 className="text-lg font-semibold text-[#F5F5F5]">
+                Order Summary
+              </h2>
 
-              <div className="space-y-3 text-xs sm:text-sm text-[#9CA3AF]">
+              <div className="space-y-2.5 text-sm text-[#A1A1AA]">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="text-white font-bold">£{subtotal.toFixed(2)}</span>
+                  <span className="text-[#F5F5F5] font-medium">£{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Delivery (2 Mile Radius)</span>
-                  <span className="text-white font-bold">£{delivery.toFixed(2)}</span>
+                  <span>Delivery fee</span>
+                  <span className="text-[#F5F5F5] font-medium">£{delivery.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Service Fee</span>
-                  <span className="text-white font-bold">£{service.toFixed(2)}</span>
+                  <span>Service fee</span>
+                  <span className="text-[#F5F5F5] font-medium">£{service.toFixed(2)}</span>
                 </div>
 
                 {discountAmount > 0 && (
-                  <div className="flex justify-between text-[#10B981] font-bold">
+                  <div className="flex justify-between text-[#22C55E] font-medium">
                     <span>Discount ({couponCode})</span>
                     <span>-£{discountAmount.toFixed(2)}</span>
                   </div>
                 )}
               </div>
 
-              <div className="pt-4 border-t border-[#1F1F1F] flex items-center justify-between">
-                <span className="text-base font-extrabold text-white">Total</span>
-                <span className="text-2xl font-black text-[#FF5500]">£{total.toFixed(2)}</span>
+              <div className="pt-3.5 border-t border-[#242424] flex items-center justify-between">
+                <span className="text-base font-semibold text-[#F5F5F5]">Total</span>
+                <span className="text-xl font-bold text-[#FF5A00]">£{total.toFixed(2)}</span>
               </div>
 
               <button
                 onClick={() => navigate('/checkout')}
-                className="w-full bg-[#FF5500] hover:bg-[#E04B00] text-white text-sm font-black uppercase tracking-wider py-4 rounded-2xl shadow-2xl shadow-[#FF5500]/30 transition-all hover:scale-[1.01] cursor-pointer mt-4 flex items-center justify-center gap-2"
+                className="w-full h-12 bg-[#FF5A00] hover:bg-[#E84F00] text-white text-sm font-semibold rounded-lg shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
               >
-                <span>PROCEED TO CHECKOUT</span>
+                <span>Proceed to checkout</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>

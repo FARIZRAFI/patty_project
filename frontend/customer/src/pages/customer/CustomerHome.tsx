@@ -76,11 +76,8 @@ export const CustomerHome: React.FC = () => {
           <div className="flex flex-wrap items-center gap-4">
             <button
               onClick={() => {
-                if (selectedBranch) {
-                  navigate('/menu');
-                } else {
-                  navigate('/select-location');
-                }
+                setOrderType('DELIVERY');
+                navigate('/select-location');
               }}
               className="bg-[#FF5500] hover:bg-[#E04B00] text-white px-7 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-[#FF5500]/30 flex items-center gap-2 cursor-pointer"
             >
@@ -90,11 +87,7 @@ export const CustomerHome: React.FC = () => {
             <button
               onClick={() => {
                 setOrderType('COLLECTION');
-                if (selectedBranch) {
-                  navigate('/menu');
-                } else {
-                  navigate('/select-location');
-                }
+                navigate('/select-location');
               }}
               className="bg-[#070707]/60 backdrop-blur-md border border-[#333333] hover:border-white text-white px-7 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer"
             >
@@ -190,7 +183,7 @@ export const CustomerHome: React.FC = () => {
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-widest uppercase font-hero">
               SIGNATURE BURGERS
             </h2>
-            <Link to="/menu" className="text-xs sm:text-sm font-extrabold text-[#FF5500] hover:underline flex items-center gap-1 uppercase tracking-wider">
+            <Link to="/order" className="text-xs sm:text-sm font-extrabold text-[#FF5500] hover:underline flex items-center gap-1 uppercase tracking-wider">
               <span>VIEW ALL</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
@@ -201,16 +194,15 @@ export const CustomerHome: React.FC = () => {
             {/* 1. MC PROJECT */}
             <div
               onClick={() => {
-                const prod = products.find(p => p.name.toLowerCase().includes('mc project')) || products[0];
-                if (prod) setSelectedProduct(prod);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-5 sm:gap-6 group cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 hover:bg-white/[0.03] border border-transparent hover:border-[#FF5500]/40 transition-all duration-300"
+              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent"
             >
               <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
                 <img
                   src="/burger_mc_project.jpg"
                   alt="MC Project"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="space-y-2.5">
@@ -228,16 +220,15 @@ export const CustomerHome: React.FC = () => {
             {/* 2. OUTLAW PROJECT */}
             <div
               onClick={() => {
-                const prod = products.find(p => p.name.toLowerCase().includes('outlaw')) || products[1] || products[0];
-                if (prod) setSelectedProduct(prod);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-5 sm:gap-6 group cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 hover:bg-white/[0.03] border border-transparent hover:border-[#FF5500]/40 transition-all duration-300"
+              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent"
             >
               <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
                 <img
                   src="/burger_outlaw_project.jpg"
                   alt="Outlaw Project"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="space-y-2.5">
@@ -255,16 +246,15 @@ export const CustomerHome: React.FC = () => {
             {/* 3. PASTRAMI BURGER */}
             <div
               onClick={() => {
-                const prod = products.find(p => p.name.toLowerCase().includes('pastrami')) || products[2] || products[0];
-                if (prod) setSelectedProduct(prod);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-5 sm:gap-6 group cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 hover:bg-white/[0.03] border border-transparent hover:border-[#FF5500]/40 transition-all duration-300"
+              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent"
             >
               <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
                 <img
                   src="/burger_pastrami_burger.jpg"
                   alt="Pastrami Burger"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="space-y-2.5">
@@ -285,16 +275,15 @@ export const CustomerHome: React.FC = () => {
             {/* 4. FRIED CHICKEN SANDO */}
             <div
               onClick={() => {
-                const prod = products.find(p => p.name.toLowerCase().includes('chicken')) || products[3] || products[0];
-                if (prod) setSelectedProduct(prod);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-5 sm:gap-6 group cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 hover:bg-white/[0.03] border border-transparent hover:border-[#FF5500]/40 transition-all duration-300"
+              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent"
             >
               <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
                 <img
                   src="/burger_fried_chicken_sando.jpg"
                   alt="Fried Chicken Sando"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="space-y-2.5">
@@ -312,16 +301,15 @@ export const CustomerHome: React.FC = () => {
             {/* 5. HALLOUMI BURGER */}
             <div
               onClick={() => {
-                const prod = products.find(p => p.name.toLowerCase().includes('halloumi')) || products[4] || products[0];
-                if (prod) setSelectedProduct(prod);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-5 sm:gap-6 group cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 hover:bg-white/[0.03] border border-transparent hover:border-[#FF5500]/40 transition-all duration-300"
+              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent"
             >
               <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
                 <img
                   src="/burger_halloumi_burger.jpg"
                   alt="Halloumi Burger"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="space-y-2.5">
@@ -429,11 +417,7 @@ export const CustomerHome: React.FC = () => {
         <div className="pt-3">
           <button
             onClick={() => {
-              if (selectedBranch) {
-                navigate('/menu');
-              } else {
-                navigate('/select-location');
-              }
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             className="bg-[#FF5500] hover:bg-[#E04B00] text-white text-xs sm:text-sm font-black uppercase tracking-widest px-10 py-4 rounded-full shadow-2xl shadow-[#FF5500]/30 transition-all hover:scale-105 cursor-pointer"
           >

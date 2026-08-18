@@ -139,34 +139,102 @@ export const AdminOrderDetailsModal: React.FC<Props> = ({ order, onClose, onUpda
             </div>
 
             {/* Update Order Status Controls */}
-            <div className="bg-[#1A1A1A] border border-[#262626] p-4 rounded-xl space-y-3">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Update Order Status</h3>
+            <div className="bg-[#151515] border border-[#242424] p-4 rounded-lg space-y-3">
+              <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider">Update Order Status</h3>
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full bg-[#121212] border border-[#262626] text-white text-xs font-semibold p-3 rounded-xl focus:outline-none focus:border-[#FF5500]"
+                className="w-full h-10 bg-[#0D0D0D] border border-[#242424] focus:border-[#FF5A00] text-[#F5F5F5] text-xs font-semibold px-3 rounded-lg focus:outline-none transition-colors"
               >
-                <option value="PENDING_PAYMENT">PENDING PAYMENT</option>
-                <option value="ACCEPTED">ACCEPTED</option>
-                <option value="PREPARING">PREPARING</option>
-                <option value="READY">READY</option>
-                <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
-                <option value="DELIVERED">DELIVERED</option>
+                <option value="INCOMING">INCOMING (New Order)</option>
+                <option value="ACCEPTED">ACCEPTED (Order Confirmed)</option>
+                <option value="PREPARING">PREPARING (In Kitchen)</option>
+                <option value="READY">READY (Packed / Waiting Dispatch)</option>
+                <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY (With Driver)</option>
+                <option value="DELIVERED">DELIVERED (Completed Delivery)</option>
+                <option value="COLLECTED">COLLECTED (Customer Picked Up)</option>
+                <option value="CANCELLED">CANCELLED</option>
               </select>
 
               <button
                 onClick={handleUpdateStatus}
                 disabled={loading}
-                className="w-full bg-[#FF5500] hover:bg-[#E04B00] text-white text-xs font-bold py-3 rounded-xl transition-all shadow-md shadow-[#FF5500]/20"
+                className="w-full h-10 bg-[#FF5A00] hover:bg-[#E84F00] text-white text-xs font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
               >
-                {loading ? 'Updating...' : 'Update Status'}
+                {loading ? 'Updating...' : 'Save Selected Status'}
               </button>
+
+              {/* One-Click Quick Workflow Action */}
+              {selectedStatus === 'INCOMING' && (
+                <button
+                  onClick={async () => {
+                    setSelectedStatus('ACCEPTED');
+                    setLoading(true);
+                    try {
+                      await api.patch(`/orders/${order.id}/status`, { status: 'ACCEPTED' });
+                      onUpdateStatus();
+                    } finally { setLoading(false); }
+                  }}
+                  className="w-full h-10 bg-[#06B6D4] hover:bg-[#0891B2] text-white text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
+                >
+                  ✓ Accept Order
+                </button>
+              )}
+
+              {selectedStatus === 'ACCEPTED' && (
+                <button
+                  onClick={async () => {
+                    setSelectedStatus('PREPARING');
+                    setLoading(true);
+                    try {
+                      await api.patch(`/orders/${order.id}/status`, { status: 'PREPARING' });
+                      onUpdateStatus();
+                    } finally { setLoading(false); }
+                  }}
+                  className="w-full h-10 bg-[#F59E0B] hover:bg-[#D97706] text-black text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
+                >
+                  🍳 Start Preparing
+                </button>
+              )}
+
+              {selectedStatus === 'PREPARING' && (
+                <button
+                  onClick={async () => {
+                    setSelectedStatus('READY');
+                    setLoading(true);
+                    try {
+                      await api.patch(`/orders/${order.id}/status`, { status: 'READY' });
+                      onUpdateStatus();
+                    } finally { setLoading(false); }
+                  }}
+                  className="w-full h-10 bg-[#10B981] hover:bg-[#059669] text-white text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
+                >
+                  📦 Mark Ready
+                </button>
+              )}
+
+              {(selectedStatus === 'READY' || selectedStatus === 'OUT_FOR_DELIVERY') && (
+                <button
+                  onClick={async () => {
+                    const finalStatus = order.order_type === 'COLLECTION' ? 'COLLECTED' : 'DELIVERED';
+                    setSelectedStatus(finalStatus);
+                    setLoading(true);
+                    try {
+                      await api.patch(`/orders/${order.id}/status`, { status: finalStatus });
+                      onUpdateStatus();
+                    } finally { setLoading(false); }
+                  }}
+                  className="w-full h-10 bg-[#22C55E] hover:bg-[#16A34A] text-white text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
+                >
+                  🚚 Mark {order.order_type === 'COLLECTION' ? 'Collected' : 'Delivered'}
+                </button>
+              )}
 
               <button
                 onClick={handleCancelOrder}
-                className="w-full border border-[#EF4444]/40 hover:bg-[#EF4444]/10 text-[#EF4444] text-xs font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="w-full h-9 bg-[#EF4444]/10 border border-[#EF4444]/30 hover:bg-[#EF4444]/20 text-[#EF4444] text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
-                <AlertTriangle className="w-4 h-4" />
+                <AlertTriangle className="w-3.5 h-3.5" />
                 <span>Cancel Order</span>
               </button>
             </div>

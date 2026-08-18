@@ -52,10 +52,6 @@ export const CustomerOffers: React.FC = () => {
       <div className="relative z-10 w-full max-w-[1450px] mx-auto px-4 sm:px-10 lg:px-12 py-6 sm:py-10 pb-36 space-y-10">
         {/* Header Section */}
         <div className="space-y-3 text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FF5500]/15 border border-[#FF5500]/40 text-[#FF5500] text-xs font-black uppercase tracking-widest">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Exclusive Deals & Discounts</span>
-          </div>
           <h1 className="text-4xl sm:text-5xl font-black text-white font-hero uppercase tracking-tight">
             Special Offers
           </h1>

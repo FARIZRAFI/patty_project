@@ -1,8 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { UtensilsCrossed, Tag, Gift, Package } from 'lucide-react';
+import { useCartStore } from '../../store/cartStore';
 
 export const MobileBottomNav: React.FC = () => {
+  const { isProductModalOpen } = useCartStore();
+
+  // Hide bottom nav bar when Product Preview Modal is open so it doesn't overlap modal or Add to Cart button
+  if (isProductModalOpen) return null;
+
   const navItems = [
     { label: 'MENU', path: '/menu', icon: UtensilsCrossed },
     { label: 'OFFERS', path: '/offers', icon: Tag },
@@ -11,7 +17,7 @@ export const MobileBottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#0B0B0B]/95 backdrop-blur-lg md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0B]/95 backdrop-blur-lg md:hidden border-t border-[#1C1C1C]">
       <div className="grid grid-cols-4 items-center py-2 px-1 text-center">
         {navItems.map((item) => {
           const Icon = item.icon;

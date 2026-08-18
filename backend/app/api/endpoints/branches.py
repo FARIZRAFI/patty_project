@@ -64,10 +64,13 @@ def get_nearest_branch(request: NearestBranchRequest, db: Session = Depends(get_
     )
     return NearestBranchResponse(
         assigned_branch=result.get("assigned_branch"),
+        nearest_branch=result.get("nearest_branch"),
         distance_miles=result.get("distance_miles"),
+        is_delivery_eligible=result.get("is_delivery_eligible", False),
         status=result.get("status"),
         message=result.get("message")
     )
+
 
 @router.patch("/{branch_id}/toggle-ordering", response_model=BranchResponse)
 def toggle_branch_ordering(

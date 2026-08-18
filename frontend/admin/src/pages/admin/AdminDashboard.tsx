@@ -193,12 +193,18 @@ export const AdminDashboard: React.FC = () => {
                         <td className="px-6 py-4 font-semibold text-white">£{o.total_amount.toFixed(2)}</td>
                         <td className="px-6 py-4">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                              o.status === 'PREPARING'
-                                ? 'bg-[#FF5500]/10 text-[#FF5500] border-[#FF5500]/30'
+                            className={`px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border ${
+                              o.status === 'INCOMING'
+                                ? 'bg-[#FF5A00]/15 text-[#FF5A00] border-[#FF5A00]/40'
+                                : o.status === 'ACCEPTED'
+                                ? 'bg-[#06B6D4]/15 text-[#06B6D4] border-[#06B6D4]/40'
+                                : o.status === 'PREPARING'
+                                ? 'bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/40'
+                                : o.status === 'READY'
+                                ? 'bg-[#10B981]/15 text-[#10B981] border-[#10B981]/40'
                                 : o.status === 'DELIVERED'
-                                ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30'
-                                : 'bg-[#3B82F6]/10 text-[#3B82F6] border-[#3B82F6]/30'
+                                ? 'bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/40'
+                                : 'bg-[#151515] text-[#A1A1AA] border-[#242424]'
                             }`}
                           >
                             {o.status}

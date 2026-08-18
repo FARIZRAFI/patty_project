@@ -14,8 +14,9 @@ interface OrderItemData {
 
 interface OrderData {
   id: string;
-  order_number: str;
+  order_number: string;
   created_at: string;
+
   status: string;
   order_type: string;
   total_amount: number;

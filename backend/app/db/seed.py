@@ -292,6 +292,54 @@ def seed_db():
     ])
 
     # 9. Create Sample Orders
+    order_incoming = Order(
+        order_number="#PP1260",
+        customer_id=customer.id,
+        customer_name="Sarah Jenkins",
+        customer_email="sarah.j@email.com",
+        customer_phone="+44 7987 654321",
+        branch_id=branch_central.id,
+        order_type=OrderType.DELIVERY,
+        status=OrderStatus.INCOMING,
+        delivery_address={
+            "address_line1": "14 Regent Street",
+            "city": "London",
+            "postcode": "NW1 5RT"
+        },
+        delivery_instructions="Ring the bell on arrival",
+        subtotal=22.40,
+        delivery_fee=2.50,
+        service_fee=0.99,
+        discount_amount=0.0,
+        vat_amount=4.48,
+        total_amount=25.89,
+        payment_method="Online (Card)",
+        payment_status=PaymentStatus.PAID,
+        payment_transaction_id="TXN9823412345",
+        points_earned=220
+    )
+
+    order_accepted = Order(
+        order_number="#PP1259",
+        customer_id=customer2.id,
+        customer_name="David Miller",
+        customer_email="david.m@email.com",
+        customer_phone="+44 7890 123456",
+        branch_id=branch_westfield.id,
+        order_type=OrderType.COLLECTION,
+        status=OrderStatus.ACCEPTED,
+        subtotal=18.50,
+        delivery_fee=0.0,
+        service_fee=0.99,
+        discount_amount=0.0,
+        vat_amount=3.70,
+        total_amount=19.49,
+        payment_method="Online (Card)",
+        payment_status=PaymentStatus.PAID,
+        payment_transaction_id="TXN5544332211",
+        points_earned=180
+    )
+
     sample_order = Order(
         order_number="#PP1258",
         customer_id=customer.id,
@@ -319,19 +367,91 @@ def seed_db():
         payment_transaction_id="TXN4789632145",
         points_earned=150
     )
-    db.add(sample_order)
+
+    order_ready = Order(
+        order_number="#PP1257",
+        customer_id=customer2.id,
+        customer_name="Emma Watson",
+        customer_email="emma.w@email.com",
+        customer_phone="+44 7456 789012",
+        branch_id=branch_central.id,
+        order_type=OrderType.DELIVERY,
+        status=OrderStatus.READY,
+        delivery_address={
+            "address_line1": "78 Oxford Street",
+            "city": "London",
+            "postcode": "W1D 1BS"
+        },
+        delivery_instructions="Deliver to front desk",
+        subtotal=31.00,
+        delivery_fee=2.50,
+        service_fee=0.99,
+        discount_amount=0.0,
+        vat_amount=6.20,
+        total_amount=34.49,
+        payment_method="Online (Card)",
+        payment_status=PaymentStatus.PAID,
+        payment_transaction_id="TXN7788990011",
+        points_earned=310
+    )
+
+    order_delivered = Order(
+        order_number="#PP1256",
+        customer_id=customer.id,
+        customer_name="Liam Gallagher",
+        customer_email="liam.g@email.com",
+        customer_phone="+44 7321 654987",
+        branch_id=branch_westfield.id,
+        order_type=OrderType.DELIVERY,
+        status=OrderStatus.DELIVERED,
+        delivery_address={
+            "address_line1": "55 Shepherd's Bush Green",
+            "city": "London",
+            "postcode": "W12 8QE"
+        },
+        delivery_instructions="Call when outside",
+        subtotal=19.95,
+        delivery_fee=2.50,
+        service_fee=0.99,
+        discount_amount=0.0,
+        vat_amount=3.99,
+        total_amount=23.44,
+        payment_method="Online (Card)",
+        payment_status=PaymentStatus.PAID,
+        payment_transaction_id="TXN6655443322",
+        points_earned=200
+    )
+
+    db.add_all([order_incoming, order_accepted, sample_order, order_ready, order_delivered])
     db.flush()
 
     db.add_all([
+        OrderItem(order_id=order_incoming.id, product_id=p1.id, product_name="Classic Beef Burger", quantity=2, unit_price=8.99, total_price=17.98),
+        OrderItem(order_id=order_incoming.id, product_id=p5.id, product_name="French Fries (Regular)", quantity=1, unit_price=2.49, total_price=2.49),
+        OrderStatusHistory(order_id=order_incoming.id, from_status=None, to_status=OrderStatus.INCOMING, notes="Order placed by customer"),
+
+        OrderItem(order_id=order_accepted.id, product_id=p2.id, product_name="Double Patty Smash", quantity=1, unit_price=11.95, total_price=11.95),
+        OrderItem(order_id=order_accepted.id, product_id=p6.id, product_name="Loaded Cheesy Bacon Fries", quantity=1, unit_price=6.45, total_price=6.45),
+        OrderStatusHistory(order_id=order_accepted.id, from_status=OrderStatus.INCOMING, to_status=OrderStatus.ACCEPTED, notes="Order accepted by store"),
+
         OrderItem(order_id=sample_order.id, product_id=p1.id, product_name="Classic Beef Burger", quantity=1, unit_price=8.99, total_price=8.99, selected_modifiers=[{"name": "No onion"}, {"name": "Extra cheese", "price": 0.80}]),
         OrderItem(order_id=sample_order.id, product_id=p5.id, product_name="French Fries (Regular)", quantity=1, unit_price=2.49, total_price=2.49),
         OrderItem(order_id=sample_order.id, product_id=p7.id, product_name="Coca Cola 500ml", quantity=2, unit_price=1.59, total_price=3.18),
-        OrderStatusHistory(order_id=sample_order.id, from_status=OrderStatus.PAID, to_status=OrderStatus.PREPARING, notes="Kitchen accepted order")
+        OrderStatusHistory(order_id=sample_order.id, from_status=OrderStatus.ACCEPTED, to_status=OrderStatus.PREPARING, notes="Kitchen preparing food"),
+
+        OrderItem(order_id=order_ready.id, product_id=p3.id, product_name="Spicy Nashville Chicken", quantity=2, unit_price=9.45, total_price=18.90),
+        OrderItem(order_id=order_ready.id, product_id=p5.id, product_name="French Fries (Regular)", quantity=2, unit_price=2.49, total_price=4.98),
+        OrderStatusHistory(order_id=order_ready.id, from_status=OrderStatus.PREPARING, to_status=OrderStatus.READY, notes="Order packed and ready for driver"),
+
+        OrderItem(order_id=order_delivered.id, product_id=p4.id, product_name="Truffle Mushroom Burger", quantity=1, unit_price=10.95, total_price=10.95),
+        OrderItem(order_id=order_delivered.id, product_id=p5.id, product_name="French Fries (Regular)", quantity=1, unit_price=2.49, total_price=2.49),
+        OrderStatusHistory(order_id=order_delivered.id, from_status=OrderStatus.READY, to_status=OrderStatus.DELIVERED, notes="Driver delivered order to customer")
     ])
 
     db.commit()
     db.close()
     print("Database seeding completed successfully!")
+
 
 if __name__ == "__main__":
     seed_db()
