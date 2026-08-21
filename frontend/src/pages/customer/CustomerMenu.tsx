@@ -218,19 +218,7 @@ export const CustomerMenu: React.FC = () => {
         })}
       </div>
 
-      {/* Footer Note */}
-      <div className="pt-16 pb-4 text-center">
-        <div className="flex items-center justify-center gap-4 pb-3">
-          <div className="h-[1px] bg-[#242424] flex-1 max-w-[180px]" />
-          <div className="w-8 h-8 rounded-full border border-[#242424] bg-[#121212] flex items-center justify-center text-[#FF5A00]">
-            <Utensils className="w-4 h-4" />
-          </div>
-          <div className="h-[1px] bg-[#242424] flex-1 max-w-[180px]" />
-        </div>
-        <p className="text-xs text-[#71717A]">
-          More items and customisations available in-store.
-        </p>
-      </div>
+
 
       {/* Product Detail Modal */}
       {selectedProduct && (
