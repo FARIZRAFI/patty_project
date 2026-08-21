@@ -211,17 +211,19 @@ export const AdminProducts: React.FC = () => {
             ))}
           </select>
 
-          {/* Branch Stock Selector */}
-          <select
-            value={selectedBranchId}
-            onChange={(e) => setSelectedBranchId(e.target.value)}
-            disabled={user?.role === 'BRANCH_ADMIN'}
-            className="bg-[#1A1A1A] border border-[#262626] rounded-xl py-2 px-4 text-xs text-white focus:outline-none focus:border-[#FF5500] disabled:opacity-75 disabled:cursor-not-allowed"
-          >
-            {branches.map((b) => (
-              <option key={b.id} value={b.id}>Stock: {b.name}</option>
-            ))}
-          </select>
+          {/* Branch Stock Selector (Branch Admin only) */}
+          {user?.role === 'BRANCH_ADMIN' && (
+            <select
+              value={selectedBranchId}
+              onChange={(e) => setSelectedBranchId(e.target.value)}
+              disabled={true}
+              className="bg-[#1A1A1A] border border-[#262626] rounded-xl py-2 px-4 text-xs text-white focus:outline-none focus:border-[#FF5500] disabled:opacity-75 disabled:cursor-not-allowed"
+            >
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>Branch: {b.name}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -234,28 +236,34 @@ export const AdminProducts: React.FC = () => {
 
       {/* Products Data Table */}
       <div className="bg-[#121212] border border-[#262626] rounded-2xl overflow-x-auto shadow-xl scrollbar-thin scrollbar-thumb-[#262626]">
-        <table className="w-full text-left text-xs min-w-[900px]">
+        <table className="w-full text-left text-xs min-w-[750px]">
           <thead className="bg-[#1A1A1A] text-[#9CA3AF] uppercase text-[10px] font-semibold tracking-wider border-b border-[#262626]">
             <tr>
               <th className="px-4 sm:px-5 py-4 whitespace-nowrap">Product ID</th>
               <th className="px-4 sm:px-5 py-4 min-w-[240px]">Product</th>
               <th className="px-4 sm:px-5 py-4 whitespace-nowrap">Category</th>
               <th className="px-4 sm:px-5 py-4 text-right whitespace-nowrap">Price</th>
-              <th className="px-4 sm:px-5 py-4 text-right whitespace-nowrap">Branch Stock</th>
-              <th className="px-4 sm:px-5 py-4 text-center whitespace-nowrap">Availability</th>
-              <th className="px-4 sm:px-5 py-4 text-center whitespace-nowrap">Actions</th>
+              {user?.role === 'BRANCH_ADMIN' && (
+                <>
+                  <th className="px-4 sm:px-5 py-4 text-right whitespace-nowrap">Branch Stock</th>
+                  <th className="px-4 sm:px-5 py-4 text-center whitespace-nowrap">Availability</th>
+                </>
+              )}
+              {user?.role === 'SUPER_ADMIN' && (
+                <th className="px-4 sm:px-5 py-4 text-center whitespace-nowrap">Actions</th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#262626]">
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-[#9CA3AF]">
+                <td colSpan={user?.role === 'BRANCH_ADMIN' ? 6 : 5} className="px-6 py-8 text-center text-[#9CA3AF]">
                   Loading products...
                 </td>
               </tr>
             ) : filteredProducts.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-[#9CA3AF]">
+                <td colSpan={user?.role === 'BRANCH_ADMIN' ? 6 : 5} className="px-6 py-8 text-center text-[#9CA3AF]">
                   No products found.
                 </td>
               </tr>
@@ -277,7 +285,7 @@ export const AdminProducts: React.FC = () => {
                         }}
                         className="w-10 h-10 rounded-lg object-cover bg-[#1A1A1A] border border-[#262626] shrink-0"
                       />
-                      <div className="min-w-0 max-w-[260px]">
+                      <div className="min-w-0 max-w-[280px]">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-white text-xs truncate">{p.name}</p>
                           {p.is_bestseller && (
@@ -293,70 +301,69 @@ export const AdminProducts: React.FC = () => {
                       {categories.find((c) => c.id === p.category_id)?.name || 'Burgers'}
                     </td>
                     <td className="px-4 sm:px-5 py-3.5 text-right font-semibold text-white whitespace-nowrap">£{p.base_price.toFixed(2)}</td>
-                    <td className="px-4 sm:px-5 py-3.5 text-right font-semibold whitespace-nowrap">
-                      <button
-                        onClick={() => handleUpdateStockQuantity(p.id, stockQty)}
-                        title="Click to update stock quantity"
-                        className="text-white hover:text-[#FF5500] transition-colors cursor-pointer underline decoration-dotted font-mono"
-                      >
-                        {stockQty}
-                      </button>
-                    </td>
-                    <td className="px-4 sm:px-5 py-3.5 text-center whitespace-nowrap">
-                      <button
-                        onClick={() => handleToggleStock(p.id)}
-                        title={isAvailable ? 'Click to mark Out of Stock' : 'Click to mark In Stock'}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
-                          isAvailable
-                            ? 'bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/30 hover:bg-[#22C55E]/20'
-                            : 'bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/30 hover:bg-[#EF4444]/20'
-                        }`}
-                      >
-                        {isAvailable ? (
-                          <>
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>In Stock</span>
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="w-3 h-3" />
-                            <span>Out of Stock</span>
-                          </>
-                        )}
-                      </button>
-                    </td>
-                    <td className="px-4 sm:px-5 py-3.5 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-2">
-                        {user?.role === 'SUPER_ADMIN' ? (
-                          <>
-                            <button
-                              onClick={() => {
-                                setEditingProduct(p);
-                                setShowAddModal(true);
-                              }}
-                              className="p-1.5 bg-[#1A1A1A] hover:bg-[#262626] border border-[#2A2A2A] hover:border-[#FF5500]/50 text-[#A1A1AA] hover:text-[#FF5500] rounded-lg transition-all cursor-pointer shadow-sm"
-                              title="Edit Product"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteProduct(p.id, p.name)}
-                              className="p-1.5 bg-[#1A1A1A] hover:bg-[#262626] border border-[#2A2A2A] hover:border-[#EF4444]/50 text-[#A1A1AA] hover:text-[#EF4444] rounded-lg transition-all cursor-pointer shadow-sm"
-                              title="Delete Product"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
-                        ) : (
+                    
+                    {/* Branch Stock & Availability: ONLY Branch Admins See */}
+                    {user?.role === 'BRANCH_ADMIN' && (
+                      <>
+                        <td className="px-4 sm:px-5 py-3.5 text-right font-semibold whitespace-nowrap">
                           <button
                             onClick={() => handleUpdateStockQuantity(p.id, stockQty)}
-                            className="px-2.5 py-1 rounded bg-[#1A1A1A] border border-[#262626] text-[#9CA3AF] hover:text-white hover:border-[#FF5500] text-[11px] font-medium transition-colors cursor-pointer"
+                            title="Click to update stock quantity"
+                            className="text-white hover:text-[#FF5500] transition-colors cursor-pointer underline decoration-dotted font-mono"
                           >
-                            Edit Stock
+                            {stockQty}
                           </button>
-                        )}
-                      </div>
-                    </td>
+                        </td>
+                        <td className="px-4 sm:px-5 py-3.5 text-center whitespace-nowrap">
+                          <button
+                            onClick={() => handleToggleStock(p.id)}
+                            title={isAvailable ? 'Click to mark Out of Stock' : 'Click to mark In Stock'}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+                              isAvailable
+                                ? 'bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/30 hover:bg-[#22C55E]/20'
+                                : 'bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/30 hover:bg-[#EF4444]/20'
+                            }`}
+                          >
+                            {isAvailable ? (
+                              <>
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>In Stock</span>
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="w-3 h-3" />
+                                <span>Out of Stock</span>
+                              </>
+                            )}
+                          </button>
+                        </td>
+                      </>
+                    )}
+
+                    {/* Actions Column: SUPER ADMIN */}
+                    {user?.role === 'SUPER_ADMIN' && (
+                      <td className="px-4 sm:px-5 py-3.5 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingProduct(p);
+                              setShowAddModal(true);
+                            }}
+                            className="p-1.5 bg-[#1A1A1A] hover:bg-[#262626] border border-[#2A2A2A] hover:border-[#FF5500]/50 text-[#A1A1AA] hover:text-[#FF5500] rounded-lg transition-all cursor-pointer shadow-sm"
+                            title="Edit Product"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(p.id, p.name)}
+                            className="p-1.5 bg-[#1A1A1A] hover:bg-[#262626] border border-[#2A2A2A] hover:border-[#EF4444]/50 text-[#A1A1AA] hover:text-[#EF4444] rounded-lg transition-all cursor-pointer shadow-sm"
+                            title="Delete Product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })
