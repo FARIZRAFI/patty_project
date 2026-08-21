@@ -79,26 +79,16 @@ export const PublicMenuPage: React.FC = () => {
       <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-16 pt-8 sm:pt-10 space-y-8">
         
         {/* Header Title & Subtitle */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-[#1C1C1C]">
-          <div>
-            <span className="text-xs text-[#FF5500] tracking-[0.25em] font-extrabold uppercase block mb-1">
-              PATTY PROJECT
-            </span>
-            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight uppercase font-hero">
-              OUR MENU
-            </h1>
-            <p className="text-xs sm:text-sm text-[#A1A1AA] mt-1 font-normal">
-              Burgers, sides and more. Made fresh to order.
-            </p>
-          </div>
-
-          <button
-            onClick={() => navigate('/select-location')}
-            className="bg-[#FF5500] hover:bg-[#E04B00] text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-[#FF5500]/30 flex items-center gap-2 cursor-pointer shrink-0"
-          >
-            <span>ORDER NOW</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+        <div className="pb-2 border-b border-[#1C1C1C]">
+          <span className="text-xs text-[#FF5500] tracking-[0.25em] font-extrabold uppercase block mb-1">
+            PATTY PROJECT
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight uppercase font-hero">
+            OUR MENU
+          </h1>
+          <p className="text-xs sm:text-sm text-[#A1A1AA] mt-1 font-normal">
+            Burgers, sides and more. Made fresh to order.
+          </p>
         </div>
 
         {/* Category Navigation Bar */}
