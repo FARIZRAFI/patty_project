@@ -151,7 +151,7 @@ export const AdminProducts: React.FC = () => {
   );
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1680px] mx-auto space-y-6">
       {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -225,7 +225,7 @@ export const AdminProducts: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="bg-[#1A1A1A] hover:bg-[#262626] border border-[#262626] text-[#9CA3AF] px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all">
+          <button className="bg-[#1A1A1A] hover:bg-[#262626] border border-[#262626] text-[#9CA3AF] px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all cursor-pointer">
             <Download className="w-4 h-4" />
             <span>Export</span>
           </button>
@@ -233,17 +233,17 @@ export const AdminProducts: React.FC = () => {
       </div>
 
       {/* Products Data Table */}
-      <div className="bg-[#121212] border border-[#262626] rounded-2xl overflow-hidden shadow-xl">
-        <table className="w-full text-left text-xs">
+      <div className="bg-[#121212] border border-[#262626] rounded-2xl overflow-x-auto shadow-xl scrollbar-thin scrollbar-thumb-[#262626]">
+        <table className="w-full text-left text-xs min-w-[900px]">
           <thead className="bg-[#1A1A1A] text-[#9CA3AF] uppercase text-[10px] font-semibold tracking-wider border-b border-[#262626]">
             <tr>
-              <th className="px-6 py-4">Product ID</th>
-              <th className="px-6 py-4">Product</th>
-              <th className="px-6 py-4">Category</th>
-              <th className="px-6 py-4 text-right">Price</th>
-              <th className="px-6 py-4 text-right">Branch Stock</th>
-              <th className="px-6 py-4 text-center">Availability</th>
-              <th className="px-6 py-4 text-right">Actions</th>
+              <th className="px-4 sm:px-5 py-4 whitespace-nowrap">Product ID</th>
+              <th className="px-4 sm:px-5 py-4 min-w-[240px]">Product</th>
+              <th className="px-4 sm:px-5 py-4 whitespace-nowrap">Category</th>
+              <th className="px-4 sm:px-5 py-4 text-right whitespace-nowrap">Price</th>
+              <th className="px-4 sm:px-5 py-4 text-right whitespace-nowrap">Branch Stock</th>
+              <th className="px-4 sm:px-5 py-4 text-center whitespace-nowrap">Availability</th>
+              <th className="px-4 sm:px-5 py-4 text-center whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#262626]">
@@ -267,8 +267,8 @@ export const AdminProducts: React.FC = () => {
 
                 return (
                   <tr key={p.id} className="hover:bg-[#1A1A1A]/40 transition-colors">
-                    <td className="px-6 py-4 font-mono font-medium text-[#FF5500]">#{p.sku}</td>
-                    <td className="px-6 py-4 flex items-center gap-3">
+                    <td className="px-4 sm:px-5 py-3.5 font-mono font-medium text-[#FF5500] whitespace-nowrap">#{p.sku}</td>
+                    <td className="px-4 sm:px-5 py-3.5 flex items-center gap-3">
                       <img
                         src={p.image_url || '/placeholder-burger.svg'}
                         alt={p.name}
@@ -277,11 +277,11 @@ export const AdminProducts: React.FC = () => {
                         }}
                         className="w-10 h-10 rounded-lg object-cover bg-[#1A1A1A] border border-[#262626] shrink-0"
                       />
-                      <div className="min-w-0">
+                      <div className="min-w-0 max-w-[260px]">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-white text-xs truncate">{p.name}</p>
                           {p.is_bestseller && (
-                            <span className="text-[9px] bg-[#FF5500]/10 text-[#FF5500] border border-[#FF5500]/20 px-1.5 py-0.5 rounded font-semibold uppercase">
+                            <span className="text-[9px] bg-[#FF5500]/10 text-[#FF5500] border border-[#FF5500]/20 px-1.5 py-0.5 rounded font-semibold uppercase shrink-0">
                               Best Seller
                             </span>
                           )}
@@ -289,24 +289,24 @@ export const AdminProducts: React.FC = () => {
                         <p className="text-[11px] text-[#9CA3AF] truncate">{p.short_description}</p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-[#9CA3AF]">
+                    <td className="px-4 sm:px-5 py-3.5 text-[#9CA3AF] whitespace-nowrap">
                       {categories.find((c) => c.id === p.category_id)?.name || 'Burgers'}
                     </td>
-                    <td className="px-6 py-4 text-right font-semibold text-white">£{p.base_price.toFixed(2)}</td>
-                    <td className="px-6 py-4 text-right font-semibold">
+                    <td className="px-4 sm:px-5 py-3.5 text-right font-semibold text-white whitespace-nowrap">£{p.base_price.toFixed(2)}</td>
+                    <td className="px-4 sm:px-5 py-3.5 text-right font-semibold whitespace-nowrap">
                       <button
                         onClick={() => handleUpdateStockQuantity(p.id, stockQty)}
                         title="Click to update stock quantity"
-                        className="text-white hover:text-[#FF5500] transition-colors cursor-pointer underline decoration-dotted"
+                        className="text-white hover:text-[#FF5500] transition-colors cursor-pointer underline decoration-dotted font-mono"
                       >
                         {stockQty}
                       </button>
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-4 sm:px-5 py-3.5 text-center whitespace-nowrap">
                       <button
                         onClick={() => handleToggleStock(p.id)}
                         title={isAvailable ? 'Click to mark Out of Stock' : 'Click to mark In Stock'}
-                        className={`px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1 ${
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
                           isAvailable
                             ? 'bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/30 hover:bg-[#22C55E]/20'
                             : 'bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/30 hover:bg-[#EF4444]/20'
@@ -325,8 +325,8 @@ export const AdminProducts: React.FC = () => {
                         )}
                       </button>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-4 sm:px-5 py-3.5 text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-2">
                         {user?.role === 'SUPER_ADMIN' ? (
                           <>
                             <button
@@ -334,14 +334,14 @@ export const AdminProducts: React.FC = () => {
                                 setEditingProduct(p);
                                 setShowAddModal(true);
                               }}
-                              className="p-2 text-[#9CA3AF] hover:text-white hover:bg-[#1A1A1A] rounded-xl transition-all cursor-pointer"
+                              className="p-1.5 bg-[#1A1A1A] hover:bg-[#262626] border border-[#2A2A2A] hover:border-[#FF5500]/50 text-[#A1A1AA] hover:text-[#FF5500] rounded-lg transition-all cursor-pointer shadow-sm"
                               title="Edit Product"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteProduct(p.id, p.name)}
-                              className="p-2 text-[#9CA3AF] hover:text-[#EF4444] hover:bg-[#EF4444]/10 rounded-xl transition-all cursor-pointer"
+                              className="p-1.5 bg-[#1A1A1A] hover:bg-[#262626] border border-[#2A2A2A] hover:border-[#EF4444]/50 text-[#A1A1AA] hover:text-[#EF4444] rounded-lg transition-all cursor-pointer shadow-sm"
                               title="Delete Product"
                             >
                               <Trash2 className="w-4 h-4" />
