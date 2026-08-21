@@ -193,7 +193,7 @@ export const CustomerHome: React.FC = () => {
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent hover:border-[#FF5500]/30 transition-all"
+              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5"
             >
               <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl bg-[#111111]">
                 <img
@@ -219,7 +219,7 @@ export const CustomerHome: React.FC = () => {
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent hover:border-[#FF5500]/30 transition-all"
+              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5"
             >
               <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl bg-[#111111]">
                 <img
@@ -245,7 +245,7 @@ export const CustomerHome: React.FC = () => {
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent hover:border-[#FF5500]/30 transition-all"
+              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5"
             >
               <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl bg-[#111111]">
                 <img
@@ -274,7 +274,7 @@ export const CustomerHome: React.FC = () => {
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent hover:border-[#FF5500]/30 transition-all"
+              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5"
             >
               <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl bg-[#111111]">
                 <img
@@ -300,7 +300,7 @@ export const CustomerHome: React.FC = () => {
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent hover:border-[#FF5500]/30 transition-all"
+              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5"
             >
               <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl bg-[#111111]">
                 <img
