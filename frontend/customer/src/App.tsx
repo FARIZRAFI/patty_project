@@ -24,6 +24,8 @@ import { SelectLocationPage } from './pages/customer/SelectLocationPage';
 import { CustomerLogin } from './pages/customer/CustomerLogin';
 import { CustomerOffers } from './pages/customer/CustomerOffers';
 import { CustomerContact } from './pages/customer/CustomerContact';
+import { CustomerAbout } from './pages/customer/CustomerAbout';
+import { CustomerFooter } from './components/customer/CustomerFooter';
 import { MockCheckoutPage } from './pages/customer/MockCheckoutPage';
 
 const queryClient = new QueryClient();
@@ -37,22 +39,26 @@ const CustomerLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children
   const orderingPortalPages = ['/order', '/cart', '/checkout', '/orders', '/profile', '/addresses', '/payment-methods', '/mock-checkout'];
   const isOrderingPortal = orderingPortalPages.includes(location.pathname) || location.pathname.startsWith('/order-confirmation') || location.pathname.startsWith('/mock-checkout');
 
-
-  const hideBottomNavPages = ['/', '/contact', '/select-location', '/menu'];
+  const hideBottomNavPages = ['/', '/contact', '/select-location', '/menu', '/about'];
   const showBottomNav = !hideBottomNavPages.includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between">
-      <div>
-        {isOrderingPortal ? (
-          <OrderingHeader onOpenLocationModal={() => setShowLocationModal(true)} />
-        ) : (
-          <CustomerHeader
-            onOpenLocationModal={() => setShowLocationModal(true)}
-            onOpenMobileDrawer={() => setShowMobileDrawer(true)}
-          />
-        )}
-        <main className={showBottomNav ? 'pb-16 md:pb-0' : ''}>{children}</main>
+      <div className="flex-1 flex flex-col justify-between">
+        <div>
+          {isOrderingPortal ? (
+            <OrderingHeader onOpenLocationModal={() => setShowLocationModal(true)} />
+          ) : (
+            <CustomerHeader
+              onOpenLocationModal={() => setShowLocationModal(true)}
+              onOpenMobileDrawer={() => setShowMobileDrawer(true)}
+            />
+          )}
+          <main className={showBottomNav ? 'pb-16 md:pb-0' : ''}>{children}</main>
+        </div>
+
+        {/* Global Footer on every page */}
+        <CustomerFooter />
       </div>
 
       {showBottomNav && <MobileBottomNav />}
@@ -77,12 +83,13 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
-          {/* Customer Routes Only */}
+          {/* Customer Routes */}
           <Route path="/" element={<CustomerLayoutShell><CustomerHome /></CustomerLayoutShell>} />
           <Route path="/select-location" element={<CustomerLayoutShell><SelectLocationPage /></CustomerLayoutShell>} />
           <Route path="/menu" element={<CustomerLayoutShell><PublicMenuPage /></CustomerLayoutShell>} />
           <Route path="/order" element={<CustomerLayoutShell><CustomerMenu /></CustomerLayoutShell>} />
           <Route path="/offers" element={<CustomerLayoutShell><CustomerOffers /></CustomerLayoutShell>} />
+          <Route path="/about" element={<CustomerLayoutShell><CustomerAbout /></CustomerLayoutShell>} />
           <Route path="/contact" element={<CustomerLayoutShell><CustomerContact /></CustomerLayoutShell>} />
           <Route path="/product/:productId" element={<CustomerLayoutShell><ProductDetailPage /></CustomerLayoutShell>} />
           <Route path="/cart" element={<CustomerLayoutShell><CustomerCart /></CustomerLayoutShell>} />

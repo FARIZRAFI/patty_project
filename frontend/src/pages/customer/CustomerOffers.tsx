@@ -115,8 +115,6 @@ export const CustomerOffers: React.FC = () => {
         </div>
       </section>
 
-      {/* Customer Footer */}
-      <CustomerFooter />
     </div>
   );
 };

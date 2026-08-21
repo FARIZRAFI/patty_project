@@ -424,9 +424,6 @@ export const CustomerHome: React.FC = () => {
         </div>
       </section>
 
-      {/* MODERN 5-COLUMN FOOTER WITH LOGO & MAP */}
-      <CustomerFooter />
-
       {/* Product Detail Modal */}
       {selectedProduct && (
         <ProductDetailModal

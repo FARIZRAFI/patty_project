@@ -152,8 +152,6 @@ export const CustomerContact: React.FC = () => {
         </div>
       </div>
 
-      {/* Customer Footer */}
-      <CustomerFooter />
     </div>
   );
 };
