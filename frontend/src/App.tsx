@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AdminSidebar } from './components/admin/AdminSidebar';
 import { CustomerHeader } from './components/customer/CustomerHeader';
@@ -8,6 +8,7 @@ import { MobileDrawer } from './components/customer/MobileDrawer';
 import { MobileBottomNav } from './components/customer/MobileBottomNav';
 import { LocationModal } from './components/customer/LocationModal';
 import { FloatingCartBar } from './components/customer/FloatingCartBar';
+import { PanelLeftOpen } from 'lucide-react';
 
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -39,10 +40,21 @@ import { useAuthStore } from './store/authStore';
 
 const queryClient = new QueryClient();
 
-
-// Admin Layout Shell with Protection Guard
+// Admin Layout Shell with Protection Guard & Sidebar Collapse Toggle
 const AdminLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token, user } = useAuthStore();
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem('admin_sidebar_collapsed') === 'true';
+  });
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('admin_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
+
   const isAdmin = token && user && (user.role === 'SUPER_ADMIN' || user.role === 'BRANCH_ADMIN');
 
   if (!isAdmin) {
@@ -50,9 +62,29 @@ const AdminLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children })
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#F5F5F5]">
-      <AdminSidebar />
-      <main className="pl-56 w-full min-h-screen">
+    <div className="min-h-screen bg-black text-white flex">
+      {/* Sidebar Component with Hide Button */}
+      <AdminSidebar isCollapsed={isCollapsed} onToggleCollapse={toggleSidebar} />
+
+      {/* Main Content Area */}
+      <main
+        className={`flex-1 min-w-0 transition-all duration-300 ease-in-out ${
+          isCollapsed ? 'ml-0' : 'ml-64'
+        }`}
+      >
+        {/* Floating/Top Bar Show Sidebar Button when Collapsed */}
+        {isCollapsed && (
+          <div className="sticky top-4 left-4 z-30 px-6 pt-4 pb-0">
+            <button
+              onClick={toggleSidebar}
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#121212]/95 backdrop-blur-md hover:bg-[#1C1C1C] text-white border border-[#2E2E2E] hover:border-[#FF5500]/50 rounded-xl shadow-2xl transition-all text-xs font-bold cursor-pointer group"
+              title="Show sidebar"
+            >
+              <PanelLeftOpen className="w-4 h-4 text-[#FF5500] group-hover:scale-110 transition-transform" />
+              <span>Show Sidebar</span>
+            </button>
+          </div>
+        )}
         {children}
       </main>
     </div>
