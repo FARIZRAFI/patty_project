@@ -42,7 +42,7 @@ export const CustomerHeader: React.FC<Props> = ({ onOpenLocationModal, onOpenMob
             <img
               src="/logo.jpeg"
               alt="Patty Project"
-              className="w-11 h-11 sm:w-14 sm:h-14 rounded-full object-cover border border-[#222222] shadow-md group-hover:scale-105 transition-transform"
+              className="w-11 h-11 sm:w-14 sm:h-14 rounded-full object-cover group-hover:scale-105 transition-transform"
             />
           </Link>
         </div>

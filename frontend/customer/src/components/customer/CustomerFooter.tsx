@@ -15,7 +15,7 @@ export const CustomerFooter: React.FC = () => {
               <img
                 src="/logo.jpeg"
                 alt="Patty Project"
-                className="w-12 h-12 rounded-full object-cover border border-[#2A2A2A] shadow-md group-hover:scale-105 transition-transform"
+                className="w-12 h-12 rounded-full object-cover group-hover:scale-105 transition-transform"
               />
               <div>
                 <span className="text-base font-black text-white tracking-widest uppercase block font-hero">
