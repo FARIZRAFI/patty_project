@@ -41,7 +41,10 @@ export interface Product {
   sku: string;
   short_description?: string;
   full_description?: string;
+  allergens?: string;
+  ingredients?: string[];
   image_url?: string;
+  images?: string[];
   base_price: number;
   compare_at_price?: number;
   rating: number;
@@ -51,6 +54,7 @@ export interface Product {
   has_service_charge: boolean;
   vat_category: string;
   is_active: boolean;
+  is_available?: boolean;
   modifiers: ProductModifier[];
   stock_quantity?: number;
 }

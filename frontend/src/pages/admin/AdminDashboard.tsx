@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ArrowLeft, Download, Calendar, Plus, Trash2, AlertTriangle, ExternalLink } from 'lucide-react';
 import { api } from '../../api/client';
 import { Branch, Order } from '../../types';
+import { useAuthStore } from '../../store/authStore';
 import { AdminCreateBranchModal } from './AdminCreateBranchModal';
 
 export const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -20,7 +24,11 @@ export const AdminDashboard: React.FC = () => {
   const fetchBranches = async () => {
     try {
       const data: Branch[] = await api.get('/branches');
-      setBranches(data);
+      let filtered = data || [];
+      if (user?.role === 'BRANCH_ADMIN' && user.branch_ids && user.branch_ids.length > 0) {
+        filtered = filtered.filter((b) => user.branch_ids.includes(b.id));
+      }
+      setBranches(filtered);
     } catch (err) {
       console.error(err);
     } finally {
@@ -39,15 +47,28 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleConfirmDeleteBranch = async () => {
-    if (!branchToDelete) return;
+    if (!branchToDelete || user?.role !== 'SUPER_ADMIN') return;
     setDeleting(true);
+    const targetId = branchToDelete.id;
     try {
-      await api.delete(`/branches/${branchToDelete.id}`);
+      await api.delete(`/branches/${targetId}`);
+      setBranches((prev) => prev.filter((b) => b.id !== targetId));
       setBranchToDelete(null);
       fetchBranches();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete branch:', err);
-      alert('Failed to delete branch. Please try again.');
+      const errMsg = err?.message || err?.detail || '';
+      const isAuthErr =
+        errMsg.toLowerCase().includes('authenticated') ||
+        errMsg.toLowerCase().includes('permission') ||
+        errMsg.toLowerCase().includes('credential');
+
+      if (isAuthErr) {
+        alert('Session expired or unauthorized. Please log in with an administrator account.');
+        navigate('/admin/login');
+      } else {
+        alert(errMsg || 'Failed to delete branch. Please try again.');
+      }
     } finally {
       setDeleting(false);
     }
@@ -59,15 +80,19 @@ export const AdminDashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#F5F5F5] tracking-tight">Dashboard</h1>
-          <p className="text-sm text-[#A1A1AA] font-normal mt-1">View and manage orders for each branch.</p>
+          <p className="text-sm text-[#A1A1AA] font-normal mt-1">
+            {user?.role === 'BRANCH_ADMIN' ? 'View and manage orders for your assigned branch.' : 'View and manage orders for each branch.'}
+          </p>
         </div>
-        <button
-          onClick={() => setShowCreateBranchModal(true)}
-          className="h-10 px-4 bg-[#FF5A00] hover:bg-[#E84F00] text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create Branch</span>
-        </button>
+        {user?.role === 'SUPER_ADMIN' && (
+          <button
+            onClick={() => setShowCreateBranchModal(true)}
+            className="h-10 px-4 bg-[#FF5A00] hover:bg-[#E84F00] text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create Branch</span>
+          </button>
+        )}
       </div>
 
       {/* Main Branch Summary Table */}
@@ -130,14 +155,16 @@ export const AdminDashboard: React.FC = () => {
                       <td className="px-5 py-3 text-center text-[#F59E0B] font-semibold">{b.code === 'LC' ? 30 : 20}</td>
                       <td className="px-5 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => setBranchToDelete(b)}
-                            title="Delete Branch"
-                            aria-label="Delete branch"
-                            className="w-8 h-8 rounded-lg bg-[#151515] border border-[#242424] text-[#71717A] hover:text-[#EF4444] hover:border-[#EF4444]/40 hover:bg-[#EF4444]/10 flex items-center justify-center transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {user?.role === 'SUPER_ADMIN' && (
+                            <button
+                              onClick={() => setBranchToDelete(b)}
+                              title="Delete Branch"
+                              aria-label="Delete branch"
+                              className="w-8 h-8 rounded-lg bg-[#151515] border border-[#242424] text-[#71717A] hover:text-[#EF4444] hover:border-[#EF4444]/40 hover:bg-[#EF4444]/10 flex items-center justify-center transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleSelectBranch(b)}
                             title="View Branch Orders"

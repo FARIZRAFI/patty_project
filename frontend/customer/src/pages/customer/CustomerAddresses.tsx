@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, Briefcase, Heart, Plus, Edit2, Trash2, MapPin, CheckCircle, X, AlertCircle } from 'lucide-react';
 import { api } from '../../api/client';
@@ -28,15 +28,7 @@ export const CustomerAddresses: React.FC = () => {
   const [isDefault, setIsDefault] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    fetchAddresses();
-  }, [user]);
-
-  const fetchAddresses = async () => {
+  const fetchAddresses = useCallback(async () => {
     setLoading(true);
     try {
       const data = await api.get<CustomerAddress[]>('/addresses');
@@ -46,7 +38,15 @@ export const CustomerAddresses: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchAddresses();
+  }, [user, navigate, fetchAddresses]);
 
   const openAddModal = () => {
     setEditingAddress(null);

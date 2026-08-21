@@ -4,7 +4,8 @@ from app.models import (
     User, UserRole, CustomerAddress,
     Branch, BranchUser,
     Category, Product, ProductModifier, Inventory,
-    Order, OrderItem, OrderStatusHistory, OrderStatus, OrderType, PaymentStatus,
+    Order, OrderItem, OrderStatusHistory, OrderStatus, OrderType,
+    Payment, PaymentStatus, PaymentProvider,
     LoyaltyAccount, LoyaltyTransaction, LoyaltyReward,
     Coupon, Printer
 )
@@ -15,7 +16,27 @@ def seed_db():
     
     # Check if database is already seeded
     if db.query(User).filter(User.email == "admin@pattyproject.co.uk").first():
-        print("Database already seeded.")
+        # Backfill payments and align 0.00 delivery fee for existing orders
+        orders = db.query(Order).all()
+        for ord in orders:
+            if ord.delivery_fee != 0.0:
+                ord.delivery_fee = 0.0
+                ord.total_amount = round(max(0.0, ord.subtotal - ord.discount_amount + 0.0 + ord.service_fee), 2)
+            
+            # Ensure payment record exists
+            if not ord.payments:
+                pm = Payment(
+                    order_id=ord.id,
+                    provider=PaymentProvider.MOCK,
+                    transaction_id=ord.payment_transaction_id or f"TXN_{ord.id[:8].upper()}",
+                    amount=ord.total_amount,
+                    currency="GBP",
+                    status=PaymentStatus.PAID if ord.payment_status == "PAID" else PaymentStatus.PENDING,
+                    payment_method_type="CARD"
+                )
+                db.add(pm)
+        db.commit()
+        print("Database already seeded. Verified payments and £0.00 delivery fees.")
         db.close()
         return
 
@@ -71,86 +92,84 @@ def seed_db():
     db.add_all([customer, customer2])
     db.flush()
 
-    # Customer Addresses matching UI design
-    address1 = CustomerAddress(
+    # 4. Create Saved Delivery Addresses for Customers
+    addr1 = CustomerAddress(
         user_id=customer.id,
-        label="Home",
-        address_line1="21 Baker Street, Marylebone",
-        address_line2="",
+        door_number="123",
+        address_line1="Baker Street",
+        address_line2="Flat 4B",
         city="London",
         postcode="NW1 6XE",
-        phone="+44 7700 900123",
+        label="Home",
         is_default=True
     )
-    address2 = CustomerAddress(
+    addr2 = CustomerAddress(
         user_id=customer.id,
+        door_number="45",
+        address_line1="Oxford Street",
+        address_line2="",
+        city="London",
+        postcode="W1D 2DZ",
         label="Work",
-        address_line1="Patty Project Office, 12 Food Court",
-        address_line2="King's Cross",
-        city="London",
-        postcode="N1C 4AG",
-        phone="+44 7700 900456",
         is_default=False
     )
-    address3 = CustomerAddress(
-        user_id=customer.id,
-        label="Other",
-        address_line1="Flat 5, 88 Brook Green",
-        address_line2="Hammersmith",
-        city="London",
-        postcode="W6 7BJ",
-        phone="+44 7700 900789",
-        is_default=False
-    )
-    db.add_all([address1, address2, address3])
+    db.add_all([addr1, addr2])
 
-    # Loyalty Account for Customers
-    loyalty_acc = LoyaltyAccount(
-        user_id=customer.id,
-        available_points=1250,
-        lifetime_points=2450,
-        tier="SILVER"
-    )
-    loyalty_acc2 = LoyaltyAccount(
-        user_id=customer2.id,
-        available_points=1250,
-        lifetime_points=2450,
-        tier="SILVER"
-    )
-    db.add_all([loyalty_acc, loyalty_acc2])
-
-    # 4. Create Initial UK Branches
+    # 5. Create UK Branches
     branch_central = Branch(
-        code="LC",
-        name="London - Central",
-        address_line1="45 Camden High Street",
-        postcode="NW1 7JE",
+        name="Patty Project - Central London",
+        code="PP-LDN-01",
+        address="10-12 Russell Street, Covent Garden, London",
         city="London",
-        latitude=51.5360,
-        longitude=-0.1420,
-        phone="+44 20 7417 5211",
-        delivery_enabled=True,
-        collection_enabled=True,
+        postcode="WC2B 5HZ",
+        phone="+44 20 7123 4567",
+        email="central@pattyproject.co.uk",
+        latitude=51.5126,
+        longitude=-0.1215,
+        is_active=True,
         ordering_enabled=True,
-        delivery_radius_miles=2.0,
-        opening_hours={"monday": {"open": "10:00", "close": "23:00"}, "tuesday": {"open": "10:00", "close": "23:00"}, "wednesday": {"open": "10:00", "close": "23:00"}, "thursday": {"open": "10:00", "close": "23:00"}, "friday": {"open": "10:00", "close": "00:00"}, "saturday": {"open": "10:00", "close": "00:00"}, "sunday": {"open": "10:00", "close": "22:00"}},
-        is_active=True
+        opening_time="11:00",
+        closing_time="23:00",
+        operating_hours={
+            "monday": {"open": "11:00", "close": "23:00"},
+            "tuesday": {"open": "11:00", "close": "23:00"},
+            "wednesday": {"open": "11:00", "close": "23:00"},
+            "thursday": {"open": "11:00", "close": "23:00"},
+            "friday": {"open": "11:00", "close": "00:00"},
+            "saturday": {"open": "11:00", "close": "00:00"},
+            "sunday": {"open": "12:00", "close": "22:00"}
+        },
+        delivery_policy="FREE Delivery up to 2 miles from this location.",
+        service_areas=["WC1", "WC2", "W1", "EC1", "EC2", "EC4", "SE1"],
+        busy_mode=False
     )
+
     branch_westfield = Branch(
-        code="LW",
-        name="London - Westfield",
-        address_line1="Ariel Way, Shepherd's Bush",
-        postcode="W12 7GF",
+        name="Patty Project - Westfield Stratford",
+        code="PP-LDN-02",
+        address="The Arcade, Westfield Stratford City, London",
         city="London",
-        latitude=51.5074,
-        longitude=-0.2217,
-        phone="+44 20 8749 8899",
-        delivery_enabled=True,
-        collection_enabled=True,
+        postcode="E20 1EQ",
+        phone="+44 20 8987 6543",
+        email="westfield@pattyproject.co.uk",
+        latitude=51.5434,
+        longitude=-0.0072,
+        is_active=True,
         ordering_enabled=True,
-        delivery_radius_miles=3.0,
-        opening_hours={"monday": {"open": "11:00", "close": "22:00"}, "tuesday": {"open": "11:00", "close": "22:00"}, "wednesday": {"open": "11:00", "close": "22:00"}, "thursday": {"open": "11:00", "close": "22:00"}, "friday": {"open": "11:00", "close": "23:00"}, "saturday": {"open": "11:00", "close": "23:00"}, "sunday": {"open": "11:00", "close": "21:00"}},
-        is_active=True
+        opening_time="11:30",
+        closing_time="22:30",
+        operating_hours={
+            "monday": {"open": "11:30", "close": "22:30"},
+            "tuesday": {"open": "11:30", "close": "22:30"},
+            "wednesday": {"open": "11:30", "close": "22:30"},
+            "thursday": {"open": "11:30", "close": "22:30"},
+            "friday": {"open": "11:30", "close": "23:30"},
+            "saturday": {"open": "11:30", "close": "23:30"},
+            "sunday": {"open": "12:00", "close": "21:30"}
+        },
+        delivery_policy="FREE Delivery up to 2 miles from this location.",
+        service_areas=["E20", "E15", "E7", "E9", "E13"],
+        busy_mode=False
     )
     db.add_all([branch_central, branch_westfield])
     db.flush()
@@ -158,145 +177,139 @@ def seed_db():
     # Assign branch admins
     db.add_all([
         BranchUser(user_id=central_admin.id, branch_id=branch_central.id),
-        BranchUser(user_id=westfield_admin.id, branch_id=branch_westfield.id),
+        BranchUser(user_id=westfield_admin.id, branch_id=branch_westfield.id)
     ])
 
-    # 5. Create Categories
-    cat_burgers = Category(name="Burgers", slug="burgers", icon="hamburger", display_order=1)
-    cat_chicken = Category(name="Chicken", slug="chicken", icon="drumstick", display_order=2)
-    cat_sides = Category(name="Sides", slug="sides", icon="fries", display_order=3)
-    cat_extras = Category(name="Extras", slug="extras", icon="plus", display_order=4)
-    cat_dips = Category(name="Dips", slug="dips", icon="sauce", display_order=5)
-    cat_drinks = Category(name="Drinks", slug="drinks", icon="cup", display_order=6)
-    db.add_all([cat_burgers, cat_chicken, cat_sides, cat_extras, cat_dips, cat_drinks])
+    # 6. Create Menu Categories
+    cat_burgers = Category(name="Gourmet Burgers", description="Handcrafted artisanal patties smashed to perfection", display_order=1)
+    cat_chicken = Category(name="Crispy Chicken", description="Double-dredged buttermilk fried chicken", display_order=2)
+    cat_sides = Category(name="Loaded Sides", description="Skin-on fries, loaded tots, and onion rings", display_order=3)
+    cat_shakes = Category(name="Craft Shakes", description="Thick milkshakes blended with real gelato", display_order=4)
+    cat_drinks = Category(name="Drinks", description="Cold sodas, craft brews, and mocktails", display_order=5)
+    cat_sauces = Category(name="House Dips", description="Signature secret sauces and dressings", display_order=6)
+    db.add_all([cat_burgers, cat_chicken, cat_sides, cat_shakes, cat_drinks, cat_sauces])
     db.flush()
 
-    # 6. Create Products
+    # 7. Create Products
     p1 = Product(
         category_id=cat_burgers.id,
-        name="Mc Project",
-        sku="BURG001",
-        short_description="Double beef, double American cheese, burger sauce, lettuce, onion & gherkins.",
-        full_description="A premium double smash beef burger made with 100% British beef, fresh lettuce, sliced tomatoes, onions, pickles, cheddar cheese and our signature Patty sauce served in a toasted brioche bun.",
-        image_url="/placeholder-burger.svg",
-        base_price=8.95,
-        rating=4.7,
-        reviews_count=312,
-        is_bestseller=True
+        name="Classic Beef Burger",
+        description="Dry-aged prime beef patty, American cheddar, crispy lettuce, tomato, pickles & signature Patty sauce in toasted brioche.",
+        base_price=8.99,
+        image_url="/images/products/classic-burger.jpg",
+        is_active=True,
+        is_featured=True,
+        calories=680,
+        dietary_tags=["Halal"]
     )
     p2 = Product(
         category_id=cat_burgers.id,
-        name="Outlaw Project",
-        sku="BURG002",
-        short_description="Smoky BBQ beef patty, smoked bacon, crispy onion rings & melted cheddar.",
-        full_description="Juicy beef patty topped with smoked streaky bacon, melted American cheese, beer-battered onion rings and house BBQ sauce.",
-        image_url="/placeholder-burger.svg",
-        base_price=8.95,
-        rating=4.6,
-        reviews_count=189,
-        is_bestseller=True
+        name="Double Patty Smash",
+        description="Two 3.5oz dry-aged beef patties smashed ultra-crispy, double American cheese, caramelized onions & smoky mayo.",
+        base_price=11.95,
+        image_url="/images/products/double-smash.jpg",
+        is_active=True,
+        is_featured=True,
+        calories=920,
+        dietary_tags=["Halal"]
     )
     p3 = Product(
-        category_id=cat_burgers.id,
-        name="Pastrami Burger",
-        sku="BURG003",
-        short_description="Beef patty loaded with cured pastrami, Swiss cheese & yellow mustard.",
-        full_description="Artisanal smash burger topped with sliced cured brisket pastrami, melted Swiss cheese, gherkin relish and spicy mustard.",
-        image_url="/placeholder-burger.svg",
-        base_price=8.95,
-        rating=4.6,
-        reviews_count=145,
-        is_bestseller=True
+        category_id=cat_chicken.id,
+        name="Spicy Nashville Chicken",
+        description="Buttermilk fried chicken breast dipped in Nashville hot oil, topped with sweet slaw, dill pickles & garlic aioli.",
+        base_price=9.45,
+        image_url="/images/products/nashville-chicken.jpg",
+        is_active=True,
+        is_featured=True,
+        calories=750,
+        dietary_tags=["Halal", "Spicy"]
     )
     p4 = Product(
-        category_id=cat_chicken.id,
-        name="Fried Chicken Sando",
-        sku="CHIK001",
-        short_description="Crispy buttermilk fried chicken breast, spicy mayo & dill pickle slaw.",
-        full_description="Hand-breaded buttermilk fried chicken fillet served with chipotle mayo, house pickles and crunchy cabbage slaw in a brioche bun.",
-        image_url="/placeholder-burger.svg",
-        base_price=8.45,
-        rating=4.6,
-        reviews_count=210,
-        is_bestseller=True
+        category_id=cat_burgers.id,
+        name="Truffle Mushroom Burger",
+        description="Beef patty topped with Swiss cheese, sautéed garlic butter mushrooms and rich black truffle mayo.",
+        base_price=10.95,
+        image_url="/images/products/truffle-burger.jpg",
+        is_active=True,
+        is_featured=False,
+        calories=810,
+        dietary_tags=["Halal"]
     )
     p5 = Product(
-        category_id=cat_burgers.id,
-        name="Halloumi Burger",
-        sku="BURG004",
-        short_description="Grilled halloumi, roasted red pepper, sweet chili jam & rocket.",
-        full_description="Thick-cut grilled Cyprus halloumi cheese with fire-roasted peppers, sweet chili relish, fresh rocket and garlic mayo in a brioche bun.",
-        image_url="/placeholder-burger.svg",
-        base_price=8.45,
-        rating=4.5,
-        reviews_count=165,
-        is_bestseller=True
+        category_id=cat_sides.id,
+        name="French Fries (Regular)",
+        description="Crispy golden skin-on fries seasoned with sea salt and rosemary dust.",
+        base_price=2.49,
+        image_url="/images/products/fries.jpg",
+        is_active=True,
+        is_featured=False,
+        calories=380,
+        dietary_tags=["Vegan", "Vegetarian", "Halal"]
     )
     p6 = Product(
         category_id=cat_sides.id,
-        name="Loaded Fries",
-        sku="FRIES002",
-        short_description="Fries topped with cheese sauce, crispy bacon bits & jalapeños.",
-        full_description="Skin-on fries smothered in warm cheddar cheese sauce, crispy smoked bacon pieces, chopped jalapeños and green onion.",
-        image_url="/placeholder-burger.svg",
+        name="Loaded Cheesy Bacon Fries",
+        description="Fries smothered in warm cheese sauce, crispy beef bacon bits and diced jalapeños.",
         base_price=6.45,
-        rating=4.5,
-        reviews_count=178,
-        is_bestseller=True
+        image_url="/images/products/loaded-fries.jpg",
+        is_active=True,
+        is_featured=True,
+        calories=620,
+        dietary_tags=["Halal"]
     )
     p7 = Product(
         category_id=cat_drinks.id,
-        name="Coca Cola 330ml",
-        sku="DRINK001",
-        short_description="Chilled original taste Coca-Cola can.",
-        full_description="Classic ice-cold Coca Cola 330ml can.",
-        image_url="/placeholder-burger.svg",
-        base_price=1.50,
-        rating=4.9,
-        reviews_count=500,
-        is_bestseller=False
+        name="Coca Cola 500ml",
+        description="Chilled 500ml Coca-Cola bottle.",
+        base_price=1.59,
+        image_url="/images/products/coke.jpg",
+        is_active=True,
+        is_featured=False,
+        calories=140,
+        dietary_tags=["Halal"]
     )
     db.add_all([p1, p2, p3, p4, p5, p6, p7])
     db.flush()
 
-    # Product Modifiers (Add-ons)
+    # 8. Modifiers for Products
     db.add_all([
-        ProductModifier(product_id=p1.id, name="Extra Beef Patty", price=2.00),
-        ProductModifier(product_id=p1.id, name="Bacon", price=1.50),
-        ProductModifier(product_id=p1.id, name="Jalapeños", price=0.80),
-        ProductModifier(product_id=p1.id, name="Extra Cheese", price=0.80),
-        ProductModifier(product_id=p2.id, name="Extra Beef Patty", price=2.00),
-        ProductModifier(product_id=p2.id, name="Bacon", price=1.50),
-        ProductModifier(product_id=p2.id, name="Jalapeños", price=0.80),
+        ProductModifier(product_id=p1.id, name="Extra Cheddar Slice", price=0.80, is_active=True),
+        ProductModifier(product_id=p1.id, name="Crispy Beef Bacon", price=1.50, is_active=True),
+        ProductModifier(product_id=p1.id, name="Jalapeño Slices", price=0.50, is_active=True),
+        ProductModifier(product_id=p2.id, name="Extra Beef Patty", price=3.00, is_active=True),
+        ProductModifier(product_id=p2.id, name="Fried Egg", price=1.20, is_active=True),
+        ProductModifier(product_id=p3.id, name="Extra Hot Sauce", price=0.50, is_active=True)
     ])
 
-    # Branch Inventory
-    for prod in [p1, p2, p3, p4, p5, p6, p7]:
-        db.add(Inventory(branch_id=branch_central.id, product_id=prod.id, stock_quantity=100))
-        db.add(Inventory(branch_id=branch_westfield.id, product_id=prod.id, stock_quantity=80))
+    # 9. Loyalty Accounts
+    loyalty_c1 = LoyaltyAccount(user_id=customer.id, available_points=450, lifetime_points=1200, tier="SILVER")
+    loyalty_c2 = LoyaltyAccount(user_id=customer2.id, available_points=210, lifetime_points=500, tier="BRONZE")
+    db.add_all([loyalty_c1, loyalty_c2])
+    db.flush()
 
-    # 7. Create Coupons
-    db.add_all([
-        Coupon(code="WELCOME10", name="Welcome Offer", coupon_type="PERCENTAGE", discount_value=10.0, min_order_value=15.0, usage_limit=1000, used_count=432),
-        Coupon(code="BURGER20", name="Burger Bonanza", coupon_type="PERCENTAGE", discount_value=20.0, min_order_value=20.0, usage_limit=500, used_count=278),
-        Coupon(code="FREESHIP", name="Free Shipping", coupon_type="FREE_SHIPPING", discount_value=0.0, min_order_value=10.0, usage_limit=9999, used_count=1245),
-        Coupon(code="FLAT15", name="Flat 15 Off", coupon_type="FIXED_AMOUNT", discount_value=15.0, min_order_value=50.0, usage_limit=300, used_count=103),
-    ])
+    # Loyalty Rewards
+    r1 = LoyaltyReward(title="Free Regular Fries", points_required=150, reward_type="FREE_ITEM", product_id=p5.id, is_active=True)
+    r2 = LoyaltyReward(title="£5 Voucher", points_required=300, reward_type="DISCOUNT_FIXED", discount_value=5.00, is_active=True)
+    r3 = LoyaltyReward(title="Free Classic Burger", points_required=500, reward_type="FREE_ITEM", product_id=p1.id, is_active=True)
+    db.add_all([r1, r2, r3])
 
-    # 8. Create Loyalty Rewards
-    db.add_all([
-        LoyaltyReward(title="Free Classic French Fries", description="Get regular crispy fries absolutely free!", points_required=500, reward_type="FREE_ITEM", product_id=p5.id),
-        LoyaltyReward(title="20% Off Entire Order", description="Get 20% off discount code for your next order!", points_required=1000, reward_type="DISCOUNT_AMOUNT", discount_value=20.0),
-        LoyaltyReward(title="Free Gourmet Patty Burger", description="Get any classic burger free on your next meal!", points_required=1500, reward_type="FREE_ITEM", product_id=p1.id),
-        LoyaltyReward(title="Free Family Feast Box", description="Get a free Family Feast Box reward at 2500 points!", points_required=2500, reward_type="FREE_ITEM"),
-    ])
+    # 10. Promotional Coupons
+    cpn1 = Coupon(code="PATTY10", description="10% off entire order", coupon_type="PERCENTAGE", discount_value=10.0, min_order_value=15.0, is_active=True)
+    cpn2 = Coupon(code="BURGER5", description="£5 off orders over £25", coupon_type="FIXED_AMOUNT", discount_value=5.0, min_order_value=25.0, is_active=True)
+    cpn3 = Coupon(code="FREESHIP", description="Free delivery promotion", coupon_type="FREE_SHIPPING", discount_value=0.0, min_order_value=0.0, is_active=True)
+    db.add_all([cpn1, cpn2, cpn3])
 
-    # 9. Create Sample Orders
+    # 11. Printers
+    printer1 = Printer(branch_id=branch_central.id, name="Central Kitchen Receipt Printer", ip_address="192.168.1.201", port=9100, is_active=True)
+    printer2 = Printer(branch_id=branch_westfield.id, name="Westfield Kitchen Printer", ip_address="192.168.1.202", port=9100, is_active=True)
+    db.add_all([printer1, printer2])
+
+    # 12. Seed Real Sample Orders
     order_incoming = Order(
         order_number="#PP1260",
         customer_id=customer.id,
-        customer_name="Sarah Jenkins",
-        customer_email="sarah.j@email.com",
+        customer_name="John Smith",
+        customer_email="john.smith@email.com",
         customer_phone="+44 7987 654321",
         branch_id=branch_central.id,
         order_type=OrderType.DELIVERY,
@@ -307,16 +320,16 @@ def seed_db():
             "postcode": "NW1 5RT"
         },
         delivery_instructions="Ring the bell on arrival",
-        subtotal=22.40,
-        delivery_fee=2.50,
+        subtotal=20.47,
+        delivery_fee=0.0,
         service_fee=0.99,
         discount_amount=0.0,
-        vat_amount=4.48,
-        total_amount=25.89,
+        vat_amount=4.09,
+        total_amount=21.46,
         payment_method="Online (Card)",
         payment_status=PaymentStatus.PAID,
         payment_transaction_id="TXN9823412345",
-        points_earned=220
+        points_earned=204
     )
 
     order_accepted = Order(
@@ -328,16 +341,16 @@ def seed_db():
         branch_id=branch_westfield.id,
         order_type=OrderType.COLLECTION,
         status=OrderStatus.ACCEPTED,
-        subtotal=18.50,
+        subtotal=18.40,
         delivery_fee=0.0,
         service_fee=0.99,
         discount_amount=0.0,
-        vat_amount=3.70,
-        total_amount=19.49,
+        vat_amount=3.68,
+        total_amount=19.39,
         payment_method="Online (Card)",
         payment_status=PaymentStatus.PAID,
         payment_transaction_id="TXN5544332211",
-        points_earned=180
+        points_earned=184
     )
 
     sample_order = Order(
@@ -356,16 +369,16 @@ def seed_db():
             "postcode": "W1U 6EP"
         },
         delivery_instructions="Leave at the door",
-        subtotal=14.66,
-        delivery_fee=2.49,
+        subtotal=15.46,
+        delivery_fee=0.0,
         service_fee=0.99,
         discount_amount=0.0,
-        vat_amount=2.93,
-        total_amount=24.98,
+        vat_amount=3.09,
+        total_amount=16.45,
         payment_method="Online (Card)",
         payment_status=PaymentStatus.PAID,
         payment_transaction_id="TXN4789632145",
-        points_earned=150
+        points_earned=154
     )
 
     order_ready = Order(
@@ -383,16 +396,16 @@ def seed_db():
             "postcode": "W1D 1BS"
         },
         delivery_instructions="Deliver to front desk",
-        subtotal=31.00,
-        delivery_fee=2.50,
+        subtotal=23.88,
+        delivery_fee=0.0,
         service_fee=0.99,
         discount_amount=0.0,
-        vat_amount=6.20,
-        total_amount=34.49,
+        vat_amount=4.78,
+        total_amount=24.87,
         payment_method="Online (Card)",
         payment_status=PaymentStatus.PAID,
         payment_transaction_id="TXN7788990011",
-        points_earned=310
+        points_earned=238
     )
 
     order_delivered = Order(
@@ -410,20 +423,29 @@ def seed_db():
             "postcode": "W12 8QE"
         },
         delivery_instructions="Call when outside",
-        subtotal=19.95,
-        delivery_fee=2.50,
+        subtotal=13.44,
+        delivery_fee=0.0,
         service_fee=0.99,
         discount_amount=0.0,
-        vat_amount=3.99,
-        total_amount=23.44,
+        vat_amount=2.69,
+        total_amount=14.43,
         payment_method="Online (Card)",
         payment_status=PaymentStatus.PAID,
         payment_transaction_id="TXN6655443322",
-        points_earned=200
+        points_earned=134
     )
 
     db.add_all([order_incoming, order_accepted, sample_order, order_ready, order_delivered])
     db.flush()
+
+    # Associated payment ledger entries for seeded orders
+    db.add_all([
+        Payment(order_id=order_incoming.id, provider=PaymentProvider.MOCK, transaction_id=order_incoming.payment_transaction_id, amount=order_incoming.total_amount, currency="GBP", status=PaymentStatus.PAID, payment_method_type="CARD"),
+        Payment(order_id=order_accepted.id, provider=PaymentProvider.MOCK, transaction_id=order_accepted.payment_transaction_id, amount=order_accepted.total_amount, currency="GBP", status=PaymentStatus.PAID, payment_method_type="CARD"),
+        Payment(order_id=sample_order.id, provider=PaymentProvider.MOCK, transaction_id=sample_order.payment_transaction_id, amount=sample_order.total_amount, currency="GBP", status=PaymentStatus.PAID, payment_method_type="CARD"),
+        Payment(order_id=order_ready.id, provider=PaymentProvider.MOCK, transaction_id=order_ready.payment_transaction_id, amount=order_ready.total_amount, currency="GBP", status=PaymentStatus.PAID, payment_method_type="CARD"),
+        Payment(order_id=order_delivered.id, provider=PaymentProvider.MOCK, transaction_id=order_delivered.payment_transaction_id, amount=order_delivered.total_amount, currency="GBP", status=PaymentStatus.PAID, payment_method_type="CARD")
+    ])
 
     db.add_all([
         OrderItem(order_id=order_incoming.id, product_id=p1.id, product_name="Classic Beef Burger", quantity=2, unit_price=8.99, total_price=17.98),

@@ -14,7 +14,6 @@ export const AdminCreateBranchModal: React.FC<Props> = ({ onClose, onSuccess }) 
   const [postcode, setPostcode] = useState('');
   const [city, setCity] = useState('London');
   const [phone, setPhone] = useState('020 7946 0000');
-  const [deliveryRadius, setDeliveryRadius] = useState('2.0');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,9 +34,7 @@ export const AdminCreateBranchModal: React.FC<Props> = ({ onClose, onSuccess }) 
         postcode: postcode.trim(),
         city: city.trim() || 'London',
         phone: phone.trim() || '020 7946 0000',
-        latitude: 51.5074,
-        longitude: -0.1278,
-        delivery_radius_miles: parseFloat(deliveryRadius || '2.0'),
+        delivery_radius_miles: 2.0,
         delivery_enabled: true,
         collection_enabled: true,
         ordering_enabled: true,
@@ -45,7 +42,7 @@ export const AdminCreateBranchModal: React.FC<Props> = ({ onClose, onSuccess }) 
       onSuccess();
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || 'Failed to create branch. Please try again.');
+      setError(err?.message || 'Failed to create branch. Please check address/postcode.');
     } finally {
       setLoading(false);
     }
@@ -159,11 +156,11 @@ export const AdminCreateBranchModal: React.FC<Props> = ({ onClose, onSuccess }) 
               <label className="block text-[11px] font-semibold text-[#A1A1AA] uppercase mb-1">Delivery Radius (Miles)</label>
               <input
                 type="number"
-                step="0.5"
-                value={deliveryRadius}
-                onChange={(e) => setDeliveryRadius(e.target.value)}
-                className="w-full h-10 bg-[#151515] border border-[#242424] focus:border-[#FF5A00] rounded-lg px-3 text-xs text-[#F5F5F5] focus:outline-none transition-colors"
+                value="2.0"
+                disabled
+                className="w-full h-10 bg-[#151515] border border-[#242424] opacity-70 cursor-not-allowed rounded-lg px-3 text-xs text-[#A1A1AA] focus:outline-none"
               />
+              <p className="text-[10px] text-[#71717A] mt-0.5">Fixed at 2.0 miles (Business Rule)</p>
             </div>
           </div>
 

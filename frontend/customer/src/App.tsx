@@ -24,6 +24,7 @@ import { SelectLocationPage } from './pages/customer/SelectLocationPage';
 import { CustomerLogin } from './pages/customer/CustomerLogin';
 import { CustomerOffers } from './pages/customer/CustomerOffers';
 import { CustomerContact } from './pages/customer/CustomerContact';
+import { MockCheckoutPage } from './pages/customer/MockCheckoutPage';
 
 const queryClient = new QueryClient();
 
@@ -33,8 +34,9 @@ const CustomerLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
   const location = useLocation();
 
-  const orderingPortalPages = ['/order', '/cart', '/checkout', '/orders', '/profile', '/addresses', '/payment-methods'];
-  const isOrderingPortal = orderingPortalPages.includes(location.pathname) || location.pathname.startsWith('/order-confirmation');
+  const orderingPortalPages = ['/order', '/cart', '/checkout', '/orders', '/profile', '/addresses', '/payment-methods', '/mock-checkout'];
+  const isOrderingPortal = orderingPortalPages.includes(location.pathname) || location.pathname.startsWith('/order-confirmation') || location.pathname.startsWith('/mock-checkout');
+
 
   const hideBottomNavPages = ['/', '/contact', '/select-location', '/menu'];
   const showBottomNav = !hideBottomNavPages.includes(location.pathname);
@@ -85,6 +87,8 @@ export function App() {
           <Route path="/product/:productId" element={<CustomerLayoutShell><ProductDetailPage /></CustomerLayoutShell>} />
           <Route path="/cart" element={<CustomerLayoutShell><CustomerCart /></CustomerLayoutShell>} />
           <Route path="/checkout" element={<CustomerLayoutShell><CustomerCheckout /></CustomerLayoutShell>} />
+          <Route path="/mock-checkout/:transactionId" element={<CustomerLayoutShell><MockCheckoutPage /></CustomerLayoutShell>} />
+          <Route path="/mock-checkout" element={<CustomerLayoutShell><MockCheckoutPage /></CustomerLayoutShell>} />
           <Route path="/order-confirmation/:orderNumber" element={<CustomerLayoutShell><OrderConfirmation /></CustomerLayoutShell>} />
           <Route path="/loyalty" element={<CustomerLayoutShell><CustomerLoyaltyPortal /></CustomerLayoutShell>} />
           <Route path="/orders" element={<CustomerLayoutShell><CustomerOrderHistory /></CustomerLayoutShell>} />

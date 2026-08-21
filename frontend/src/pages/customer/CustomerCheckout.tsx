@@ -121,12 +121,23 @@ export const CustomerCheckout: React.FC = () => {
 
   const handleCreateOrderAndPay = async () => {
     setError('');
+    if (items.length === 0) {
+      setError('Your cart is empty. Please add items before checking out.');
+      return;
+    }
+    if (!selectedBranch) {
+      setError('Please select a branch before checking out.');
+      return;
+    }
+
+    const outOfStockItem = items.find((i) => i.product.is_available === false || (i.product.stock_quantity !== undefined && i.product.stock_quantity <= 0));
+    if (outOfStockItem) {
+      setError(`'${outOfStockItem.product.name}' is currently out of stock at ${selectedBranch.name}. Please remove it from your cart before proceeding.`);
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!selectedBranch) {
-        throw new Error('Please select a branch before checking out.');
-      }
-
       // Step 1: Create Order
       const fullPhone = `+44 ${phoneDigits}`;
       const orderPayload = {
@@ -149,31 +160,41 @@ export const CustomerCheckout: React.FC = () => {
 
       const newOrder: any = await api.post('/orders', orderPayload);
 
-      // Step 2: Create Payment Session
-      await api.post(`/payments/create-session?order_id=${newOrder.id}`, {});
+      // Step 2: Create Payment Session with Canonical Contract
+      const idempotencyKey = `idemp_${newOrder.id}_${Date.now()}`;
+      const sessionRes: any = await api.post(
+        '/payments/create-session',
+        {
+          order_id: newOrder.id,
+          payment_method_type: 'CARD'
+        },
+        {
+          headers: {
+            'Idempotency-Key': idempotencyKey
+          }
+        }
+      );
 
-      // Simulate payment webhook success callback for mock adapter
-      await api.post('/payments/webhook', {
-        order_id: newOrder.id,
-        status: 'SUCCESS'
-      });
-
-      clearCart();
-      navigate(`/order-confirmation/${newOrder.order_number}`);
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail || err?.detail || err;
-      if (typeof detail === 'object' && detail?.code === 'DELIVERY_OUTSIDE_RADIUS') {
-        setError('WE PROVIDE DELIVERY UP TO 2 MILES ONLY. Please collect your food from the nearest store.');
-        setOrderType('COLLECTION');
-      } else if (typeof detail === 'string') {
-        setError(detail);
+      if (sessionRes && sessionRes.transaction_id) {
+        navigate(`/mock-checkout/${sessionRes.transaction_id}`);
+      } else if (sessionRes && sessionRes.payment_url) {
+        navigate(sessionRes.payment_url);
       } else {
-        setError(err.message || 'Payment failed. Please try again.');
+        clearCart();
+        navigate(`/order-confirmation/${newOrder.order_number}`);
+      }
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.detail?.message || err?.response?.data?.detail || err?.message || '';
+      if (typeof errMsg === 'string' && (errMsg.includes('2 MILES') || errMsg.includes('RADIUS') || errMsg.includes('DELIVERY_OUTSIDE_RADIUS'))) {
+        setError('WE PROVIDE DELIVERY UP TO 2 MILES ONLY. Please choose Collection or enter an address within 2 miles.');
+      } else {
+        setError(typeof errMsg === 'string' && errMsg ? errMsg : 'Payment initiation failed. Please try again.');
       }
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="w-full max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-20 text-[#F5F5F5]">
@@ -709,8 +730,9 @@ export const CustomerCheckout: React.FC = () => {
                 className="w-full h-12 bg-[#FF5A00] hover:bg-[#E84F00] text-white text-sm font-semibold rounded-lg shadow-lg transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
               >
                 <Lock className="w-4 h-4" />
-                <span>{loading ? 'Processing...' : `Pay Securely • £${total.toFixed(2)}`}</span>
+                <span>{loading ? 'Creating Payment...' : `Pay Securely • £${total.toFixed(2)}`}</span>
               </button>
+
 
               <button
                 onClick={() => setStep(1)}

@@ -1,42 +1,46 @@
-import React, { useEffect, useState } from 'react';
-import { Search, Bell, Calendar, RefreshCw, Eye, Truck, ShoppingBag, ChefHat, ClipboardCheck, XCircle, CheckCircle, ArrowRight, Inbox } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Search, RefreshCw, Eye, Truck, ShoppingBag, ChefHat, ClipboardCheck, CheckCircle, ArrowRight, Inbox } from 'lucide-react';
 import { api } from '../../api/client';
 import { Order, Branch } from '../../types';
+import { useAuthStore } from '../../store/authStore';
 import { AdminOrderDetailsModal } from './AdminOrderDetailsModal';
 
 export const AdminOrderBoard: React.FC = () => {
+  const { user } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [filterBranch, setFilterBranch] = useState('ALL');
+  const [filterBranch, setFilterBranch] = useState(
+    user?.role === 'BRANCH_ADMIN' && user.branch_ids && user.branch_ids[0] ? user.branch_ids[0] : 'ALL'
+  );
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBranches();
-  }, []);
-
-  useEffect(() => {
-    fetchOrders();
-  }, [filterBranch, filterStatus]);
-
-  const fetchBranches = async () => {
+  const fetchBranches = useCallback(async () => {
     try {
       const data: Branch[] = await api.get('/branches');
-      setBranches(data || []);
+      let filtered = data || [];
+      if (user?.role === 'BRANCH_ADMIN' && user.branch_ids && user.branch_ids.length > 0) {
+        filtered = filtered.filter((b) => user.branch_ids.includes(b.id));
+      }
+      setBranches(filtered);
     } catch (err) {
       console.error('Failed to load branches', err);
     }
-  };
+  }, [user]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
       let url = '/orders';
       const params = [];
-      if (filterBranch !== 'ALL') params.push(`branch_id=${filterBranch}`);
+      if (user?.role === 'BRANCH_ADMIN' && user.branch_ids && user.branch_ids[0]) {
+        params.push(`branch_id=${user.branch_ids[0]}`);
+      } else if (filterBranch !== 'ALL') {
+        params.push(`branch_id=${filterBranch}`);
+      }
       if (filterStatus !== 'ALL') params.push(`status=${filterStatus}`);
       if (params.length) url += `?${params.join('&')}`;
 
@@ -47,7 +51,15 @@ export const AdminOrderBoard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterBranch, filterStatus, user]);
+
+  useEffect(() => {
+    fetchBranches();
+  }, [fetchBranches]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleQuickStatusChange = async (orderId: string, newStatus: string) => {
     setUpdatingOrderId(orderId);
@@ -244,9 +256,10 @@ export const AdminOrderBoard: React.FC = () => {
           <select
             value={filterBranch}
             onChange={(e) => setFilterBranch(e.target.value)}
-            className="h-10 bg-[#151515] border border-[#242424] focus:border-[#FF5A00] text-[#F5F5F5] text-xs font-semibold px-3.5 rounded-lg focus:outline-none cursor-pointer transition-colors"
+            disabled={user?.role === 'BRANCH_ADMIN'}
+            className="h-10 bg-[#151515] border border-[#242424] focus:border-[#FF5A00] text-[#F5F5F5] text-xs font-semibold px-3.5 rounded-lg focus:outline-none cursor-pointer transition-colors disabled:opacity-75 disabled:cursor-not-allowed"
           >
-            <option value="ALL">All Branches</option>
+            {user?.role !== 'BRANCH_ADMIN' && <option value="ALL">All Branches</option>}
             {branches.map((b) => (
               <option key={b.id} value={b.id}>{b.name}</option>
             ))}

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Search, SlidersHorizontal, ChevronRight, Package, Clock, MapPin, Building2, X, AlertCircle } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronRight, Package, X, AlertCircle } from 'lucide-react';
 import { api } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 
@@ -44,15 +44,7 @@ export const CustomerOrderHistory: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'ALL' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED'>('ALL');
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    fetchMyOrders();
-  }, [user]);
-
-  const fetchMyOrders = async () => {
+  const fetchMyOrders = useCallback(async () => {
     setLoading(true);
     try {
       const data = await api.get<OrderData[]>('/orders/my-orders');
@@ -62,7 +54,15 @@ export const CustomerOrderHistory: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchMyOrders();
+  }, [user, navigate, fetchMyOrders]);
 
   // Filter Orders based on Tab and Search query
   const filteredOrders = orders.filter((order) => {

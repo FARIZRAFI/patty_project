@@ -1,45 +1,79 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Star, ChevronRight, Leaf, Bike, Award, Mail, MapPin, Phone, Wheat, Sparkles } from 'lucide-react';
+import {
+  Star,
+  ChevronRight,
+  Mail,
+  MapPin,
+  Phone,
+  Wheat,
+  Sparkles,
+  LayoutGrid,
+  Beef,
+  Drumstick,
+  UtensilsCrossed,
+  Flame,
+  CupSoda,
+  Plus
+} from 'lucide-react';
 import { api } from '../../api/client';
-import { Product } from '../../types';
-import { ProductDetailModal } from './ProductDetailModal';
+import { Product, Category } from '../../types';
 import { useCartStore } from '../../store/cartStore';
 import bannerImg from '../../assets/banner.png';
 
 export const CustomerHome: React.FC = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const navigate = useNavigate();
   const { selectedBranch, setOrderType } = useCartStore();
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    fetchData();
+  }, [selectedBranch?.id]);
 
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     try {
-      const data: Product[] = await api.get('/products');
-      setProducts(data);
+      const branchParam = selectedBranch?.id ? `?branch_id=${selectedBranch.id}` : '';
+      const [catData, prodData] = await Promise.all([
+        api.get<Category[]>('/categories'),
+        api.get<Product[]>(`/products${branchParam}`)
+      ]);
+      setCategories(catData);
+      setProducts(prodData);
     } catch (err) {
       console.error(err);
     }
   };
 
-  // 6 Best Seller items to match exact desktop screenshot row
-  const bestSellers = [
-    { id: '1', name: 'Mc Project', price: 8.95, rating: 4.7, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80' },
-    { id: '2', name: 'Outlaw Project', price: 8.95, rating: 4.6, image: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=600&q=80' },
-    { id: '3', name: 'Pastrami Burger', price: 8.95, rating: 4.6, image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=600&q=80' },
-    { id: '4', name: 'Fried Chicken Sando', price: 8.45, rating: 4.6, image: 'https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?auto=format&fit=crop&w=600&q=80' },
-    { id: '5', name: 'Halloumi Burger', price: 8.45, rating: 4.5, image: 'https://images.unsplash.com/photo-1520072959219-c595dc870360?auto=format&fit=crop&w=600&q=80' },
-    { id: '6', name: 'Loaded Fries', price: 6.45, rating: 4.5, image: 'https://images.unsplash.com/photo-1585109649139-366815a0d713?auto=format&fit=crop&w=600&q=80' },
-  ];
+  const filteredProducts = products.filter((p) => {
+    if (selectedCategory === 'ALL') return true;
+    const cat = categories.find((c) => c.id === selectedCategory);
+    return p.category_id === selectedCategory || (cat && (p as any).category?.slug === cat.slug);
+  });
+
+  const categoryIcons: Record<string, React.ReactNode> = {
+    all: <LayoutGrid className="w-4 h-4" />,
+    burgers: <Beef className="w-4 h-4" />,
+    chicken: <Drumstick className="w-4 h-4" />,
+    sides: <UtensilsCrossed className="w-4 h-4" />,
+    extras: <Plus className="w-4 h-4" />,
+    dips: <Flame className="w-4 h-4" />,
+    drinks: <CupSoda className="w-4 h-4" />,
+  };
+
+  const getCategoryIcon = (slugName: string, isSelected: boolean) => {
+    const key = slugName.toLowerCase();
+    const iconElement = categoryIcons[key] || <UtensilsCrossed className="w-4 h-4" />;
+    return React.cloneElement(iconElement as React.ReactElement<{ className?: string }>, {
+      className: `w-4 h-4 ${isSelected ? 'text-white' : 'text-[#71717A]'}`
+    });
+  };
 
   return (
     <div className="pb-0 space-y-16">
       {/* Hero Section matching exact reference image */}
-      <section className="relative bg-black min-h-[calc(100vh-65px)] lg:h-[calc(100vh-65px)] flex flex-col justify-between overflow-hidden px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-6 lg:pt-8 pb-6 lg:pb-8">
+      <section id="hero" className="relative bg-black min-h-[calc(100vh-65px)] lg:h-[calc(100vh-65px)] flex flex-col justify-between overflow-hidden px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-6 lg:pt-8 pb-6 lg:pb-8">
         
         {/* Full-bleed right side burger background image overlay */}
         <div className="absolute inset-y-0 right-0 w-full lg:w-[62%] xl:w-[66%] pointer-events-none overflow-hidden flex items-center justify-end z-0">
@@ -175,154 +209,128 @@ export const CustomerHome: React.FC = () => {
         />
       </section>
 
-      {/* SIGNATURE BURGERS & TODAY'S OFFERS SECTION */}
+      {/* OUR MENU SHOWCASE & TODAY'S OFFERS SECTION */}
       <section className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-12 -mt-10 sm:-mt-14 lg:-mt-20">
-        {/* SIGNATURE BURGERS SHOWCASE SECTION (Full Width & Large Scale matching reference poster) */}
-        <div className="space-y-10 sm:space-y-12">
+        {/* DYNAMIC MENU SHOWCASE (Category Bar + Cards, No Price, No Cart Button, Click Scrolls to Hero) */}
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-widest uppercase font-hero">
-              SIGNATURE BURGERS
-            </h2>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-widest uppercase font-hero">
+                OUR MENU
+              </h2>
+              <p className="text-xs text-[#A1A1AA] mt-1 font-normal">
+                Burgers, sides and more. Made fresh to order.
+              </p>
+            </div>
             <Link to="/order" className="text-xs sm:text-sm font-extrabold text-[#FF5500] hover:underline flex items-center gap-1 uppercase tracking-wider">
-              <span>VIEW ALL</span>
+              <span>VIEW FULL MENU</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
 
-          {/* Top Row: 3 Signature Burgers spanning full width */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10 xl:gap-14">
-            {/* 1. MC PROJECT */}
-            <div
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent"
+          {/* Horizontal Category Navigation Bar */}
+          <div className="flex items-center gap-2.5 pb-2 overflow-x-auto scrollbar-none scroll-smooth">
+            <button
+              onClick={() => setSelectedCategory('ALL')}
+              className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors shrink-0 cursor-pointer border ${
+                selectedCategory === 'ALL'
+                  ? 'bg-[#FF5A00] text-white border-[#FF5A00] shadow-sm'
+                  : 'bg-[#0D0D0D] text-[#A1A1AA] border-[#242424] hover:text-[#F5F5F5] hover:bg-[#151515] hover:border-[#333333]'
+              }`}
             >
-              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
-                <img
-                  src="/burger_mc_project.jpg"
-                  alt="MC Project"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="space-y-2.5">
-                <h3 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-serif font-black tracking-wide uppercase leading-tight">
-                  <span className="text-white">MC </span>
-                  <br className="hidden sm:inline" />
-                  <span className="text-[#FF5500]">PROJECT</span>
-                </h3>
-                <p className="text-xs sm:text-sm lg:text-base text-[#D1D5DB] font-medium leading-relaxed max-w-[280px] sm:max-w-[320px]">
-                  Double beef, double American cheese, burger sauce, lettuce, onion & gherkins
-                </p>
-              </div>
-            </div>
+              {getCategoryIcon('all', selectedCategory === 'ALL')}
+              <span>All Items</span>
+            </button>
 
-            {/* 2. OUTLAW PROJECT */}
-            <div
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent"
-            >
-              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
-                <img
-                  src="/burger_outlaw_project.jpg"
-                  alt="Outlaw Project"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="space-y-2.5">
-                <h3 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-serif font-black tracking-wide uppercase leading-tight">
-                  <span className="text-white">OUTLAW </span>
-                  <br className="hidden sm:inline" />
-                  <span className="text-[#FF5500]">PROJECT</span>
-                </h3>
-                <p className="text-xs sm:text-sm lg:text-base text-[#D1D5DB] font-medium leading-relaxed max-w-[280px] sm:max-w-[320px]">
-                  Double beef, mature cheddar, bacon, smoky BBQ, jalapeños & jalapeño mayo
-                </p>
-              </div>
-            </div>
-
-            {/* 3. PASTRAMI BURGER */}
-            <div
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent"
-            >
-              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
-                <img
-                  src="/burger_pastrami_burger.jpg"
-                  alt="Pastrami Burger"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="space-y-2.5">
-                <h3 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-serif font-black tracking-wide uppercase leading-tight">
-                  <span className="text-white">PASTRAMI </span>
-                  <br className="hidden sm:inline" />
-                  <span className="text-[#FF5500]">BURGER</span>
-                </h3>
-                <p className="text-xs sm:text-sm lg:text-base text-[#D1D5DB] font-medium leading-relaxed max-w-[280px] sm:max-w-[320px]">
-                  Pastrami, Emmental, Russian sauce & pickled gherkins
-                </p>
-              </div>
-            </div>
+            {categories.map((c) => {
+              const isSelected = selectedCategory === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCategory(c.id)}
+                  className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors shrink-0 cursor-pointer border ${
+                    isSelected
+                      ? 'bg-[#FF5A00] text-white border-[#FF5A00] shadow-sm'
+                      : 'bg-[#0D0D0D] text-[#A1A1AA] border-[#242424] hover:text-[#F5F5F5] hover:bg-[#151515] hover:border-[#333333]'
+                  }`}
+                >
+                  {getCategoryIcon(c.slug || c.name, isSelected)}
+                  <span>{c.name}</span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Bottom Row: 2 Signature Burgers Large Centered */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 xl:gap-28 max-w-5xl lg:max-w-6xl mx-auto pt-4 sm:pt-8">
-            {/* 4. FRIED CHICKEN SANDO */}
-            <div
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent"
-            >
-              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
-                <img
-                  src="/burger_fried_chicken_sando.jpg"
-                  alt="Fried Chicken Sando"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="space-y-2.5">
-                <h3 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-serif font-black tracking-wide uppercase leading-tight">
-                  <span className="text-white">FRIED CHICKEN </span>
-                  <br className="hidden sm:inline" />
-                  <span className="text-[#FF5500]">SANDO</span>
-                </h3>
-                <p className="text-xs sm:text-sm lg:text-base text-[#D1D5DB] font-medium leading-relaxed max-w-[280px] sm:max-w-[320px]">
-                  Buffalo buttermilk chicken, coleslaw, lime mayo & gherkins
-                </p>
-              </div>
-            </div>
+          {/* Responsive Product Grid (NO Price, NO Cart Button, Click scrolls to Hero) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+            {filteredProducts.map((p) => {
+              const displayImg = p.image_url || '/placeholder-burger.svg';
+              const isOutOfStock = p.is_available === false || (p.stock_quantity !== undefined && p.stock_quantity <= 0);
+              const isVeg = p.name.includes('[VEG]');
+              const isVegan = p.name.includes('[VEGAN]');
+              const cleanName = p.name.replace('[VEG]', '').replace('[VEGAN]', '').trim();
 
-            {/* 5. HALLOUMI BURGER */}
-            <div
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent"
-            >
-              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
-                <img
-                  src="/burger_halloumi_burger.jpg"
-                  alt="Halloumi Burger"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="space-y-2.5">
-                <h3 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-serif font-black tracking-wide uppercase leading-tight">
-                  <span className="text-white">HALLOUMI </span>
-                  <br className="hidden sm:inline" />
-                  <span className="text-[#FF5500]">BURGER</span>
-                </h3>
-                <p className="text-xs sm:text-sm lg:text-base text-[#D1D5DB] font-medium leading-relaxed max-w-[280px] sm:max-w-[320px]">
-                  Halloumi, guacamole, tomato, pickled onion & hot-honey ketchup
-                </p>
-              </div>
-            </div>
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className={`bg-[#0D0D0D] border rounded-[10px] overflow-hidden transition-all duration-200 group flex flex-col justify-between cursor-pointer ${
+                    isOutOfStock
+                      ? 'border-[#242424] opacity-85 hover:border-[#3F3F46]'
+                      : 'border-[#242424] hover:border-[#FF5A00]/50'
+                  }`}
+                >
+                  {/* Product Image Area (4/3 Aspect Ratio) */}
+                  <div className="w-full aspect-[4/3] overflow-hidden bg-[#111111] relative border-b border-[#1C1C1C]">
+                    <img
+                      src={displayImg}
+                      alt={p.name}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/placeholder-burger.svg';
+                      }}
+                      className={`w-full h-full object-cover transition-transform duration-200 ${
+                        isOutOfStock ? 'brightness-75' : 'group-hover:scale-[1.02]'
+                      }`}
+                    />
+
+                    {/* Dietary Badges */}
+                    {(isVeg || isVegan) && (
+                      <span className="absolute top-2.5 left-2.5 bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E] text-[10px] font-semibold px-2 py-0.5 rounded-md backdrop-blur-sm z-10">
+                        {isVegan ? 'VEGAN' : 'VEG'}
+                      </span>
+                    )}
+
+                    {/* OUT OF STOCK Badge Overlay on Image */}
+                    {isOutOfStock && (
+                      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-2 z-10">
+                        <span className="bg-[#18181B]/95 text-[#EF4444] border border-[#EF4444]/40 text-[11px] sm:text-xs font-black px-3 py-1.5 rounded-lg tracking-wider uppercase shadow-xl">
+                          Out of Stock
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Product Information Area (Name & Stars only - NO Price & NO Cart Button) */}
+                  <div className="p-4 space-y-2.5 bg-[#0D0D0D]">
+                    <h3 className={`font-semibold text-sm leading-snug line-clamp-2 min-h-[40px] ${isOutOfStock ? 'text-[#A1A1AA]' : 'text-[#F5F5F5]'}`}>
+                      {cleanName}
+                    </h3>
+
+                    {/* Rating Row only */}
+                    <div className="flex items-center gap-1 pt-2 border-t border-[#1C1C1C]">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className={`w-3.5 h-3.5 ${isOutOfStock ? 'fill-[#52525B] text-[#52525B]' : 'fill-[#FF5A00] text-[#FF5A00]'}`} />
+                      ))}
+                      <span className="text-xs text-[#71717A] font-normal ml-1">
+                        {p.rating || 4.7}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -512,14 +520,6 @@ export const CustomerHome: React.FC = () => {
           </div>
         </div>
       </footer>
-
-      {/* Product Detail Modal */}
-      {selectedProduct && (
-        <ProductDetailModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
     </div>
   );
 };

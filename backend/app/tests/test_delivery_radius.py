@@ -28,99 +28,10 @@ from app.services.branch_service import (
     MAX_DELIVERY_RADIUS_MILES
 )
 
-# In-memory SQLite Database for Fast, Isolated Testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+from app.tests.db import engine, TestingSessionLocal, client
 
-def override_get_db():
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
-app.dependency_overrides[get_db] = override_get_db
-client = TestClient(app)
 
-@pytest.fixture(autouse=True)
-def setup_test_db():
-    Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
-
-    # Clear all data
-    for table in reversed(Base.metadata.sorted_tables):
-        db.execute(table.delete())
-    db.commit()
-
-    # Seed test branches
-    # Branch 1: Camden (Lat: 51.5360, Lng: -0.1420)
-    camden = Branch(
-        id="branch-camden-001",
-        code="LC",
-        name="London - Camden",
-        address_line1="45 Camden High Street",
-        postcode="NW1 7JE",
-        city="London",
-        latitude=51.5360,
-        longitude=-0.1420,
-        phone="+44 20 7417 5211",
-        delivery_enabled=True,
-        collection_enabled=True,
-        ordering_enabled=True,
-        delivery_radius_miles=2.0,
-        is_active=True
-    )
-
-    # Branch 2: Westfield (Lat: 51.5074, Lng: -0.2217)
-    westfield = Branch(
-        id="branch-westfield-002",
-        code="LW",
-        name="London - Westfield",
-        address_line1="Ariel Way, Shepherd's Bush",
-        postcode="W12 7GF",
-        city="London",
-        latitude=51.5074,
-        longitude=-0.2217,
-        phone="+44 20 8749 8899",
-        delivery_enabled=True,
-        collection_enabled=True,
-        ordering_enabled=True,
-        delivery_radius_miles=2.0,
-        is_active=True
-    )
-
-    # Category and Product for order tests
-    cat = Category(
-        id="cat-burgers",
-        name="Burgers",
-        slug="burgers",
-        icon="hamburger",
-        display_order=1
-    )
-
-    prod = Product(
-        id="prod-mc-project",
-        category_id="cat-burgers",
-        name="Mc Project",
-        sku="BURG001",
-        base_price=8.95,
-        rating=4.8,
-        reviews_count=100,
-        is_active=True
-    )
-
-    db.add_all([camden, westfield, cat, prod])
-    db.commit()
-    db.close()
-
-    yield
-
-    Base.metadata.drop_all(bind=engine)
 
 
 # --------------------------------------------------------------------------
@@ -350,3 +261,144 @@ def test_backend_order_collection_outside_radius_allowed():
     assert res.status_code == 200
     order_data = res.json()
     assert order_data["order_type"] == "COLLECTION"
+
+
+# --------------------------------------------------------------------------
+# PHASE 2 REGRESSION TESTS: Production Bug Specific Scenarios
+# --------------------------------------------------------------------------
+
+def test_customer_shepherds_bush_assigns_westfield_regression():
+    """
+    REGRESSION TEST (Production Bug Phase 1/Phase 2):
+    Customer location at Lat 51.492306, Lng -0.224556 MUST recommend London - Westfield (1.05 miles away)
+    and NOT London - Camden/Central (4.66 miles away).
+    """
+    db = TestingSessionLocal()
+    lat = 51.492306
+    lng = -0.224556
+    result = find_nearest_eligible_branch(db, lat=lat, lng=lng)
+
+    assert result["is_delivery_eligible"] is True
+    assert result["status"] == "SUCCESS"
+    assert result["assigned_branch"] is not None
+    assert result["assigned_branch"].id == "branch-westfield-002"
+    assert result["assigned_branch"].name == "London - Westfield"
+    assert 1.0 <= result["distance_miles"] <= 1.1
+    db.close()
+
+
+def test_customer_location_transition_central_to_westfield():
+    """
+    REGRESSION TEST:
+    Moving from Location A (Camden NW1, close to Camden branch) to Location B (Shepherd's Bush W12, close to Westfield)
+    must transition the recommended branch from Camden to Westfield.
+    """
+    db = TestingSessionLocal()
+    # Location A: close to Camden branch
+    loc_a_lat, loc_a_lng = 51.5400, -0.1420
+    res_a = find_nearest_eligible_branch(db, lat=loc_a_lat, lng=loc_a_lng)
+    assert res_a["is_delivery_eligible"] is True
+    assert res_a["assigned_branch"].id == "branch-camden-001"
+
+    # Location B: close to Westfield (Shepherd's Bush / Hammersmith border)
+    loc_b_lat, loc_b_lng = 51.492306, -0.224556
+    res_b = find_nearest_eligible_branch(db, lat=loc_b_lat, lng=loc_b_lng)
+    assert res_b["is_delivery_eligible"] is True
+    assert res_b["assigned_branch"].id == "branch-westfield-002"
+    db.close()
+
+
+def test_collection_order_rejects_inactive_or_disabled_branch():
+    """
+    REGRESSION TEST:
+    Collection order to an inactive branch or collection_disabled branch must be rejected with 400.
+    """
+    db = TestingSessionLocal()
+    # Create a temporary active branch with collection_enabled=False
+    disabled_b = Branch(
+        id="branch-no-collection-test",
+        code="NC",
+        name="No Collection Branch",
+        address_line1="123 No Pickup Rd",
+        postcode="NW1 1AA",
+        latitude=51.5360,
+        longitude=-0.1420,
+        delivery_enabled=True,
+        collection_enabled=False,
+        ordering_enabled=True,
+        is_active=True
+    )
+    db.add(disabled_b)
+    db.commit()
+
+    order_payload = {
+        "branch_id": "branch-no-collection-test",
+        "order_type": "COLLECTION",
+        "customer_name": "Dave Pickup",
+        "customer_email": "dave@example.com",
+        "customer_phone": "+44 7123456789",
+        "items": [{"product_id": "prod-mc-project", "quantity": 1, "selected_modifiers": []}]
+    }
+    res = client.post("/api/v1/orders", json=order_payload)
+    assert res.status_code == 400
+    assert "Collection is not currently available" in res.json()["detail"]
+
+    # Inactive branch rejection
+    order_payload_inactive = {
+        "branch_id": "branch-non-existent-id",
+        "order_type": "COLLECTION",
+        "customer_name": "Dave Pickup",
+        "customer_email": "dave@example.com",
+        "customer_phone": "+44 7123456789",
+        "items": [{"product_id": "prod-mc-project", "quantity": 1, "selected_modifiers": []}]
+    }
+    res_inactive = client.post("/api/v1/orders", json=order_payload_inactive)
+    assert res_inactive.status_code == 400
+
+    db.delete(disabled_b)
+    db.commit()
+    db.close()
+
+
+def test_delivery_order_rejects_delivery_disabled_branch():
+    """
+    REGRESSION TEST:
+    Delivery order to a branch with delivery_enabled=False must be rejected with 400.
+    """
+    db = TestingSessionLocal()
+    disabled_d = Branch(
+        id="branch-no-delivery-test",
+        code="ND",
+        name="No Delivery Branch",
+        address_line1="123 No Delivery Rd",
+        postcode="NW1 1AA",
+        latitude=51.5360,
+        longitude=-0.1420,
+        delivery_enabled=False,
+        collection_enabled=True,
+        ordering_enabled=True,
+        is_active=True
+    )
+    db.add(disabled_d)
+    db.commit()
+
+    order_payload = {
+        "branch_id": "branch-no-delivery-test",
+        "order_type": "DELIVERY",
+        "customer_name": "Eve Delivery",
+        "customer_email": "eve@example.com",
+        "customer_phone": "+44 7123456789",
+        "latitude": 51.5360,
+        "longitude": -0.1420,
+        "delivery_postcode": "NW1 1AA",
+        "delivery_address": {"address_line1": "123 High St", "city": "London", "postcode": "NW1 1AA"},
+        "items": [{"product_id": "prod-mc-project", "quantity": 1, "selected_modifiers": []}]
+    }
+    res = client.post("/api/v1/orders", json=order_payload)
+    assert res.status_code == 400
+    assert "Delivery is not currently available" in res.json()["detail"]
+
+    db.delete(disabled_d)
+    db.commit()
+    db.close()
+

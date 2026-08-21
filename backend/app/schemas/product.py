@@ -46,6 +46,8 @@ class ProductResponse(BaseModel):
     has_service_charge: bool
     vat_category: str
     is_active: bool
+    is_available: bool = True
+    stock_quantity: int = 100
     modifiers: List[ProductModifierResponse] = []
 
     class Config:
@@ -88,4 +90,32 @@ class ProductUpdateRequest(BaseModel):
     has_service_charge: Optional[bool] = None
     is_active: Optional[bool] = None
     modifiers: Optional[List[dict]] = None
+
+class InventoryResponse(BaseModel):
+    id: str
+    branch_id: str
+    product_id: str
+    product_name: str
+    product_sku: str
+    category_id: Optional[str] = None
+    category_name: Optional[str] = None
+    base_price: float
+    image_url: Optional[str] = None
+    stock_quantity: int
+    low_stock_threshold: int
+    is_available: bool
+
+    class Config:
+        from_attributes = True
+
+class InventoryUpdateRequest(BaseModel):
+    stock_quantity: Optional[int] = None
+    low_stock_threshold: Optional[int] = None
+    is_available: Optional[bool] = None
+
+class InventoryToggleRequest(BaseModel):
+    branch_id: str
+    product_id: str
+    is_available: Optional[bool] = None
+    stock_quantity: Optional[int] = None
 

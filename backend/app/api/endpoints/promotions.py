@@ -35,6 +35,9 @@ def validate_coupon(code: str = Query(...), subtotal: float = Query(...), db: Se
         "message": f"Applied {coupon.name} (-£{discount:.2f})"
     }
 
+from app.api.endpoints.auth import require_role
+from app.models.user import UserRole, User
+
 @router.get("/coupons", response_model=List[CouponResponse])
 @router.get("", response_model=List[CouponResponse])
 def get_coupons(db: Session = Depends(get_db)):
@@ -43,8 +46,12 @@ def get_coupons(db: Session = Depends(get_db)):
 
 @router.post("/coupons", response_model=CouponResponse)
 @router.post("", response_model=CouponResponse)
-def create_coupon(request: CouponCreateRequest, db: Session = Depends(get_db)):
-    """Create a new coupon."""
+def create_coupon(
+    request: CouponCreateRequest,
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN])),
+    db: Session = Depends(get_db)
+):
+    """Super Admin create a new coupon."""
     clean_code = request.code.strip().upper()
     existing = db.query(Coupon).filter(Coupon.code == clean_code, Coupon.is_active == True).first()
     if existing:
@@ -67,8 +74,12 @@ def create_coupon(request: CouponCreateRequest, db: Session = Depends(get_db)):
 
 @router.delete("/coupons/{coupon_id}")
 @router.delete("/{coupon_id}")
-def delete_coupon(coupon_id: str, db: Session = Depends(get_db)):
-    """Soft delete / deactivate a coupon."""
+def delete_coupon(
+    coupon_id: str,
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN])),
+    db: Session = Depends(get_db)
+):
+    """Super Admin soft delete / deactivate a coupon."""
     coupon = db.query(Coupon).filter(Coupon.id == coupon_id).first()
     if not coupon:
         raise HTTPException(status_code=404, detail="Coupon not found.")

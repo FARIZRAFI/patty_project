@@ -42,6 +42,7 @@ export interface Product {
   short_description?: string;
   full_description?: string;
   allergens?: string;
+  ingredients?: string[];
   image_url?: string;
   images?: string[];
   base_price: number;

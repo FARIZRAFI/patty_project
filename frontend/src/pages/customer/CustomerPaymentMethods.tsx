@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Plus, Edit2, Trash2, CreditCard, ChevronRight, X, AlertCircle, HelpCircle, ShieldCheck } from 'lucide-react';
 import { api } from '../../api/client';
@@ -26,15 +26,7 @@ export const CustomerPaymentMethods: React.FC = () => {
   const [isDefault, setIsDefault] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    fetchCards();
-  }, [user]);
-
-  const fetchCards = async () => {
+  const fetchCards = useCallback(async () => {
     setLoading(true);
     try {
       const data = await api.get<CustomerCard[]>('/payment-methods/cards');
@@ -44,7 +36,15 @@ export const CustomerPaymentMethods: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchCards();
+  }, [user, navigate, fetchCards]);
 
   const openAddModal = () => {
     setEditingCard(null);

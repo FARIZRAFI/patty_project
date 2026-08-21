@@ -8,7 +8,7 @@ interface CartState {
   nearestBranchForCollection: Branch | null;
   deliveryDistanceMiles: number | null;
   isDeliveryEligible: boolean;
-  userCoords: { lat: number; lng: number } | null;
+  userCoords: { lat: number; lng: number; accuracy?: number } | null;
   userPostcode: string | null;
   locationErrorMsg: string | null;
   couponCode: string | null;
@@ -22,10 +22,10 @@ interface CartState {
     isEligible?: boolean,
     nearestBranch?: Branch | null,
     locationMsg?: string | null,
-    coords?: { lat: number; lng: number } | null,
+    coords?: { lat: number; lng: number; accuracy?: number } | null,
     postcode?: string | null
   ) => void;
-  setUserCoords: (coords: { lat: number; lng: number } | null, postcode?: string | null) => void;
+  setUserCoords: (coords: { lat: number; lng: number; accuracy?: number } | null, postcode?: string | null) => void;
   setLocationErrorMsg: (msg: string | null) => void;
   setProductModalOpen: (open: boolean) => void;
   addItem: (product: Product, quantity: number, selectedModifiers: ProductModifier[]) => void;
@@ -41,11 +41,22 @@ interface CartState {
   getTotal: () => number;
 }
 
+const getInitialBranch = (): Branch | null => {
+  try {
+    const raw = localStorage.getItem('patty_selected_branch');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const initialBranch = getInitialBranch();
+
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   orderType: 'COLLECTION', // FAIL-CLOSED DEFAULT: Starts on COLLECTION until <= 2.0 miles is verified
-  selectedBranch: null,
-  nearestBranchForCollection: null,
+  selectedBranch: initialBranch,
+  nearestBranchForCollection: initialBranch,
   deliveryDistanceMiles: null,
   isDeliveryEligible: false,
   userCoords: null,
@@ -68,7 +79,15 @@ export const useCartStore = create<CartState>((set, get) => ({
   setSelectedBranch: (branch, distanceMiles, isEligible, nearestBranch, locationMsg, coords, postcode) => {
     const dist = distanceMiles ?? null;
     const eligible = Boolean(isEligible ?? (dist !== null && dist <= 2.0));
-    const effectiveBranch = eligible ? branch : (nearestBranch || branch);
+    const effectiveBranch = branch ?? nearestBranch ?? null;
+
+    try {
+      if (effectiveBranch) {
+        localStorage.setItem('patty_selected_branch', JSON.stringify(effectiveBranch));
+      } else {
+        localStorage.removeItem('patty_selected_branch');
+      }
+    } catch {}
 
     set({
       selectedBranch: effectiveBranch,
@@ -77,8 +96,8 @@ export const useCartStore = create<CartState>((set, get) => ({
       isDeliveryEligible: eligible,
       orderType: eligible ? get().orderType : 'COLLECTION', // Auto-switch to COLLECTION if outside 2 miles
       locationErrorMsg: locationMsg || (eligible ? null : 'WE PROVIDE DELIVERY UP TO 2 MILES ONLY'),
-      userCoords: coords ?? get().userCoords,
-      userPostcode: postcode ?? get().userPostcode
+      userCoords: coords !== undefined ? coords : get().userCoords,
+      userPostcode: postcode !== undefined ? postcode : get().userPostcode
     });
   },
 
@@ -89,6 +108,9 @@ export const useCartStore = create<CartState>((set, get) => ({
   setProductModalOpen: (open) => set({ isProductModalOpen: open }),
 
   addItem: (product, quantity, selectedModifiers) => {
+    const isOutOfStock = product.is_available === false || (product.stock_quantity !== undefined && product.stock_quantity <= 0);
+    if (isOutOfStock) return;
+
     const modCost = selectedModifiers.reduce((acc, m) => acc + m.price, 0);
     const unitPrice = product.base_price + modCost;
     const lineTotal = unitPrice * quantity;
@@ -132,10 +154,8 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   getDeliveryFee: () => {
-    const { orderType, items, couponCode, isDeliveryEligible, deliveryDistanceMiles } = get();
-    if (orderType === 'COLLECTION' || items.length === 0 || !isDeliveryEligible || (deliveryDistanceMiles !== null && deliveryDistanceMiles > 2.0)) return 0.0;
-    if (couponCode === 'FREESHIP') return 0.0;
-    return 2.50;
+    // Patty Project delivery is FREE (£0.00). 2-mile radius is purely an eligibility check.
+    return 0.0;
   },
 
   getServiceFee: () => {

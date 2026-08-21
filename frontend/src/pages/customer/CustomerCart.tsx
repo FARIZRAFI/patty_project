@@ -39,6 +39,10 @@ export const CustomerCart: React.FC = () => {
   const service = getServiceFee();
   const total = getTotal();
 
+  const hasOutOfStockItems = items.some(
+    (item) => item.product.is_available === false || (item.product.stock_quantity !== undefined && item.product.stock_quantity <= 0)
+  );
+
   return (
     <div className="w-full max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-20 text-[#F5F5F5]">
       {/* Header Bar */}
@@ -60,6 +64,12 @@ export const CustomerCart: React.FC = () => {
           <span>Continue Shopping</span>
         </Link>
       </div>
+
+      {hasOutOfStockItems && (
+        <div className="mb-6 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg p-3.5 text-xs text-[#EF4444] font-medium flex items-center gap-2">
+          <span>Some items in your cart are currently out of stock at this location. Please remove them before proceeding to checkout.</span>
+        </div>
+      )}
 
       {items.length === 0 ? (
         /* Empty Cart State */
@@ -88,28 +98,49 @@ export const CustomerCart: React.FC = () => {
           <div className="lg:col-span-7 space-y-3.5">
             {items.map((item, idx) => {
               const displayImg = item.product.image_url || '/placeholder-burger.svg';
+              const isItemOutOfStock = item.product.is_available === false || (item.product.stock_quantity !== undefined && item.product.stock_quantity <= 0);
 
               return (
                 <div
                   key={idx}
-                  className="bg-[#0D0D0D] border border-[#242424] hover:border-[#333333] rounded-[10px] p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors"
+                  className={`bg-[#0D0D0D] border rounded-[10px] p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors ${
+                    isItemOutOfStock ? 'border-[#EF4444]/40 bg-[#140808]' : 'border-[#242424] hover:border-[#333333]'
+                  }`}
                 >
                   {/* Product Image & Info Container */}
                   <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                    <img
-                      src={displayImg}
-                      alt={item.product.name}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = '/placeholder-burger.svg';
-                      }}
-                      className="w-20 h-20 object-cover rounded-lg border border-[#1C1C1C] shrink-0 bg-[#111111]"
-                    />
+                    <div className="relative shrink-0">
+                      <img
+                        src={displayImg}
+                        alt={item.product.name}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/placeholder-burger.svg';
+                        }}
+                        className={`w-20 h-20 object-cover rounded-lg border border-[#1C1C1C] bg-[#111111] ${
+                          isItemOutOfStock ? 'brightness-75' : ''
+                        }`}
+                      />
+                      {isItemOutOfStock && (
+                        <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                          <span className="text-[9px] font-black text-[#EF4444] bg-[#18181B]/90 px-1.5 py-0.5 rounded uppercase">
+                            Out of Stock
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Product Details & Selected Modifiers */}
                     <div className="min-w-0 space-y-1">
-                      <h3 className="font-semibold text-[#F5F5F5] text-base truncate">
-                        {item.product.name}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-[#F5F5F5] text-base truncate">
+                          {item.product.name}
+                        </h3>
+                        {isItemOutOfStock && (
+                          <span className="text-[10px] font-bold text-[#EF4444] bg-[#EF4444]/10 border border-[#EF4444]/30 px-2 py-0.5 rounded">
+                            Out of Stock
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs font-semibold text-[#FF5A00]">
                         £{item.product.base_price.toFixed(2)}
                       </p>
@@ -246,11 +277,16 @@ export const CustomerCart: React.FC = () => {
               </div>
 
               <button
+                disabled={hasOutOfStockItems}
                 onClick={() => navigate('/checkout')}
-                className="w-full h-12 bg-[#FF5A00] hover:bg-[#E84F00] text-white text-sm font-semibold rounded-lg shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
+                className={`w-full h-12 text-sm font-semibold rounded-lg shadow-lg transition-colors flex items-center justify-center gap-2 ${
+                  hasOutOfStockItems
+                    ? 'bg-[#27272A] text-[#71717A] cursor-not-allowed border border-[#3F3F46]'
+                    : 'bg-[#FF5A00] hover:bg-[#E84F00] text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50'
+                }`}
               >
-                <span>Proceed to checkout</span>
-                <ChevronRight className="w-4 h-4" />
+                <span>{hasOutOfStockItems ? 'Resolve Out of Stock Items' : 'Proceed to checkout'}</span>
+                {!hasOutOfStockItems && <ChevronRight className="w-4 h-4" />}
               </button>
             </div>
           </div>

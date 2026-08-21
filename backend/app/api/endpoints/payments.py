@@ -1,91 +1,286 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import List, Optional, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, Request, Header, Query
 from sqlalchemy.orm import Session
+from app.core.config import settings
 from app.core.database import get_db
-from app.models.order import Order, OrderStatus, PaymentStatus
-from app.services.payment_service import payment_provider
-from app.models.loyalty import LoyaltyAccount, LoyaltyTransaction
+from app.models.order import Order, OrderStatus, OrderType, PaymentStatus as OrderPaymentStatus
+from app.models.payment import Payment, PaymentStatus, PaymentProvider
+from app.models.branch import Branch
+from app.schemas.payment import (
+    PaymentResponse,
+    PaymentSessionCreateRequest,
+    PaymentSessionResponse,
+    PaymentRefundRequest,
+    PaymentWebhookPayload
+)
+from app.services.payment_service import (
+    payment_provider,
+    get_or_create_payment_for_order,
+    transition_payment_status,
+    process_payment_refund,
+    process_payment_event,
+    NormalizedPaymentEvent,
+    InvalidPaymentTransitionError
+)
+from app.services.branch_service import calculate_haversine_miles, MAX_DELIVERY_RADIUS_MILES
 
 router = APIRouter()
 
-@router.post("/create-session")
-async def create_payment_session(order_id: str, db: Session = Depends(get_db)):
-    """Initializes checkout session with pluggable Payment Provider."""
-    order = db.query(Order).filter(Order.id == order_id).first()
+
+def check_mock_gateway_allowed():
+    """Refuses execution if mock gateway is called in production environment."""
+    if settings.is_production and settings.PAYMENT_PROVIDER == "mock":
+        raise HTTPException(
+            status_code=403,
+            detail="Mock payment gateway is strictly disabled in production environments."
+        )
+
+
+@router.post("/create-session", response_model=PaymentSessionResponse)
+async def create_payment_session(
+    request_data: PaymentSessionCreateRequest,
+    idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db)
+):
+    """
+    Initializes payment session with provider-independent Payment domain.
+    Canonical contract:
+    POST /api/v1/payments/create-session
+    Headers:
+      Idempotency-Key: <key>
+    JSON Body:
+      {
+        "order_id": "<ORDER_ID>",
+        "payment_method_type": "CARD"
+      }
+    """
+    check_mock_gateway_allowed()
+
+    target_order_id = request_data.order_id
+    effective_idempotency_key = idempotency_key or request_data.idempotency_key
+
+    order = db.query(Order).filter(Order.id == target_order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    session_data = await payment_provider.create_payment_session(
-        order_id=order.id,
-        amount=order.total_amount,
-        currency="GBP",
-        customer_info={"name": order.customer_name, "email": order.customer_email}
+    # Protection: Cancelled order payment rejection
+    if order.status == OrderStatus.CANCELLED:
+        raise HTTPException(status_code=400, detail="Cannot initiate payment for a cancelled order.")
+
+    # Protection: Delivery radius validation
+    if order.order_type == OrderType.DELIVERY and order.delivery_address:
+        addr = order.delivery_address
+        lat = addr.get("latitude") if isinstance(addr, dict) else getattr(addr, "latitude", None)
+        lng = addr.get("longitude") if isinstance(addr, dict) else getattr(addr, "longitude", None)
+
+        if lat is not None and lng is not None:
+            branch = db.query(Branch).filter(Branch.id == order.branch_id).first()
+            if branch and branch.latitude is not None and branch.longitude is not None:
+                dist = calculate_haversine_miles(lat, lng, branch.latitude, branch.longitude)
+                if dist > (branch.delivery_radius_miles or MAX_DELIVERY_RADIUS_MILES):
+                    raise HTTPException(
+                        status_code=400,
+                        detail={
+                            "code": "DELIVERY_OUTSIDE_RADIUS",
+                            "message": "WE PROVIDE DELIVERY UP TO 2 MILES ONLY",
+                            "distance_miles": round(dist, 2),
+                            "max_radius_miles": branch.delivery_radius_miles or MAX_DELIVERY_RADIUS_MILES
+                        }
+                    )
+
+    # Protection: Already paid protection
+    if order.payment_status == OrderPaymentStatus.PAID:
+        existing_paid = db.query(Payment).filter(
+            Payment.order_id == order.id,
+            Payment.status == PaymentStatus.PAID
+        ).first()
+        if existing_paid:
+            return PaymentSessionResponse(
+                provider=existing_paid.provider,
+                order_id=order.id,
+                payment_id=existing_paid.id,
+                transaction_id=existing_paid.transaction_id or "ALREADY_PAID",
+                amount=existing_paid.amount,
+                currency=existing_paid.currency,
+                status=PaymentStatus.PAID,
+                client_secret=None,
+                payment_url=None
+            )
+
+    method_type = request_data.payment_method_type if request_data and request_data.payment_method_type else "CARD"
+
+    # Fetch or initialize the provider-independent payment ledger entry
+    payment = get_or_create_payment_for_order(
+        db=db,
+        order=order,
+        provider=PaymentProvider.MOCK,
+        idempotency_key=effective_idempotency_key,
+        payment_method_type=method_type
     )
 
-    order.payment_transaction_id = session_data.get("transaction_id")
-    db.commit()
+    session_data = await payment_provider.create_payment_session(
+        order_id=order.id,
+        amount=payment.amount,
+        currency=payment.currency,
+        customer_info={"name": order.customer_name, "email": order.customer_email},
+        idempotency_key=effective_idempotency_key
+    )
 
-    return session_data
+    if not payment.transaction_id:
+        payment.transaction_id = session_data.get("transaction_id")
+        order.payment_transaction_id = session_data.get("transaction_id")
+        db.commit()
+        db.refresh(payment)
+
+    final_tx_id = payment.transaction_id or session_data.get("transaction_id", "")
+    client_sec = session_data.get("client_secret") or f"sec_mock_{final_tx_id}"
+    pay_url = session_data.get("payment_url") or f"/mock-checkout/{final_tx_id}"
+
+    return PaymentSessionResponse(
+        provider=payment.provider,
+        order_id=order.id,
+        payment_id=payment.id,
+        transaction_id=final_tx_id,
+        amount=payment.amount,
+        currency=payment.currency,
+        status=payment.status,
+        client_secret=client_sec,
+        payment_url=pay_url
+    )
+
 
 @router.post("/webhook")
 async def payment_gateway_webhook(request: Request, db: Session = Depends(get_db)):
-    """Idempotent Webhook Callback endpoint for Pluggable Payment Gateway."""
+    """
+    Inbound provider webhook endpoint for server-to-server gateway callbacks.
+    Verifies gateway signature, normalizes event, and processes state lifecycle atomically.
+    """
+    check_mock_gateway_allowed()
+
     raw_body = await request.body()
     headers = dict(request.headers)
 
-    # Signature Validation
+    # Signature / authenticity validation
     is_valid = await payment_provider.verify_webhook_signature(headers, raw_body)
     if not is_valid:
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
 
-    payload = await request.json()
-    order_id = payload.get("order_id")
-    status_event = payload.get("status")  # e.g. "SUCCESS", "PAID"
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
 
-    if order_id:
-        order = db.query(Order).filter(Order.id == order_id).first()
-        if order and order.status in [OrderStatus.PENDING_PAYMENT, OrderStatus.INCOMING]:
-            order.status = OrderStatus.INCOMING
-            order.payment_status = PaymentStatus.PAID
+    # Normalize incoming gateway event
+    event = payment_provider.normalize_webhook_payload(headers=headers, payload=payload)
 
-            
-            # Award loyalty points if customer account exists (matched by customer_id or email)
-            from app.models.user import User
-            user = None
-            if order.customer_id:
-                user = db.query(User).filter(User.id == order.customer_id).first()
-            elif order.customer_email:
-                user = db.query(User).filter(User.email == order.customer_email.strip().lower()).first()
+    try:
+        result = process_payment_event(db=db, event=event)
+        return result
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except InvalidPaymentTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
 
-            if user:
-                loyalty = db.query(LoyaltyAccount).filter(LoyaltyAccount.user_id == user.id).first()
-                if not loyalty:
-                    loyalty = LoyaltyAccount(user_id=user.id, available_points=0, lifetime_points=0, tier="BRONZE")
-                    db.add(loyalty)
-                    db.flush()
 
-                pts = order.points_earned if order.points_earned and order.points_earned > 0 else int(order.total_amount * 10)
-                loyalty.available_points += pts
-                loyalty.lifetime_points += pts
+@router.post("/mock-simulate")
+async def mock_simulate_payment(request: Request, db: Session = Depends(get_db)):
+    """
+    Development-only simulation endpoint used exclusively by MockCheckoutPage.
+    Strictly blocked in production environments. Passes directly through process_payment_event.
+    """
+    check_mock_gateway_allowed()
 
-                # Auto-upgrade tier based on lifetime_points
-                if loyalty.lifetime_points >= 5000:
-                    loyalty.tier = "PLATINUM"
-                elif loyalty.lifetime_points >= 2500:
-                    loyalty.tier = "GOLD"
-                elif loyalty.lifetime_points >= 1000:
-                    loyalty.tier = "SILVER"
-                else:
-                    loyalty.tier = "BRONZE"
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
 
-                tx = LoyaltyTransaction(
-                    loyalty_account_id=loyalty.id,
-                    order_id=order.id,
-                    points=pts,
-                    transaction_type="EARNED",
-                    description=f"Points earned from Order {order.order_number}"
-                )
-                db.add(tx)
+    headers = dict(request.headers)
+    event = payment_provider.normalize_webhook_payload(headers=headers, payload=payload)
 
-            db.commit()
+    try:
+        result = process_payment_event(db=db, event=event)
+        return result
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except InvalidPaymentTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
 
-    return {"status": "SUCCESS", "message": "Webhook processed idempotently"}
+
+
+@router.get("/verify/{transaction_id}")
+def verify_transaction_status(transaction_id: str, db: Session = Depends(get_db)):
+    """
+    Retrieves authoritative status for mock checkout polling and confirmation.
+    """
+    check_mock_gateway_allowed()
+
+    payment = db.query(Payment).filter(Payment.transaction_id == transaction_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    order = db.query(Order).filter(Order.id == payment.order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Associated order not found")
+
+    return {
+        "payment_id": payment.id,
+        "transaction_id": payment.transaction_id,
+        "order_id": order.id,
+        "order_number": order.order_number,
+        "customer_name": order.customer_name,
+        "order_type": order.order_type,
+        "amount": payment.amount,
+        "currency": payment.currency,
+        "payment_status": payment.status,
+        "order_status": order.status,
+        "created_at": payment.created_at
+    }
+
+
+@router.get("/order/{order_id}", response_model=List[PaymentResponse])
+def get_order_payments(order_id: str, db: Session = Depends(get_db)):
+    """Retrieves all payment transactions and audit ledger for an order."""
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order.payments
+
+
+@router.get("/{payment_id}", response_model=PaymentResponse)
+def get_payment_details(payment_id: str, db: Session = Depends(get_db)):
+    """Fetches details of a specific payment transaction."""
+    payment = db.query(Payment).filter(Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment record not found")
+    return payment
+
+
+@router.post("/{payment_id}/refund", response_model=PaymentResponse)
+def refund_payment(
+    payment_id: str,
+    request: PaymentRefundRequest,
+    db: Session = Depends(get_db)
+):
+    """Processes a full or partial refund for a completed payment."""
+    payment = db.query(Payment).filter(Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment record not found")
+
+    try:
+        updated = process_payment_refund(
+            db=db,
+            payment=payment,
+            refund_amount=request.amount,
+            reason=request.reason
+        )
+        return updated
+    except InvalidPaymentTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+

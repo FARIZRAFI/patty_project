@@ -12,15 +12,17 @@ export const AdminSidebar: React.FC = () => {
     navigate('/admin/login');
   };
 
-  const navItems = [
+  const allNavItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Orders', path: '/admin/orders', icon: ClipboardList },
-    { label: 'Products', path: '/admin/products', icon: Package },
-    { label: 'Customers', path: '/admin/customers', icon: Users },
-    { label: 'Loyalty Points', path: '/admin/loyalty', icon: Star },
-    { label: 'Coupons & Offers', path: '/admin/coupons', icon: Ticket },
+    { label: 'Products & Stock', path: '/admin/products', icon: Package },
+    { label: 'Customers', path: '/admin/customers', icon: Users, superAdminOnly: true },
+    { label: 'Loyalty Points', path: '/admin/loyalty', icon: Star, superAdminOnly: true },
+    { label: 'Coupons & Offers', path: '/admin/coupons', icon: Ticket, superAdminOnly: true },
     { label: 'Profile Settings', path: '/admin/settings', icon: Settings },
   ];
+
+  const navItems = allNavItems.filter((item) => !item.superAdminOnly || user?.role === 'SUPER_ADMIN');
 
   return (
     <aside className="fixed top-0 left-0 bottom-0 w-56 bg-[#080808] border-r border-[#1C1C1C] flex flex-col justify-between h-screen shrink-0 select-none z-40 overflow-y-auto">

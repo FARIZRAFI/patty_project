@@ -12,10 +12,19 @@ import { AdminLoyalty } from './pages/admin/AdminLoyalty';
 import { AdminCoupons } from './pages/admin/AdminCoupons';
 import { AdminProfileSettings } from './pages/admin/AdminProfileSettings';
 
+import { useAuthStore } from './store/authStore';
+
 const queryClient = new QueryClient();
 
-// Admin Layout Shell
+// Admin Layout Shell with Protection Guard
 const AdminLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { token, user } = useAuthStore();
+  const isAdmin = token && user && (user.role === 'SUPER_ADMIN' || user.role === 'BRANCH_ADMIN');
+
+  if (!isAdmin) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-black text-white flex">
       <AdminSidebar />

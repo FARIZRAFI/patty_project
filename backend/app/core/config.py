@@ -17,16 +17,28 @@ class Settings(BaseSettings):
     
     # CORS Origins
     BACKEND_CORS_ORIGINS: List[str] = [
+        "https://order.pattyproject.co.uk",
+        "https://admin.pattyproject.co.uk",
+        "https://pattyproject.co.uk",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "*",
     ]
+
+    # Environment & Payment Provider
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", os.getenv("APP_ENV", "development"))
+    PAYMENT_PROVIDER: str = os.getenv("PAYMENT_PROVIDER", "mock")
+
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT.lower() == "production"
 
     class Config:
         case_sensitive = True
 
+
 settings = Settings()
+

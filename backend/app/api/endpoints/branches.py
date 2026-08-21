@@ -3,10 +3,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.branch import Branch
-from app.schemas.branch import BranchResponse, BranchCreate, NearestBranchRequest, NearestBranchResponse
+from app.schemas.branch import BranchResponse, BranchCreate, BranchUpdate, NearestBranchRequest, NearestBranchResponse, NearestBranchInfo
 from app.api.endpoints.auth import require_role
 from app.models.user import UserRole, User
-from app.services.branch_service import find_nearest_eligible_branch
+from app.services.branch_service import (
+    find_nearest_eligible_branch,
+    is_valid_coordinate,
+    resolve_postcode_lat_lng,
+    MAX_DELIVERY_RADIUS_MILES
+)
 from app.models.audit import AuditLog
 import random
 
@@ -25,7 +30,7 @@ def create_branch(
     current_user: User = Depends(require_role([UserRole.SUPER_ADMIN])),
     db: Session = Depends(get_db)
 ):
-    """Super Admin create new branch."""
+    """Super Admin create new branch with coordinate validation and auto-geocoding."""
     code_val = request.code.upper().strip() if request.code else "".join([w[0] for w in request.name.split()][:2]).upper()
     if not code_val:
         code_val = f"B{random.randint(10, 99)}"
@@ -33,22 +38,107 @@ def create_branch(
     if db.query(Branch).filter(Branch.code == code_val).first():
         code_val = f"{code_val}{random.randint(1, 9)}"
 
+    # Validate or geocode coordinates
+    lat = request.latitude
+    lng = request.longitude
+
+    if lat is not None or lng is not None:
+        if not is_valid_coordinate(lat, lng):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid coordinates. Latitude must be between -90 and 90, and longitude between -180 and 180."
+            )
+    else:
+        resolved = resolve_postcode_lat_lng(request.postcode)
+        if not resolved or not is_valid_coordinate(resolved[0], resolved[1]):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not determine valid coordinates for postcode '{request.postcode}'. Please provide valid latitude and longitude or a valid UK postcode."
+            )
+        lat, lng = resolved
+
     branch = Branch(
         code=code_val,
         name=request.name.strip(),
         address_line1=request.address_line1.strip(),
-        postcode=request.postcode.strip(),
+        postcode=request.postcode.strip().upper(),
         city=request.city or "London",
-        latitude=request.latitude or 51.5074,
-        longitude=request.longitude or -0.1278,
+        latitude=lat,
+        longitude=lng,
         phone=request.phone or "020 7946 0000",
         delivery_enabled=request.delivery_enabled,
         collection_enabled=request.collection_enabled,
         ordering_enabled=request.ordering_enabled,
-        delivery_radius_miles=request.delivery_radius_miles or 2.0,
+        delivery_radius_miles=MAX_DELIVERY_RADIUS_MILES,
         is_active=True
     )
     db.add(branch)
+    db.commit()
+    db.refresh(branch)
+    return branch
+
+@router.put("/{branch_id}", response_model=BranchResponse)
+@router.patch("/{branch_id}", response_model=BranchResponse)
+def update_branch(
+    branch_id: str,
+    request: BranchUpdate,
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.BRANCH_ADMIN])),
+    db: Session = Depends(get_db)
+):
+    """Update existing branch details with coordinate validation."""
+    branch = db.query(Branch).filter(Branch.id == branch_id).first()
+    if not branch:
+        raise HTTPException(status_code=404, detail="Branch not found")
+
+    if current_user.role == UserRole.BRANCH_ADMIN:
+        assigned_ids = [bu.branch_id for bu in current_user.branch_assignments]
+        if branch_id not in assigned_ids:
+            raise HTTPException(status_code=403, detail="You do not have permission to manage this branch")
+
+    if request.name is not None:
+        branch.name = request.name.strip()
+    if request.code is not None:
+        branch.code = request.code.upper().strip()
+    if request.address_line1 is not None:
+        branch.address_line1 = request.address_line1.strip()
+    if request.city is not None:
+        branch.city = request.city.strip()
+    if request.phone is not None:
+        branch.phone = request.phone.strip()
+    if request.opening_hours is not None:
+        branch.opening_hours = request.opening_hours
+    if request.delivery_enabled is not None:
+        branch.delivery_enabled = request.delivery_enabled
+    if request.collection_enabled is not None:
+        branch.collection_enabled = request.collection_enabled
+    if request.ordering_enabled is not None:
+        branch.ordering_enabled = request.ordering_enabled
+
+    # Coordinate & Postcode updates
+    if request.latitude is not None or request.longitude is not None:
+        new_lat = request.latitude if request.latitude is not None else branch.latitude
+        new_lng = request.longitude if request.longitude is not None else branch.longitude
+        if not is_valid_coordinate(new_lat, new_lng):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid coordinates. Latitude must be between -90 and 90, and longitude between -180 and 180."
+            )
+        branch.latitude = new_lat
+        branch.longitude = new_lng
+    elif request.postcode is not None and request.postcode.strip().upper() != branch.postcode.upper():
+        new_postcode = request.postcode.strip().upper()
+        resolved = resolve_postcode_lat_lng(new_postcode)
+        if not resolved or not is_valid_coordinate(resolved[0], resolved[1]):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not determine valid coordinates for postcode '{request.postcode}'. Please provide valid latitude and longitude or a valid UK postcode."
+            )
+        branch.latitude, branch.longitude = resolved
+
+    if request.postcode is not None:
+        branch.postcode = request.postcode.strip().upper()
+
+    branch.delivery_radius_miles = MAX_DELIVERY_RADIUS_MILES
     db.commit()
     db.refresh(branch)
     return branch
@@ -60,13 +150,65 @@ def get_nearest_branch(request: NearestBranchRequest, db: Session = Depends(get_
         db=db,
         lat=request.latitude,
         lng=request.longitude,
-        postcode=request.postcode
+        postcode=request.postcode,
+        fulfillment_method=request.fulfillment_method
     )
+    
+    nearest_b = result.get("nearest_branch")
+    assigned_b = result.get("assigned_branch")
+    dist_val = result.get("distance_miles")
+    candidates_val = result.get("candidate_outlets")
+
+    nearest_info = None
+    if nearest_b:
+        nearest_info = NearestBranchInfo(
+            id=nearest_b.id,
+            code=nearest_b.code,
+            name=nearest_b.name,
+            address_line1=nearest_b.address_line1,
+            postcode=nearest_b.postcode,
+            city=nearest_b.city or "London",
+            latitude=nearest_b.latitude,
+            longitude=nearest_b.longitude,
+            phone=nearest_b.phone,
+            opening_hours=nearest_b.opening_hours,
+            delivery_enabled=nearest_b.delivery_enabled if nearest_b.delivery_enabled is not None else True,
+            collection_enabled=nearest_b.collection_enabled if nearest_b.collection_enabled is not None else True,
+            ordering_enabled=nearest_b.ordering_enabled if nearest_b.ordering_enabled is not None else True,
+            delivery_radius_miles=nearest_b.delivery_radius_miles or 2.0,
+            is_active=bool(nearest_b.is_active) if nearest_b.is_active is not None else True,
+            distance_miles=dist_val
+        )
+
+    assigned_info = None
+    if assigned_b:
+        assigned_info = NearestBranchInfo(
+            id=assigned_b.id,
+            code=assigned_b.code,
+            name=assigned_b.name,
+            address_line1=assigned_b.address_line1,
+            postcode=assigned_b.postcode,
+            city=assigned_b.city or "London",
+            latitude=assigned_b.latitude,
+            longitude=assigned_b.longitude,
+            phone=assigned_b.phone,
+            opening_hours=assigned_b.opening_hours,
+            delivery_enabled=assigned_b.delivery_enabled if assigned_b.delivery_enabled is not None else True,
+            collection_enabled=assigned_b.collection_enabled if assigned_b.collection_enabled is not None else True,
+            ordering_enabled=assigned_b.ordering_enabled if assigned_b.ordering_enabled is not None else True,
+            delivery_radius_miles=assigned_b.delivery_radius_miles or 2.0,
+            is_active=bool(assigned_b.is_active) if assigned_b.is_active is not None else True,
+            distance_miles=dist_val
+        )
+
     return NearestBranchResponse(
-        assigned_branch=result.get("assigned_branch"),
-        nearest_branch=result.get("nearest_branch"),
-        distance_miles=result.get("distance_miles"),
+        assigned_branch=assigned_info,
+        nearest_branch=nearest_info,
+        candidate_outlets=candidates_val,
+        distance_miles=dist_val,
         is_delivery_eligible=result.get("is_delivery_eligible", False),
+        delivery_available=result.get("delivery_available", False),
+        collection_available=result.get("collection_available", True),
         status=result.get("status"),
         message=result.get("message")
     )
@@ -113,18 +255,46 @@ def delete_branch(
     current_user: User = Depends(require_role([UserRole.SUPER_ADMIN])),
     db: Session = Depends(get_db)
 ):
-    """Super Admin delete branch."""
+    """Super Admin delete branch with cleanup and audit trail."""
     branch = db.query(Branch).filter(Branch.id == branch_id).first()
     if not branch:
         raise HTTPException(status_code=404, detail="Branch not found")
 
     try:
-        from app.models.branch import BranchUser
+        from app.models.branch import BranchUser, CollectionSlot
+        from app.models.product import Inventory
+        from app.models.printer import Printer, PrintJob
+        from app.models.order import Order
+
+        # Clean up related records
         db.query(BranchUser).filter(BranchUser.branch_id == branch_id).delete(synchronize_session=False)
-        branch.is_active = False
+        db.query(CollectionSlot).filter(CollectionSlot.branch_id == branch_id).delete(synchronize_session=False)
+        db.query(Inventory).filter(Inventory.branch_id == branch_id).delete(synchronize_session=False)
+        db.query(Printer).filter(Printer.branch_id == branch_id).delete(synchronize_session=False)
+        db.query(PrintJob).filter(PrintJob.branch_id == branch_id).delete(synchronize_session=False)
+
+        # Audit log before deletion
+        audit = AuditLog(
+            actor_id=current_user.id,
+            actor_email=current_user.email,
+            action="DELETE_BRANCH",
+            resource="branches",
+            resource_id=branch_id,
+            diff_json={"branch_name": branch.name, "branch_code": branch.code}
+        )
+        db.add(audit)
+
+        # Check if there are orders linked to this branch
+        has_orders = db.query(Order).filter(Order.branch_id == branch_id).first() is not None
+        if not has_orders:
+            db.delete(branch)
+        else:
+            branch.is_active = False
+
         db.commit()
-    except Exception:
+    except Exception as e:
         db.rollback()
+        # Fallback to soft delete
         branch = db.query(Branch).filter(Branch.id == branch_id).first()
         if branch:
             branch.is_active = False

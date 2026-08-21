@@ -48,7 +48,10 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
   const modTotal = selectedModifiers.reduce((sum, m) => sum + m.price, 0);
   const totalPrice = product.base_price + modTotal;
 
+  const isProductOutOfStock = product.is_available === false || (product.stock_quantity !== undefined && product.stock_quantity <= 0);
+
   const handleAddToCart = () => {
+    if (isProductOutOfStock) return;
     addItem(product, 1, selectedModifiers);
     onClose();
   };
@@ -128,8 +131,15 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80';
                 }}
-                className="w-full h-full object-cover"
+                className={`w-full h-full object-cover ${isProductOutOfStock ? 'brightness-75' : ''}`}
               />
+              {isProductOutOfStock && (
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-2 z-10">
+                  <span className="bg-[#18181B]/95 text-[#EF4444] border border-[#EF4444]/40 text-xs font-black px-3.5 py-1.5 rounded-lg tracking-wider uppercase shadow-xl">
+                    Out of Stock
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Product Info */}
@@ -138,10 +148,16 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
                 <h2 className="text-lg sm:text-xl font-bold text-[#F5F5F5] leading-snug">
                   {product.name}
                 </h2>
-                <span className="text-lg font-bold text-[#FF5A00] shrink-0">
+                <span className={`text-lg font-bold shrink-0 ${isProductOutOfStock ? 'text-[#71717A]' : 'text-[#FF5A00]'}`}>
                   £{product.base_price.toFixed(2)}
                 </span>
               </div>
+
+              {isProductOutOfStock && (
+                <span className="inline-block bg-[#EF4444]/10 border border-[#EF4444]/25 text-[#EF4444] text-xs font-semibold px-2.5 py-1 rounded-md">
+                  Currently unavailable at this branch
+                </span>
+              )}
 
               <p className="text-xs sm:text-sm text-[#A1A1AA] font-normal leading-relaxed">
                 {product.short_description ||
@@ -153,13 +169,23 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
 
           {/* Desktop Bottom Action CTA Bar */}
           <div className="hidden md:block p-5 bg-[#0D0D0D] border-t border-[#242424] shrink-0">
-            <button
-              onClick={handleAddToCart}
-              className="h-12 bg-[#FF5A00] hover:bg-[#E84F00] active:scale-[0.99] text-white rounded-lg px-5 flex items-center justify-between font-semibold text-sm transition-all cursor-pointer w-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
-            >
-              <span>£{totalPrice.toFixed(2)}</span>
-              <span>Add to cart</span>
-            </button>
+            {isProductOutOfStock ? (
+              <button
+                disabled
+                className="h-12 bg-[#18181B] border border-[#27272A] text-[#71717A] rounded-lg px-5 flex items-center justify-between font-semibold text-sm cursor-not-allowed w-full select-none"
+              >
+                <span className="line-through opacity-70">£{totalPrice.toFixed(2)}</span>
+                <span className="text-[#EF4444] font-bold uppercase tracking-wider">Out of Stock</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                className="h-12 bg-[#FF5A00] hover:bg-[#E84F00] active:scale-[0.99] text-white rounded-lg px-5 flex items-center justify-between font-semibold text-sm transition-all cursor-pointer w-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
+              >
+                <span>£{totalPrice.toFixed(2)}</span>
+                <span>Add to cart</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -238,13 +264,23 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
 
           {/* Mobile Bottom Action CTA Bar (Pinned at bottom) */}
           <div className="md:hidden p-4 bg-[#0D0D0D] border-t border-[#242424] shrink-0 sticky bottom-0 z-30">
-            <button
-              onClick={handleAddToCart}
-              className="h-12 bg-[#FF5A00] hover:bg-[#E84F00] active:scale-[0.99] text-white rounded-lg px-5 flex items-center justify-between font-semibold text-sm transition-all cursor-pointer w-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
-            >
-              <span>£{totalPrice.toFixed(2)}</span>
-              <span>Add to cart</span>
-            </button>
+            {isProductOutOfStock ? (
+              <button
+                disabled
+                className="h-12 bg-[#18181B] border border-[#27272A] text-[#71717A] rounded-lg px-5 flex items-center justify-between font-semibold text-sm cursor-not-allowed w-full select-none"
+              >
+                <span className="line-through opacity-70">£{totalPrice.toFixed(2)}</span>
+                <span className="text-[#EF4444] font-bold uppercase tracking-wider">Out of Stock</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                className="h-12 bg-[#FF5A00] hover:bg-[#E84F00] active:scale-[0.99] text-white rounded-lg px-5 flex items-center justify-between font-semibold text-sm transition-all cursor-pointer w-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
+              >
+                <span>£{totalPrice.toFixed(2)}</span>
+                <span>Add to cart</span>
+              </button>
+            )}
           </div>
         </div>
 

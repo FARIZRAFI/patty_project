@@ -56,6 +56,7 @@ export interface Product {
   has_service_charge: boolean;
   vat_category: string;
   is_active: boolean;
+  is_available?: boolean;
   modifiers: ProductModifier[];
   stock_quantity?: number;
 }

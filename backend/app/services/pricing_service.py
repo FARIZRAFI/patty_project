@@ -58,7 +58,8 @@ def calculate_order_totals(
 
     subtotal = round(subtotal, 2)
     discount_amount = 0.0
-    delivery_fee = 2.50 if order_type == "DELIVERY" else 0.0
+    # Patty Project delivery is FREE (£0.00). 2-mile boundary is purely an eligibility check.
+    delivery_fee = 0.0
     service_fee = 0.99 if subtotal > 0 else 0.0
 
     # Apply Coupon Discount if valid

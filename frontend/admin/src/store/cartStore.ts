@@ -79,11 +79,10 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   getDeliveryFee: () => {
-    const { orderType, items, couponCode } = get();
-    if (orderType === 'COLLECTION' || items.length === 0) return 0.0;
-    if (couponCode === 'FREESHIP') return 0.0;
-    return 2.50;
+    // Patty Project delivery is FREE (£0.00). 2-mile radius is purely an eligibility check.
+    return 0.0;
   },
+
 
   getServiceFee: () => {
     return get().items.length > 0 ? 0.99 : 0.0;

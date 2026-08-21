@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, MapPin, Search, Navigation, Clock, AlertTriangle, ShoppingBag, Check } from 'lucide-react';
+import { X, MapPin, Search, Navigation, Clock, AlertTriangle, ShoppingBag, RotateCcw } from 'lucide-react';
 import { api } from '../../api/client';
 import { useCartStore } from '../../store/cartStore';
 import { Branch } from '../../types';
@@ -16,19 +16,25 @@ export const LocationModal: React.FC<Props> = ({ onClose }) => {
   const [nearestBranch, setNearestBranch] = useState<Branch | null>(null);
   const [distanceMiles, setDistanceMiles] = useState<number | null>(null);
   const [isDeliveryEligible, setIsDeliveryEligible] = useState<boolean>(false);
-  const [locationDenied, setLocationDenied] = useState<boolean>(false);
+  const [errorTitle, setErrorTitle] = useState<string>('');
+  const [errorDetails, setErrorDetails] = useState<string>('');
+  const [canRetry, setCanRetry] = useState<boolean>(false);
   const [msg, setMsg] = useState('');
-  const [userCoords, setUserCoordsState] = useState<{ lat: number; lng: number } | null>(null);
+  const [userCoords, setUserCoordsState] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+  const requestIdRef = React.useRef<number>(0);
 
   const { setSelectedBranch, setOrderType } = useCartStore();
 
-  const handleGeocode = async (lat?: number, lng?: number, pc?: string) => {
+  const handleGeocode = async (lat?: number, lng?: number, pc?: string, accuracy?: number) => {
+    const currentRequestId = ++requestIdRef.current;
     setLoading(true);
     setMsg('');
-    setLocationDenied(false);
+    setErrorTitle('');
+    setErrorDetails('');
+    setCanRetry(false);
 
     if (lat !== undefined && lng !== undefined) {
-      setUserCoordsState({ lat, lng });
+      setUserCoordsState({ lat, lng, accuracy });
     }
 
     try {
@@ -37,6 +43,8 @@ export const LocationModal: React.FC<Props> = ({ onClose }) => {
         longitude: lng,
         postcode: pc
       });
+
+      if (currentRequestId !== requestIdRef.current) return;
 
       const eligible = Boolean(res.is_delivery_eligible ?? (res.assigned_branch && res.distance_miles !== null && res.distance_miles <= 2.0));
       const effectiveNearest = res.nearest_branch || res.assigned_branch || null;
@@ -51,30 +59,105 @@ export const LocationModal: React.FC<Props> = ({ onClose }) => {
       } else {
         setMsg('WE PROVIDE DELIVERY UP TO 2 MILES ONLY');
       }
-    } catch (err: any) {
-      setMsg('Location access is required to check delivery availability. Please enable location access, or choose Collection from your nearest store.');
+    } catch {
+      if (currentRequestId !== requestIdRef.current) return;
+      setIsDeliveryEligible(false);
+      setErrorTitle('Unable to verify delivery availability.');
+      setErrorDetails('Please search with your UK postcode or select Collection.');
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   const handleToggleLocation = (checked: boolean) => {
     setUseCurrentLocation(checked);
-    if (checked && navigator.geolocation) {
-      setLoading(true);
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          handleGeocode(pos.coords.latitude, pos.coords.longitude);
-        },
-        () => {
-          setLoading(false);
-          setLocationDenied(true);
-          setIsDeliveryEligible(false);
-          setMsg('Location access is required to check delivery availability. Please enable location access, or choose Collection from your nearest store.');
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
+    if (!checked) {
+      setUserCoordsState(null);
+      setIsDeliveryEligible(false);
+      setErrorTitle('');
+      setErrorDetails('');
+      return;
     }
+
+    if (!('geolocation' in navigator)) {
+      setUseCurrentLocation(false);
+      setErrorTitle('Geolocation is not supported by your browser.');
+      setErrorDetails('Please enter your UK postcode below or select Collection.');
+      setCanRetry(false);
+      return;
+    }
+
+    setLoading(true);
+    setErrorTitle('');
+    setErrorDetails('');
+    setCanRetry(false);
+
+    const geoOptions: PositionOptions = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 30000
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const accuracy = pos.coords.accuracy;
+
+        // Bounds validation
+        if (lat === undefined || lng === undefined || isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          setLoading(false);
+          setUseCurrentLocation(false);
+          setErrorTitle('Invalid coordinates received.');
+          setErrorDetails('Please enter your UK postcode or select Collection.');
+          setCanRetry(false);
+          return;
+        }
+
+        // Accuracy check (> 5km)
+        if (accuracy && accuracy > 5000) {
+          setLoading(false);
+          setUseCurrentLocation(false);
+          setErrorTitle('Location accuracy is too low to verify 2-mile delivery radius.');
+          setErrorDetails(`Device accuracy is ±${Math.round(accuracy / 1000)} km. Please enter your UK postcode.`);
+          setCanRetry(false);
+          return;
+        }
+
+        handleGeocode(lat, lng, undefined, accuracy);
+      },
+      (error) => {
+        setLoading(false);
+        setUseCurrentLocation(false);
+        setIsDeliveryEligible(false);
+
+        switch (error.code) {
+          case 1: // PERMISSION_DENIED
+            setErrorTitle('Location access is required to check delivery availability.');
+            setErrorDetails('Please enable location access in your browser settings, or choose Collection from your nearest store.');
+            setCanRetry(false);
+            break;
+          case 2: // POSITION_UNAVAILABLE
+            setErrorTitle('Unable to determine your device location.');
+            setErrorDetails('GPS coordinates could not be determined. Please search with your postcode below or select Collection.');
+            setCanRetry(true);
+            break;
+          case 3: // TIMEOUT
+            setErrorTitle('Location request timed out.');
+            setErrorDetails('The location check took too long to respond. Tap Retry or enter your postcode manually.');
+            setCanRetry(true);
+            break;
+          default:
+            setErrorTitle('Location access error.');
+            setErrorDetails('Please enter your UK postcode below or select Collection.');
+            setCanRetry(true);
+            break;
+        }
+      },
+      geoOptions
+    );
   };
 
   const handleConfirmDelivery = () => {
@@ -110,7 +193,9 @@ export const LocationModal: React.FC<Props> = ({ onClose }) => {
         {/* Current Location Toggle Card */}
         <div className="bg-[#1A1A1A] border border-[#262626] p-4 rounded-xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#FF5500]/10 text-[#FF5500] flex items-center justify-center border border-[#FF5500]/30 shrink-0">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${
+              useCurrentLocation ? 'bg-[#FF5500]/10 border-[#FF5500]/30 text-[#FF5500]' : 'bg-[#151515] border-[#262626] text-[#A1A1AA]'
+            }`}>
               <MapPin className="w-5 h-5" />
             </div>
             <div>
@@ -122,6 +207,7 @@ export const LocationModal: React.FC<Props> = ({ onClose }) => {
             type="checkbox"
             checked={useCurrentLocation}
             onChange={(e) => handleToggleLocation(e.target.checked)}
+            disabled={loading}
             className="w-5 h-5 rounded bg-[#121212] border-[#262626] accent-[#FF5500] cursor-pointer"
           />
         </div>
@@ -141,6 +227,9 @@ export const LocationModal: React.FC<Props> = ({ onClose }) => {
               placeholder="Enter your location / UK Postcode"
               value={postcode}
               onChange={(e) => setPostcode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleGeocode(undefined, undefined, postcode);
+              }}
               className="w-full bg-[#1A1A1A] border border-[#262626] rounded-xl py-2.5 pl-9 pr-3 text-xs text-white placeholder-[#6B7280] focus:outline-none focus:border-[#FF5500]"
             />
           </div>
@@ -153,21 +242,34 @@ export const LocationModal: React.FC<Props> = ({ onClose }) => {
           </button>
         </div>
 
-        {/* Location Denial Message */}
-        {locationDenied && (
-          <div className="bg-[#2A1215] border border-[#EF4444]/40 p-4 rounded-xl text-xs space-y-1">
+        {/* Location Error / Denial Banner */}
+        {errorTitle && (
+          <div className="bg-[#2A1215] border border-[#EF4444]/40 p-4 rounded-xl text-xs space-y-1.5">
             <p className="font-bold text-[#EF4444] flex items-center gap-1.5">
               <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>Location access is required to check delivery availability.</span>
+              <span>{errorTitle}</span>
             </p>
-            <p className="text-[#FCA5A5] text-[11px] pt-1">
-              Please enable location access, or choose Collection from your nearest store.
-            </p>
+            {errorDetails && (
+              <p className="text-[#FCA5A5] text-[11px] leading-relaxed">
+                {errorDetails}
+              </p>
+            )}
+            {canRetry && (
+              <div className="pt-1 flex justify-end">
+                <button
+                  onClick={() => handleToggleLocation(true)}
+                  className="px-2.5 py-1 bg-[#EF4444]/20 hover:bg-[#EF4444]/30 border border-[#EF4444]/40 text-[#FCA5A5] rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Retry</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {/* Outside 2-Mile Delivery Radius Warning Banner */}
-        {!isDeliveryEligible && nearestBranch && !locationDenied && (
+        {!isDeliveryEligible && nearestBranch && !errorTitle && (
           <div className="bg-[#241209] border border-[#6B2A0D] p-4 rounded-xl space-y-2 text-xs">
             <div className="flex items-center gap-2 text-[#FF5500] font-extrabold tracking-wide uppercase text-[11px]">
               <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -179,7 +281,7 @@ export const LocationModal: React.FC<Props> = ({ onClose }) => {
 
             <div className="pt-2 border-t border-[#6B2A0D]/50 flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-[#A1A1AA] uppercase font-semibold">Nearest Store</p>
+                <p className="text-[10px] text-[#A1A1AA] uppercase font-semibold">Nearest store:</p>
                 <p className="text-xs font-bold text-white">Patty Project — {nearestBranch.name}</p>
                 {distanceMiles !== null && (
                   <p className="text-[10px] text-[#FF5500] font-semibold">{distanceMiles} miles away</p>
@@ -233,7 +335,7 @@ export const LocationModal: React.FC<Props> = ({ onClose }) => {
         )}
 
         {/* Non-eligible general message */}
-        {msg && !locationDenied && !resultBranch && !nearestBranch && (
+        {msg && !errorTitle && !resultBranch && !nearestBranch && (
           <p className="text-xs text-center text-[#FF5500] font-semibold">{msg}</p>
         )}
       </div>

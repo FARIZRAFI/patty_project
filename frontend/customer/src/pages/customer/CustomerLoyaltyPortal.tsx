@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Gift, Award, TrendingUp, Sparkles, Lock, CheckCircle2, ShoppingBag, ArrowRight, X, Copy, AlertCircle } from 'lucide-react';
 import { api } from '../../api/client';
@@ -48,15 +48,7 @@ export const CustomerLoyaltyPortal: React.FC = () => {
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    fetchLoyaltyData();
-  }, [user]);
-
-  const fetchLoyaltyData = async () => {
+  const fetchLoyaltyData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get<LoyaltyData>('/loyalty/balance');
@@ -66,7 +58,15 @@ export const CustomerLoyaltyPortal: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchLoyaltyData();
+  }, [user, navigate, fetchLoyaltyData]);
 
   const handleClaimOffer = async (reward: MilestoneReward) => {
     setClaimingId(reward.id);

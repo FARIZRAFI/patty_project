@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Star, Plus, LayoutGrid, Beef, Drumstick, UtensilsCrossed, Flame, CupSoda, Utensils } from 'lucide-react';
 import { api } from '../../api/client';
-import { Product, Category } from '../../types';
+import { Product, Category, Branch } from '../../types';
 import { ProductDetailModal } from './ProductDetailModal';
 import { useCartStore } from '../../store/cartStore';
 
@@ -11,17 +11,32 @@ export const CustomerMenu: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const { addItem } = useCartStore();
+  const { selectedBranch, setSelectedBranch } = useCartStore();
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [selectedBranch?.id]);
 
   const fetchData = async () => {
     try {
+      let currentBranch = selectedBranch;
+      if (!currentBranch) {
+        try {
+          const branches = await api.get<Branch[]>('/branches');
+          const activeBranches = branches.filter((b) => b.is_active !== false);
+          if (activeBranches.length > 0) {
+            currentBranch = activeBranches[0];
+            setSelectedBranch(currentBranch, null, false, currentBranch);
+          }
+        } catch (branchErr) {
+          console.error('Failed to load branches:', branchErr);
+        }
+      }
+
+      const branchParam = currentBranch?.id ? `?branch_id=${currentBranch.id}` : '';
       const [catData, prodData] = await Promise.all([
         api.get<Category[]>('/categories'),
-        api.get<Product[]>('/products')
+        api.get<Product[]>(`/products${branchParam}`)
       ]);
       setCategories(catData);
       setProducts(prodData);
@@ -52,7 +67,6 @@ export const CustomerMenu: React.FC = () => {
     return React.cloneElement(iconElement, {
       className: `w-4 h-4 ${isSelected ? 'text-white' : 'text-[#71717A]'}`
     });
-
   };
 
   return (
@@ -104,6 +118,7 @@ export const CustomerMenu: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
         {filteredProducts.map((p) => {
           const displayImg = p.image_url || '/placeholder-burger.svg';
+          const isOutOfStock = p.is_available === false || (p.stock_quantity !== undefined && p.stock_quantity <= 0);
 
           // Extract dietary labels if present in product name
           const isVeg = p.name.includes('[VEG]');
@@ -114,7 +129,11 @@ export const CustomerMenu: React.FC = () => {
             <div
               key={p.id}
               onClick={() => setSelectedProduct(p)}
-              className="bg-[#0D0D0D] border border-[#242424] hover:border-[#FF5A00]/50 rounded-[10px] overflow-hidden cursor-pointer transition-all duration-200 group flex flex-col justify-between"
+              className={`bg-[#0D0D0D] border rounded-[10px] overflow-hidden transition-all duration-200 group flex flex-col justify-between cursor-pointer ${
+                isOutOfStock
+                  ? 'border-[#242424] opacity-85 hover:border-[#3F3F46]'
+                  : 'border-[#242424] hover:border-[#FF5A00]/50'
+              }`}
             >
               {/* Product Image Area (4/3 Aspect Ratio) */}
               <div className="w-full aspect-[4/3] overflow-hidden bg-[#111111] relative border-b border-[#1C1C1C]">
@@ -124,14 +143,25 @@ export const CustomerMenu: React.FC = () => {
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).src = '/placeholder-burger.svg';
                   }}
-                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
+                  className={`w-full h-full object-cover transition-transform duration-200 ${
+                    isOutOfStock ? 'brightness-75' : 'group-hover:scale-[1.02]'
+                  }`}
                 />
 
                 {/* Dietary Badges */}
                 {(isVeg || isVegan) && (
-                  <span className="absolute top-2.5 left-2.5 bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E] text-[10px] font-semibold px-2 py-0.5 rounded-md backdrop-blur-sm">
+                  <span className="absolute top-2.5 left-2.5 bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E] text-[10px] font-semibold px-2 py-0.5 rounded-md backdrop-blur-sm z-10">
                     {isVegan ? 'VEGAN' : 'VEG'}
                   </span>
+                )}
+
+                {/* OUT OF STOCK Badge Overlay on Image */}
+                {isOutOfStock && (
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-2 z-10">
+                    <span className="bg-[#18181B]/95 text-[#EF4444] border border-[#EF4444]/40 text-[11px] sm:text-xs font-black px-3 py-1.5 rounded-lg tracking-wider uppercase shadow-xl">
+                      Out of Stock
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -139,10 +169,10 @@ export const CustomerMenu: React.FC = () => {
               <div className="p-4 space-y-3 bg-[#0D0D0D]">
                 {/* Product Name & Price Row */}
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold text-[#F5F5F5] text-sm leading-snug line-clamp-2 min-h-[40px]">
+                  <h3 className={`font-semibold text-sm leading-snug line-clamp-2 min-h-[40px] ${isOutOfStock ? 'text-[#A1A1AA]' : 'text-[#F5F5F5]'}`}>
                     {cleanName}
                   </h3>
-                  <span className="font-semibold text-[#F5F5F5] text-sm shrink-0">
+                  <span className={`font-semibold text-sm shrink-0 ${isOutOfStock ? 'text-[#71717A]' : 'text-[#F5F5F5]'}`}>
                     £{p.base_price.toFixed(2)}
                   </span>
                 </div>
@@ -151,24 +181,36 @@ export const CustomerMenu: React.FC = () => {
                 <div className="flex items-center justify-between pt-2.5 border-t border-[#1C1C1C]">
                   <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-[#FF5A00] text-[#FF5A00]" />
+                      <Star key={i} className={`w-3.5 h-3.5 ${isOutOfStock ? 'fill-[#52525B] text-[#52525B]' : 'fill-[#FF5A00] text-[#FF5A00]'}`} />
                     ))}
-                    <span className="text-xs text-[#A1A1AA] font-normal ml-1">
+                    <span className="text-xs text-[#71717A] font-normal ml-1">
                       {p.rating || 4.7}
                     </span>
                   </div>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedProduct(p);
-                    }}
-                    title="Customize & Add"
-                    aria-label={`Add ${p.name} to order`}
-                    className="w-9 h-9 rounded-lg border border-[#FF5A00] text-[#FF5A00] hover:bg-[#FF5A00] hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0 focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+                  {isOutOfStock ? (
+                    <button
+                      disabled
+                      onClick={(e) => e.stopPropagation()}
+                      title="Out of Stock"
+                      aria-label={`${p.name} is out of stock`}
+                      className="h-9 px-2.5 rounded-lg border border-[#27272A] bg-[#18181B] text-[#71717A] flex items-center justify-center text-[11px] font-bold uppercase tracking-wider cursor-not-allowed shrink-0 select-none"
+                    >
+                      Sold Out
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProduct(p);
+                      }}
+                      title="Customize & Add"
+                      aria-label={`Add ${p.name} to order`}
+                      className="w-9 h-9 rounded-lg border border-[#FF5A00] text-[#FF5A00] hover:bg-[#FF5A00] hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0 focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

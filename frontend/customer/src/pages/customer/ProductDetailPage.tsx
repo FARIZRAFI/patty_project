@@ -3,22 +3,25 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Product } from '../../types';
 import { ProductDetailModal } from './ProductDetailModal';
+import { useCartStore } from '../../store/cartStore';
 
 export const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const { selectedBranch } = useCartStore();
 
   useEffect(() => {
     if (productId) {
       fetchProduct(productId);
     }
-  }, [productId]);
+  }, [productId, selectedBranch?.id]);
 
   const fetchProduct = async (id: string) => {
     try {
-      const data = await api.get<Product>(`/products/${id}`);
+      const branchParam = selectedBranch?.id ? `?branch_id=${selectedBranch.id}` : '';
+      const data = await api.get<Product>(`/products/${id}${branchParam}`);
       setProduct(data);
     } catch (err) {
       console.error(err);

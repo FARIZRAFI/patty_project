@@ -1,5 +1,6 @@
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, EmailStr
+from app.schemas.payment import PaymentResponse
 
 class OrderItemCreate(BaseModel):
     product_id: str
@@ -72,9 +73,11 @@ class OrderResponse(BaseModel):
     created_at: Any
     items: List[OrderItemResponse] = []
     status_history: List[OrderStatusHistoryResponse] = []
+    payments: List[PaymentResponse] = []
 
     class Config:
         from_attributes = True
+
 
 class StatusUpdateRequest(BaseModel):
     status: str
