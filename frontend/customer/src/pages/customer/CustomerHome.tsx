@@ -27,6 +27,12 @@ export const CustomerHome: React.FC = () => {
     }
   };
 
+  const mcProduct = products.find(p => p.name.toLowerCase().includes('mc project') && !p.name.toLowerCase().includes('vegan'));
+  const outlawProduct = products.find(p => p.name.toLowerCase().includes('outlaw project') && !p.name.toLowerCase().includes('vegan'));
+  const pastramiProduct = products.find(p => p.name.toLowerCase().includes('pastrami'));
+  const chickenProduct = products.find(p => p.name.toLowerCase().includes('chicken sando') || p.name.toLowerCase().includes('buffalo chicken'));
+  const halloumiProduct = products.find(p => p.name.toLowerCase().includes('halloumi'));
+
   return (
     <div className="pb-0 space-y-16">
       {/* Hero Section matching exact reference image */}
@@ -189,9 +195,9 @@ export const CustomerHome: React.FC = () => {
               }}
               className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent hover:border-[#FF5500]/30 transition-all"
             >
-              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
+              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl bg-[#111111]">
                 <img
-                  src="/burger_mc_project.jpg"
+                  src={mcProduct?.image_url || '/product_the_mc_project.png'}
                   alt="MC Project"
                   className="w-full h-full object-cover"
                 />
@@ -215,9 +221,9 @@ export const CustomerHome: React.FC = () => {
               }}
               className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent hover:border-[#FF5500]/30 transition-all"
             >
-              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
+              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl bg-[#111111]">
                 <img
-                  src="/burger_outlaw_project.jpg"
+                  src={outlawProduct?.image_url || '/product_the_outlaw_project_.png'}
                   alt="Outlaw Project"
                   className="w-full h-full object-cover"
                 />
@@ -241,9 +247,9 @@ export const CustomerHome: React.FC = () => {
               }}
               className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent hover:border-[#FF5500]/30 transition-all"
             >
-              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
+              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl bg-[#111111]">
                 <img
-                  src="/burger_pastrami_burger.jpg"
+                  src={pastramiProduct?.image_url || '/product_pastrami_burger_.png'}
                   alt="Pastrami Burger"
                   className="w-full h-full object-cover"
                 />
@@ -270,9 +276,9 @@ export const CustomerHome: React.FC = () => {
               }}
               className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent hover:border-[#FF5500]/30 transition-all"
             >
-              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
+              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl bg-[#111111]">
                 <img
-                  src="/burger_fried_chicken_sando.jpg"
+                  src={chickenProduct?.image_url || '/product_buffalo_chicken_sando_.png'}
                   alt="Fried Chicken Sando"
                   className="w-full h-full object-cover"
                 />
@@ -296,9 +302,9 @@ export const CustomerHome: React.FC = () => {
               }}
               className="flex items-center gap-5 sm:gap-6 cursor-pointer p-3 sm:p-5 rounded-3xl bg-black/40 border border-transparent hover:border-[#FF5500]/30 transition-all"
             >
-              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl">
+              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-36 sm:h-48 lg:h-52 xl:h-60 shrink-0 relative overflow-hidden rounded-3xl bg-[#111111]">
                 <img
-                  src="/burger_halloumi_burger.jpg"
+                  src={halloumiProduct?.image_url || '/product_the_halloumi_project_veg.png'}
                   alt="Halloumi Burger"
                   className="w-full h-full object-cover"
                 />
