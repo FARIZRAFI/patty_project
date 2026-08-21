@@ -8,7 +8,7 @@ import { MobileDrawer } from './components/customer/MobileDrawer';
 import { MobileBottomNav } from './components/customer/MobileBottomNav';
 import { LocationModal } from './components/customer/LocationModal';
 import { FloatingCartBar } from './components/customer/FloatingCartBar';
-import { PanelLeftOpen } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -77,11 +77,11 @@ const AdminLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children })
           <div className="sticky top-4 left-4 z-30 px-6 pt-4 pb-0">
             <button
               onClick={toggleSidebar}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#121212]/95 backdrop-blur-md hover:bg-[#1C1C1C] text-white border border-[#2E2E2E] hover:border-[#FF5500]/50 rounded-xl shadow-2xl transition-all text-xs font-bold cursor-pointer group"
+              className="inline-flex items-center gap-2 px-3 py-2 bg-[#121212]/95 backdrop-blur-md hover:bg-[#1C1C1C] text-white border border-[#2E2E2E] hover:border-[#FF5500]/50 rounded-xl shadow-2xl transition-all text-xs font-semibold cursor-pointer group"
               title="Show sidebar"
             >
-              <PanelLeftOpen className="w-4 h-4 text-[#FF5500] group-hover:scale-110 transition-transform" />
-              <span>Show Sidebar</span>
+              <Menu className="w-4 h-4 text-[#FF5500] group-hover:scale-110 transition-transform" />
+              <span>Sidebar</span>
             </button>
           </div>
         )}

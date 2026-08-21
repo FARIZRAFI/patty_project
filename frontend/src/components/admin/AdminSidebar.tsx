@@ -9,7 +9,7 @@ import {
   Ticket,
   Settings,
   LogOut,
-  PanelLeftClose
+  ChevronLeft
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
@@ -49,7 +49,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       }`}
     >
       <div className="flex flex-col h-full overflow-hidden">
-        {/* Brand Logo Header with Hide Button */}
+        {/* Brand Logo Header with Standard Chevron Collapse Button */}
         <div className="p-4 flex items-center justify-between border-b border-[#1A1A1A] h-16 shrink-0 bg-[#0A0A0A]">
           <div className="flex items-center gap-3 min-w-0">
             <img
@@ -67,15 +67,15 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
           </div>
 
-          {/* Hide Sidebar Button */}
+          {/* Industry Standard Collapse Button */}
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              title="Hide sidebar"
-              className="p-1.5 text-[#9CA3AF] hover:text-white hover:bg-[#1A1A1A] rounded-lg border border-transparent hover:border-[#333333] transition-all cursor-pointer shrink-0 ml-1"
-              aria-label="Hide sidebar"
+              title="Collapse sidebar"
+              className="p-2 text-[#9CA3AF] hover:text-white hover:bg-[#1A1A1A] rounded-lg border border-[#262626] hover:border-[#3A3A3A] transition-all cursor-pointer shrink-0 ml-1"
+              aria-label="Collapse sidebar"
             >
-              <PanelLeftClose className="w-5 h-5 text-[#FF5500]" />
+              <ChevronLeft className="w-4 h-4 text-[#A1A1AA] hover:text-white" />
             </button>
           )}
         </div>
