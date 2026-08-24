@@ -5,15 +5,15 @@ export const CustomerAbout: React.FC = () => {
     <div className="min-h-screen bg-black text-white selection:bg-[#FF5A00] selection:text-white pb-20">
       
       {/* ========================================================================= */}
-      {/* HERO SECTION: Compact Header Banner (Matching Offers page banner height) */}
+      {/* HERO SECTION: Header Banner with Top-Aligned Burger (Full Top Bun Visible) */}
       {/* ========================================================================= */}
       <section aria-label="About Us Hero" className="relative w-full overflow-hidden bg-black h-[220px] sm:h-[260px] lg:h-[300px] xl:h-[320px] flex items-center">
-        {/* Background Banner Image with precise focal positioning */}
+        {/* Background Banner Image with top-right focal alignment to show full top bun */}
         <div className="absolute inset-0 z-0">
           <img
             src="/about_hero_banner.png"
             alt="Patty Project Hero Burger"
-            className="w-full h-full object-cover object-[right_center] select-none pointer-events-none"
+            className="w-full h-full object-cover object-right-top sm:object-[right_top] select-none pointer-events-none"
             loading="eager"
           />
           {/* Soft dark gradient on left for guaranteed text readability */}
