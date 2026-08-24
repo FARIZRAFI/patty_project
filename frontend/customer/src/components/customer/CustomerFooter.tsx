@@ -4,8 +4,9 @@ import { Mail, MapPin, Phone, Clock, ExternalLink } from 'lucide-react';
 
 export const CustomerFooter: React.FC = () => {
   return (
-    <footer className="w-full bg-black pt-14 pb-8 text-white">
-      <div className="max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 space-y-12">
+    <footer className="w-full bg-black pt-14 pb-8 text-white border-t border-white/[0.06]">
+      {/* Full-width container spanning full desktop screen */}
+      <div className="w-full px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-12">
         {/* 5-Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10 xl:gap-12">
           
