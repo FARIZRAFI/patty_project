@@ -88,7 +88,7 @@ export const CustomerFooter: React.FC = () => {
                 <Link to="/" className="hover:text-white transition-colors">Home</Link>
               </li>
               <li>
-                <Link to="/menu" className="hover:text-white transition-colors">Full Menu & Order</Link>
+                <Link to="/order" className="hover:text-white transition-colors">Order Online</Link>
               </li>
               <li>
                 <Link to="/offers" className="hover:text-white transition-colors">Special Offers</Link>
@@ -109,19 +109,19 @@ export const CustomerFooter: React.FC = () => {
             </h4>
             <ul className="space-y-2.5 text-xs text-[#9CA3AF] font-medium">
               <li>
-                <Link to="/menu" className="hover:text-white transition-colors">Gourmet Burgers</Link>
+                <Link to="/order" className="hover:text-white transition-colors">Gourmet Burgers</Link>
               </li>
               <li>
-                <Link to="/menu" className="hover:text-white transition-colors">Chicken Sandos</Link>
+                <Link to="/order" className="hover:text-white transition-colors">Chicken Sandos</Link>
               </li>
               <li>
-                <Link to="/menu" className="hover:text-white transition-colors">Loaded Fries & Sides</Link>
+                <Link to="/order" className="hover:text-white transition-colors">Loaded Fries & Sides</Link>
               </li>
               <li>
-                <Link to="/menu" className="hover:text-white transition-colors">Handmade Shakes</Link>
+                <Link to="/order" className="hover:text-white transition-colors">Handmade Shakes</Link>
               </li>
               <li>
-                <Link to="/menu" className="hover:text-white transition-colors">Dips & Beverages</Link>
+                <Link to="/order" className="hover:text-white transition-colors">Dips & Beverages</Link>
               </li>
             </ul>
           </div>

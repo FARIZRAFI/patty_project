@@ -19,7 +19,6 @@ export const CustomerHeader: React.FC<Props> = ({ onOpenLocationModal, onOpenMob
 
   const navLinks = [
     { label: 'HOME', path: '/' },
-    { label: 'MENU', path: '/menu' },
     { label: 'OFFERS', path: '/offers' },
     { label: 'ABOUT', path: '/about' },
     { label: 'CONTACT', path: '/contact' },

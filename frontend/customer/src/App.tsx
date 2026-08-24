@@ -102,11 +102,11 @@ const CustomerLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children
   const orderingPortalPages = ['/order', '/cart', '/checkout', '/orders', '/profile', '/addresses', '/payment-methods', '/mock-checkout'];
   const isOrderingPortal = orderingPortalPages.includes(location.pathname) || location.pathname.startsWith('/order-confirmation') || location.pathname.startsWith('/mock-checkout');
 
-  const hideBottomNavPages = ['/', '/contact', '/select-location', '/menu', '/about'];
+  const hideBottomNavPages = ['/', '/contact', '/select-location', '/about'];
   const showBottomNav = !hideBottomNavPages.includes(location.pathname);
 
   // Footer only on public marketing/showcase pages
-  const publicPagesWithFooter = ['/', '/menu', '/offers', '/about', '/contact'];
+  const publicPagesWithFooter = ['/', '/offers', '/about', '/contact'];
   const showFooter = publicPagesWithFooter.includes(location.pathname);
 
   // - Selection Location: /select-location (Excluded per user request)
@@ -118,7 +118,6 @@ const CustomerLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children
   // Explicitly EXCLUDED from:
   // - Select location page ('/select-location')
   // - Landing page ('/')
-  // - Public customer menu page ('/menu')
   // - Marketing showcase pages ('/about', '/contact', '/offers')
   const isOrderNowFlowPage =
     location.pathname === '/order' ||
@@ -129,9 +128,9 @@ const CustomerLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children
     location.pathname.startsWith('/order-confirmation') ||
     location.pathname === '/payment-methods' ||
     location.pathname === '/orders' ||
-    location.pathname === '/addresses' ||
+    location.pathname === '/loyalty' ||
     location.pathname === '/profile' ||
-    location.pathname === '/loyalty';
+    location.pathname === '/addresses';
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between relative">
@@ -213,7 +212,7 @@ export function App() {
           {/* Customer Routes */}
           <Route path="/" element={<CustomerLayoutShell><CustomerHome /></CustomerLayoutShell>} />
           <Route path="/select-location" element={<CustomerLayoutShell><SelectLocationPage /></CustomerLayoutShell>} />
-          <Route path="/menu" element={<CustomerLayoutShell><PublicMenuPage /></CustomerLayoutShell>} />
+          <Route path="/menu" element={<Navigate to="/order" replace />} />
           <Route path="/order" element={<CustomerLayoutShell><CustomerMenu /></CustomerLayoutShell>} />
           <Route path="/offers" element={<CustomerLayoutShell><CustomerOffers /></CustomerLayoutShell>} />
           <Route path="/about" element={<CustomerLayoutShell><CustomerAbout /></CustomerLayoutShell>} />

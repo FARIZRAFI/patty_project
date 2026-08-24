@@ -190,7 +190,7 @@ export const CustomerHome: React.FC = () => {
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-widest uppercase font-hero">
               SIGNATURE BURGERS
             </h2>
-            <Link to="/menu" className="text-xs sm:text-sm font-extrabold text-[#FF5500] hover:underline flex items-center gap-1 uppercase tracking-wider">
+            <Link to="/order" className="text-xs sm:text-sm font-extrabold text-[#FF5500] hover:underline flex items-center gap-1 uppercase tracking-wider">
               <span>VIEW ALL</span>
               <ChevronRight className="w-4 h-4" />
             </Link>

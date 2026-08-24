@@ -29,7 +29,6 @@ export const MobileDrawer: React.FC<Props> = ({ onClose, onOpenLocationModal }) 
 
   const navLinks = [
     { label: 'HOME', path: '/', icon: Home },
-    { label: 'MENU', path: '/menu', icon: UtensilsCrossed },
     { label: 'OFFERS', path: '/offers', icon: Tag },
     { label: 'ABOUT', path: '/about', icon: Info },
     { label: 'CONTACT', path: '/contact', icon: Headphones },
