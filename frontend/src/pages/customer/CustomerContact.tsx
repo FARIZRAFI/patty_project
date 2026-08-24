@@ -32,33 +32,36 @@ export const CustomerContact: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-[#FF5500] selection:text-white flex flex-col justify-between">
-      {/* 1400px Apple-inspired Editorial Container */}
-      <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-12 xl:px-16 pt-16 sm:pt-20 lg:pt-24 pb-20 sm:pb-24">
+      {/* 1280–1400px Centered Editorial Container */}
+      <div className="w-full max-w-[1360px] mx-auto px-5 sm:px-8 lg:px-12 pt-12 sm:pt-16 lg:pt-20 pb-16 sm:pb-20">
         
-        {/* Two-Column Desktop Layout (46% Left / 54% Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-20 items-stretch">
+        {/* Two-Column Desktop Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 xl:gap-16 items-start">
           
           {/* ========================================================================= */}
-          {/* LEFT COLUMN: Contact Intro & Form (Approx 46%) */}
+          {/* LEFT COLUMN: Contact Intro & Form */}
           {/* ========================================================================= */}
-          <div className="lg:col-span-6 flex flex-col justify-center space-y-8">
+          <div className="lg:col-span-6 space-y-6">
             
-            {/* Contact Hero Intro */}
-            <div className="space-y-4">
-              <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.12em] text-[#FF5500] block">
-                CONTACT US
-              </span>
+            {/* Header Intro */}
+            <div className="space-y-3">
+              <div>
+                <span className="text-xs sm:text-[13px] font-bold uppercase tracking-[0.12em] text-[#FF5500] block">
+                  CONTACT US
+                </span>
+                <div className="w-8 h-0.5 bg-[#FF5500] rounded-full mt-1.5" />
+              </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-[64px] xl:text-[72px] font-black uppercase text-white tracking-tight font-hero leading-[0.96]">
+              <h1 className="text-4xl sm:text-5xl lg:text-[64px] xl:text-[70px] font-black uppercase text-white tracking-tight font-hero leading-[0.95] pt-1">
                 GET IN TOUCH
               </h1>
 
-              <p className="text-base sm:text-lg lg:text-[18px] text-[#A1A1A1] leading-[1.5] max-w-[520px]">
+              <p className="text-[15px] sm:text-base lg:text-[17px] text-[#A1A1A1] leading-[1.5] max-w-[500px] pt-1">
                 We'd love to hear from you. Whether it's a question, feedback or a custom request — drop us a message.
               </p>
 
               {/* Location Line */}
-              <div className="text-sm sm:text-[15px] text-[#A1A1A1] pt-1 space-y-0.5">
+              <div className="text-xs sm:text-sm text-[#A1A1A1] pt-1 leading-relaxed">
                 <p>
                   Find our{' '}
                   <Link to="/select-location" className="text-[#FF5500] font-semibold hover:underline">
@@ -75,27 +78,27 @@ export const CustomerContact: React.FC = () => {
 
             {/* Contact Form */}
             {submitted ? (
-              <div className="p-8 bg-[#111111] border border-[#FF5500]/40 rounded-xl space-y-3 transition-all">
-                <div className="flex items-center gap-3 text-[#FF5500]">
-                  <CheckCircle2 className="w-6 h-6 shrink-0" />
-                  <h3 className="text-lg font-bold text-white uppercase font-hero tracking-wide">
+              <div className="p-6 bg-[#111111] border border-[#FF5500]/40 rounded-[8px] space-y-2.5 transition-all">
+                <div className="flex items-center gap-2.5 text-[#FF5500]">
+                  <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  <h3 className="text-base font-bold text-white uppercase font-hero tracking-wide">
                     Message Sent Successfully
                   </h3>
                 </div>
-                <p className="text-sm text-[#A1A1A1] leading-relaxed">
+                <p className="text-xs sm:text-sm text-[#A1A1A1] leading-relaxed">
                   Thank you for reaching out. Our team has received your note and will be in touch shortly.
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5 max-w-[540px]">
+              <form onSubmit={handleSubmit} className="space-y-4 max-w-[500px]">
                 {/* Row 1: First Name & Last Name */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                  <div className="space-y-1.5">
                     <label 
                       htmlFor="first-name" 
                       className="block text-xs sm:text-[13px] font-semibold text-white tracking-wide"
                     >
-                      First Name <span className="text-neutral-500 font-normal lowercase text-xs">(required)</span>
+                      First Name <span className="text-neutral-500 font-normal lowercase text-[11px]">(required)</span>
                     </label>
                     <input
                       id="first-name"
@@ -104,16 +107,16 @@ export const CustomerContact: React.FC = () => {
                       placeholder="Your first name"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full h-[52px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-lg px-4 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
+                      className="w-full h-[50px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-[8px] px-3.5 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label 
                       htmlFor="last-name" 
                       className="block text-xs sm:text-[13px] font-semibold text-white tracking-wide"
                     >
-                      Last Name <span className="text-neutral-500 font-normal lowercase text-xs">(required)</span>
+                      Last Name <span className="text-neutral-500 font-normal lowercase text-[11px]">(required)</span>
                     </label>
                     <input
                       id="last-name"
@@ -122,18 +125,18 @@ export const CustomerContact: React.FC = () => {
                       placeholder="Your last name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="w-full h-[52px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-lg px-4 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
+                      className="w-full h-[50px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-[8px] px-3.5 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
 
                 {/* Row 2: Email */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label 
                     htmlFor="contact-email" 
                     className="block text-xs sm:text-[13px] font-semibold text-white tracking-wide"
                   >
-                    Email <span className="text-neutral-500 font-normal lowercase text-xs">(required)</span>
+                    Email <span className="text-neutral-500 font-normal lowercase text-[11px]">(required)</span>
                   </label>
                   <input
                     id="contact-email"
@@ -142,17 +145,17 @@ export const CustomerContact: React.FC = () => {
                     placeholder="Your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-[52px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-lg px-4 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
+                    className="w-full h-[50px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-[8px] px-3.5 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
                   />
                 </div>
 
                 {/* Row 3: Subject */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label 
                     htmlFor="contact-subject" 
                     className="block text-xs sm:text-[13px] font-semibold text-white tracking-wide"
                   >
-                    Subject <span className="text-neutral-500 font-normal lowercase text-xs">(required)</span>
+                    Subject <span className="text-neutral-500 font-normal lowercase text-[11px]">(required)</span>
                   </label>
                   <input
                     id="contact-subject"
@@ -161,17 +164,17 @@ export const CustomerContact: React.FC = () => {
                     placeholder="What's this about?"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    className="w-full h-[52px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-lg px-4 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
+                    className="w-full h-[50px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-[8px] px-3.5 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
                   />
                 </div>
 
                 {/* Row 4: Message */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label 
                     htmlFor="contact-message" 
                     className="block text-xs sm:text-[13px] font-semibold text-white tracking-wide"
                   >
-                    Message <span className="text-neutral-500 font-normal lowercase text-xs">(required)</span>
+                    Message <span className="text-neutral-500 font-normal lowercase text-[11px]">(required)</span>
                   </label>
                   <textarea
                     id="contact-message"
@@ -180,15 +183,15 @@ export const CustomerContact: React.FC = () => {
                     placeholder="Write your message here..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="w-full h-[130px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-lg p-4 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors resize-none"
+                    className="w-full h-[120px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-[8px] p-3.5 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors resize-none"
                   />
                 </div>
 
-                {/* Submit Button */}
+                {/* Submit Button: ~210px wide, 50px high, subtle hover lift */}
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="h-[52px] px-8 bg-[#FF5500] hover:bg-[#E04B00] text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded-lg flex items-center justify-center gap-2.5 transition-all duration-200 hover:shadow-lg hover:shadow-[#FF5500]/20 active:scale-[0.98] cursor-pointer"
+                    className="w-full sm:w-[210px] h-[50px] bg-[#FF5500] hover:bg-[#FF661A] text-white text-xs sm:text-[13px] font-bold uppercase tracking-wider rounded-[8px] flex items-center justify-center gap-2 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer shadow-md hover:shadow-lg hover:shadow-[#FF5500]/20"
                   >
                     <span>SUBMIT MESSAGE</span>
                     <ArrowRight className="w-4 h-4" />
@@ -200,14 +203,14 @@ export const CustomerContact: React.FC = () => {
           </div>
 
           {/* ========================================================================= */}
-          {/* RIGHT COLUMN: Large Editorial Restaurant Interior Image (Approx 54%) */}
+          {/* RIGHT COLUMN: Large Editorial Restaurant Interior Image */}
           {/* ========================================================================= */}
-          <div className="lg:col-span-6 flex items-center justify-center">
-            <div className="w-full h-[380px] sm:h-[480px] lg:h-[650px] xl:h-[680px] rounded-[20px] overflow-hidden border border-[#222222] bg-[#111111]">
+          <div className="lg:col-span-6 flex items-start justify-center pt-1 lg:pt-2">
+            <div className="w-full h-[380px] sm:h-[460px] lg:h-[620px] xl:h-[640px] rounded-[20px] overflow-hidden border border-[#222222] bg-[#111111]">
               <img
                 src="/contact_background.jpg"
                 alt="Patty Project Restaurant Interior & Bar"
-                className="w-full h-full object-cover object-center select-none pointer-events-none transition-transform duration-500 hover:scale-[1.01]"
+                className="w-full h-full object-cover object-center select-none pointer-events-none brightness-[1.08] contrast-[1.03]"
                 loading="eager"
               />
             </div>
