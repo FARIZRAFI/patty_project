@@ -9,7 +9,7 @@ import { CustomerCard } from '../../types/card';
 
 export const CustomerCheckout: React.FC = () => {
   const [step, setStep] = useState<1 | 2>(1);
-  const { items, orderType, setOrderType, selectedBranch, getTotal, getSubtotal, getDeliveryFee, discountAmount, clearCart } = useCartStore();
+  const { items, orderType, setOrderType, selectedBranch, getTotal, getSubtotal, getDeliveryFee, getServiceFee, discountAmount, clearCart } = useCartStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
@@ -132,12 +132,20 @@ export const CustomerCheckout: React.FC = () => {
         customer_name: customerName,
         customer_email: customerEmail,
         customer_phone: fullPhone,
-        delivery_address: orderType === 'DELIVERY' ? { door_number: doorNumber, address_line1: addressLine1, address_line2: addressLine2, city, postcode, country } : null,
+        delivery_address: orderType === 'DELIVERY' ? {
+          door_number: doorNumber,
+          address_line1: addressLine1,
+          address_line2: addressLine2,
+          city: city || 'London',
+          postcode,
+          country: country || 'United Kingdom'
+        } : null,
         delivery_instructions: instructions,
+        delivery_postcode: postcode || undefined,
         items: items.map((i) => ({
           product_id: i.product.id,
           quantity: i.quantity,
-          selected_modifiers: i.selectedModifiers.map((m) => ({ name: m.name, price: m.price }))
+          selected_modifiers: (i.selectedModifiers || []).map((m) => ({ name: m.name, price: m.price }))
         }))
       };
 
@@ -167,11 +175,17 @@ export const CustomerCheckout: React.FC = () => {
         navigate(`/order-confirmation/${newOrder.order_number}`);
       }
     } catch (err: any) {
-      const errMsg = err?.response?.data?.detail?.message || err?.response?.data?.detail || err?.message || '';
-      if (typeof errMsg === 'string' && (errMsg.includes('2 MILES') || errMsg.includes('RADIUS') || errMsg.includes('DELIVERY_OUTSIDE_RADIUS'))) {
+      const detailObj = err?.detail || err?.data?.detail;
+      const rawMsg =
+        (typeof detailObj === 'string' ? detailObj : '') ||
+        (typeof detailObj === 'object' && detailObj !== null ? (detailObj.message || detailObj.error || detailObj.msg) : '') ||
+        err?.message ||
+        'Payment initiation failed. Please try again.';
+
+      if (typeof rawMsg === 'string' && (rawMsg.includes('2 MILES') || rawMsg.includes('RADIUS') || rawMsg.includes('DELIVERY_OUTSIDE_RADIUS'))) {
         setError('WE PROVIDE DELIVERY UP TO 2 MILES ONLY. Please choose Collection or enter an address within 2 miles.');
       } else {
-        setError(typeof errMsg === 'string' && errMsg ? errMsg : 'Payment initiation failed. Please try again.');
+        setError(rawMsg);
       }
     } finally {
       setLoading(false);
@@ -772,6 +786,12 @@ export const CustomerCheckout: React.FC = () => {
                 <span>Delivery fee</span>
                 <span className="text-[#F5F5F5] font-medium">£{delivery.toFixed(2)}</span>
               </div>
+              {getServiceFee() > 0 && (
+                <div className="flex justify-between">
+                  <span>Service fee</span>
+                  <span className="text-[#F5F5F5] font-medium">£{getServiceFee().toFixed(2)}</span>
+                </div>
+              )}
               {discountAmount > 0 && (
                 <div className="flex justify-between text-[#22C55E] font-medium">
                   <span>Discount</span>

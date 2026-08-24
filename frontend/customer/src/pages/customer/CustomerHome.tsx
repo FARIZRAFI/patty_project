@@ -7,6 +7,7 @@ import { ProductDetailModal } from './ProductDetailModal';
 import { CustomerFooter } from '../../components/customer/CustomerFooter';
 import { useCartStore } from '../../store/cartStore';
 import bannerImg from '../../assets/banner.png';
+import mobileBannerImg from '../../assets/delivery_mobile_banner.png';
 
 export const CustomerHome: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -165,16 +166,24 @@ export const CustomerHome: React.FC = () => {
       </section>
 
       {/* DELIVERY PROMO BANNER: CRAVING IT? WE'RE ALREADY ON OUR WAY */}
-      <section className="w-full -my-14 sm:-my-20 lg:-my-28 xl:-my-32 overflow-hidden">
+      <section className="w-full -mt-12 sm:-mt-6 lg:-my-28 xl:-my-32 overflow-hidden flex items-center justify-center">
+        {/* Mobile View: Exact Attached Mobile Banner Image */}
+        <img
+          src={mobileBannerImg}
+          alt="Hot & Special Food - Craving It? We're Already On Our Way."
+          className="w-full h-auto block select-none lg:hidden"
+        />
+
+        {/* Desktop View: Original Desktop Banner (Unchanged) */}
         <img
           src={bannerImg}
           alt="Hot & Special Food - Craving It? We're Already On Our Way."
-          className="w-full h-auto block select-none"
+          className="w-full h-auto hidden lg:block select-none"
         />
       </section>
 
       {/* SIGNATURE BURGERS & TODAY'S OFFERS SECTION */}
-      <section className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-12 -mt-10 sm:-mt-14 lg:-mt-20">
+      <section className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-12 -mt-10 sm:mt-0 lg:-mt-20">
         {/* SIGNATURE BURGERS SHOWCASE SECTION (Full Width & Large Scale matching reference poster) */}
         <div className="space-y-10 sm:space-y-12">
           <div className="flex items-center justify-between">

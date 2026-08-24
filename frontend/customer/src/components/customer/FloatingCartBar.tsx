@@ -15,13 +15,20 @@ export const FloatingCartBar: React.FC = () => {
   const hideCartBarPages = ['/', '/menu', '/cart', '/checkout'];
   const isHidePage = hideCartBarPages.includes(location.pathname) || location.pathname.startsWith('/order-confirmation');
 
+  const hideBottomNavPages = ['/', '/contact', '/select-location', '/menu', '/about'];
+  const showBottomNav = !hideBottomNavPages.includes(location.pathname);
+
   // Hide completely when cart is empty, on landing/menu/cart/checkout pages, OR when Product Preview Modal is open!
   if (totalCount === 0 || isProductModalOpen || isHidePage) return null;
 
   return (
     <>
-      {/* Mobile View Cart Bar: Full width pinned at bottom */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FF5500] text-white px-5 py-3.5 flex items-center justify-between shadow-2xl border-t border-[#FF7733]/40 cursor-pointer active:bg-[#E04B00] transition-colors">
+      {/* Mobile View Cart Bar: Pinned directly ABOVE bottom nav bar (or at bottom if no nav bar) */}
+      <div
+        className={`sm:hidden fixed left-0 right-0 z-40 bg-[#FF5500] text-white px-5 py-3.5 flex items-center justify-between shadow-2xl border-t border-[#FF7733]/40 cursor-pointer active:bg-[#E04B00] transition-all duration-200 ${
+          showBottomNav ? 'bottom-[56px]' : 'bottom-0'
+        }`}
+      >
         <button
           onClick={() => navigate('/cart')}
           className="w-full flex items-center justify-between cursor-pointer"

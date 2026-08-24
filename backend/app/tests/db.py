@@ -14,7 +14,7 @@ from app.main import app
 from app.core.database import Base, get_db
 import app.models as _all_models_registered
 from app.models import (
-    User, UserRole, CustomerAddress,
+    User, UserRole, CustomerAddress, UserAuthIdentity, AuthProvider, AuthConsumedJti,
     Branch, BranchUser,
     Category, Product, ProductModifier,
     Order, OrderItem, OrderStatusHistory, OrderStatus, OrderType,

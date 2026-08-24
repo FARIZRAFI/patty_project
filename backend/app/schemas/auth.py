@@ -16,6 +16,23 @@ class RegisterRequest(BaseModel):
     phone: Optional[str] = None
     password: str
 
+class SocialLoginRequest(BaseModel):
+    provider: str  # google, apple
+    email: EmailStr
+    full_name: Optional[str] = None
+    provider_user_id: Optional[str] = None
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str
+    state_token: str
+
+class GoogleNonceResponse(BaseModel):
+    nonce: str
+    state_token: str
+
+class GoogleConfigResponse(BaseModel):
+    client_id: str
+
 class UserResponse(BaseModel):
     id: str
     email: str

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User as UserIcon, Phone, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { api } from '../../api/client';
@@ -17,8 +17,11 @@ export const CustomerLogin: React.FC = () => {
 
   // Status states
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const googleStateRef = useRef<{ nonce: string; state_token: string } | null>(null);
 
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
@@ -29,6 +32,87 @@ export const CustomerLogin: React.FC = () => {
   const resetFormState = () => {
     setError(null);
     setSuccessMessage(null);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const setupGoogleAuth = async () => {
+      try {
+        const config: any = await api.get('/auth/google/config');
+        const nonceData: any = await api.get('/auth/google/nonce');
+        
+        if (!isMounted || !config?.client_id) return;
+        googleStateRef.current = nonceData;
+
+        const initializeGis = () => {
+          if ((window as any).google?.accounts?.id && googleStateRef.current) {
+            (window as any).google.accounts.id.initialize({
+              client_id: config.client_id,
+              nonce: googleStateRef.current.nonce,
+              callback: handleGoogleCredentialResponse,
+            });
+          }
+        };
+
+        if (!document.getElementById('google-gsi-client')) {
+          const script = document.createElement('script');
+          script.id = 'google-gsi-client';
+          script.src = 'https://accounts.google.com/gsi/client';
+          script.async = true;
+          script.defer = true;
+          script.onload = initializeGis;
+          document.body.appendChild(script);
+        } else {
+          initializeGis();
+        }
+      } catch (e) {
+        console.warn('Google OAuth initialization skipped / unavailable:', e);
+      }
+    };
+
+    setupGoogleAuth();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleGoogleCredentialResponse = async (response: any) => {
+    if (!response?.credential || !googleStateRef.current) {
+      setError('Unable to complete sign in with Google. Please use your standard login method.');
+      return;
+    }
+    setGoogleLoading(true);
+    resetFormState();
+    try {
+      const data: any = await api.post('/auth/google', {
+        id_token: response.credential,
+        state_token: googleStateRef.current.state_token,
+      });
+      if (data && data.access_token && data.user) {
+        setAuth(data.access_token, data.user);
+        navigate(redirectPath, { replace: true });
+      } else {
+        setError('Unable to complete sign in with Google. Please use your standard login method.');
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Unable to complete sign in with Google. Please use your standard login method.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleButtonClick = () => {
+    resetFormState();
+    if ((window as any).google?.accounts?.id) {
+      (window as any).google.accounts.id.prompt((notification: any) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          setError('Google One-Tap is not available in this browser window. Please check browser popups or sign in with email.');
+        }
+      });
+    } else {
+      setError('Google Sign-In is initializing. Please try again in a moment.');
+    }
   };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -156,11 +240,11 @@ export const CustomerLogin: React.FC = () => {
         <div className="w-full max-w-[520px] bg-[#121212] border border-[#222222] rounded-2xl p-6 sm:p-12 shadow-2xl shadow-black/90 my-auto flex flex-col justify-between">
           <div>
             {/* Patty Project Brand Logo */}
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mx-auto mb-6 shadow-2xl flex items-center justify-center border border-[#282828]">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 flex items-center justify-center">
               <img
-                src="/logo.jpeg"
+                src="/logo.png"
                 alt="Patty Project"
-                className="w-full h-full object-cover scale-[1.22] select-none"
+                className="w-full h-full object-contain select-none"
               />
             </div>
 
@@ -285,16 +369,26 @@ export const CustomerLogin: React.FC = () => {
                 <div className="space-y-3">
                   <button
                     type="button"
-                    onClick={() => setError('Google sign-in is coming soon.')}
-                    className="w-full bg-[#181818] hover:bg-[#222222] border border-[#282828] text-white font-semibold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
+                    disabled={googleLoading || loading}
+                    onClick={handleGoogleButtonClick}
+                    className="w-full bg-[#181818] hover:bg-[#222222] border border-[#282828] text-white font-semibold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                      <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z" />
-                      <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
-                      <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 10.8 0 12.5s.7 2.8 1.9 5.2l3.7-2.9z" />
-                      <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 17C3.7 20.7 7.5 24 12 24z" />
-                    </svg>
-                    <span>Continue with Google</span>
+                    {googleLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-[#FF5500]" />
+                        <span>Signing in with Google...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" viewBox="0 0 24 24">
+                          <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z" />
+                          <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                          <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 10.8 0 12.5s.7 2.8 1.9 5.2l3.7-2.9z" />
+                          <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 17C3.7 20.7 7.5 24 12 24z" />
+                        </svg>
+                        <span>Continue with Google</span>
+                      </>
+                    )}
                   </button>
 
                   <button
@@ -309,8 +403,8 @@ export const CustomerLogin: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Bottom Sign Up Prompt & Admin Portal Link */}
-                <div className="space-y-3 mt-5">
+                {/* Bottom Sign Up Prompt */}
+                <div className="mt-5">
                   <p className="text-center text-xs text-[#9CA3AF] font-medium">
                     Don't have an account?{' '}
                     <button
@@ -324,15 +418,6 @@ export const CustomerLogin: React.FC = () => {
                       Sign up
                     </button>
                   </p>
-
-                  <div className="pt-3 border-t border-[#1F1F1F] text-center">
-                    <Link
-                      to="/admin/login"
-                      className="text-[11px] font-bold text-[#FF5500] hover:underline transition-colors uppercase tracking-wider flex items-center justify-center gap-1.5"
-                    >
-                      <span>🔐 Admin Portal Login</span>
-                    </Link>
-                  </div>
                 </div>
               </div>
             )}
@@ -504,12 +589,8 @@ export const CustomerLogin: React.FC = () => {
       </div>
 
       {/* Centered Footer Copy */}
-      <footer className="relative z-10 py-3.5 text-center text-[11px] text-[#6B7280] font-medium border-t border-[#141414] bg-[#070707] flex items-center justify-center gap-3">
+      <footer className="relative z-10 py-3.5 text-center text-[11px] text-[#6B7280] font-medium border-t border-[#141414] bg-[#070707] flex items-center justify-center">
         <p>© 2026 Patty Project London. All rights reserved.</p>
-        <span>•</span>
-        <Link to="/admin/login" className="text-[#FF5500] hover:underline font-bold transition-colors">
-          Admin Portal Access
-        </Link>
       </footer>
     </div>
   );

@@ -52,11 +52,11 @@ export const AdminLogin: React.FC = () => {
         <div className="w-full max-w-[520px] min-h-[660px] bg-[#121212] border border-[#222222] rounded-2xl p-11 sm:p-14 sm:py-16 shadow-2xl shadow-black/90 my-auto flex flex-col justify-between">
           <div>
             {/* Industry Standard Patty Project Brand Logo */}
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mx-auto mb-8 shadow-2xl flex items-center justify-center border border-[#282828]">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-8 flex items-center justify-center">
               <img
-                src="/logo.jpeg"
+                src="/logo.png"
                 alt="Patty Project"
-                className="w-full h-full object-cover scale-[1.22] select-none"
+                className="w-full h-full object-contain select-none"
               />
             </div>
 

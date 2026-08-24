@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -9,12 +9,17 @@ class UserRole:
     BRANCH_ADMIN = "BRANCH_ADMIN"
     CUSTOMER = "CUSTOMER"
 
+class AuthProvider:
+    LOCAL = "LOCAL"
+    GOOGLE = "GOOGLE"
+    APPLE = "APPLE"
+
 class User(Base):
     __tablename__ = "users"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(255), unique=True, index=True, nullable=False)
-    password_hash = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=True)  # Nullable for OAuth-only users
     full_name = Column(String(255), nullable=False)
     phone = Column(String(50), nullable=True)
     role = Column(String(50), nullable=False, default=UserRole.CUSTOMER)
@@ -27,6 +32,24 @@ class User(Base):
     cards = relationship("CustomerCard", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="customer")
     loyalty_account = relationship("LoyaltyAccount", back_populates="user", uselist=False)
+    auth_identities = relationship("UserAuthIdentity", back_populates="user", cascade="all, delete-orphan")
+
+class UserAuthIdentity(Base):
+    __tablename__ = "user_auth_identities"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    provider = Column(String(50), nullable=False)           # GOOGLE, APPLE
+    provider_subject = Column(String(255), nullable=False)  # Immutable provider subject ID (sub)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="auth_identities")
+
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_subject", name="uq_provider_subject"),
+    )
 
 class CustomerAddress(Base):
     __tablename__ = "customer_addresses"
@@ -58,4 +81,11 @@ class CustomerCard(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="cards")
+
+class AuthConsumedJti(Base):
+    __tablename__ = "auth_consumed_jtis"
+
+    jti = Column(String(64), primary_key=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 

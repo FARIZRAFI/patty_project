@@ -21,16 +21,29 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const detailMsg = typeof data.detail === 'string'
-        ? data.detail
-        : data.detail && typeof data.detail === 'object' && data.detail.message
-          ? data.detail.message
-          : Array.isArray(data.detail)
-            ? data.detail.map((e: any) => e.msg || JSON.stringify(e)).join(', ')
-            : 'An unexpected error occurred';
+      let detailMsg: string = '';
+      if (typeof data.detail === 'string') {
+        detailMsg = data.detail;
+      } else if (data.detail && typeof data.detail === 'object') {
+        detailMsg = data.detail.message || data.detail.error || data.detail.msg || data.detail.detail || '';
+      } else if (Array.isArray(data.detail)) {
+        detailMsg = data.detail.map((e: any) => (typeof e === 'string' ? e : e.msg || e.message || JSON.stringify(e))).join(', ');
+      }
+
+      if (!detailMsg && typeof data.message === 'string') {
+        detailMsg = data.message;
+      }
+      if (!detailMsg && typeof data.error === 'string') {
+        detailMsg = data.error;
+      }
+      if (!detailMsg) {
+        detailMsg = response.statusText ? `Error: ${response.status} ${response.statusText}` : 'An unexpected error occurred';
+      }
+
       const customErr: any = new Error(detailMsg);
       customErr.detail = data.detail;
       customErr.data = data;
+      customErr.status = response.status;
       throw customErr;
     }
 

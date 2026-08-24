@@ -63,26 +63,30 @@ export const CustomerMenu: React.FC = () => {
 
   const getCategoryIcon = (slugName: string, isSelected: boolean) => {
     const key = slugName.toLowerCase();
-    const iconElement = categoryIcons[key] || <UtensilsCrossed className="w-4 h-4" />;
-    return React.cloneElement(iconElement as React.ReactElement, {
+    const iconElement = (categoryIcons[key] || <UtensilsCrossed className="w-4 h-4" />) as React.ReactElement<{ className?: string }>;
+    return React.cloneElement(iconElement, {
       className: `w-4 h-4 ${isSelected ? 'text-white' : 'text-[#71717A]'}`
     });
   };
 
   return (
-    <div className="w-full max-w-[1260px] mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 text-[#F5F5F5]">
-      {/* Page Heading & Subtitle */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#F5F5F5] tracking-tight">
-          Our Menu
-        </h1>
-        <p className="text-sm text-[#A1A1AA] mt-1.5 font-normal">
-          Burgers, sides and more. Made fresh to order.
-        </p>
-      </div>
+    <div className="w-full min-h-screen bg-black text-[#F5F5F5] pb-36 sm:pb-24">
+      <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-16 pt-8 sm:pt-10 space-y-8">
+        {/* Page Heading & Subtitle */}
+        <div className="pb-2 border-b border-[#1C1C1C]">
+          <span className="text-xs text-[#FF5A00] tracking-[0.25em] font-extrabold uppercase block mb-1">
+            PATTY PROJECT
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight uppercase font-hero">
+            OUR MENU
+          </h1>
+          <p className="text-xs sm:text-sm text-[#A1A1AA] mt-1 font-normal">
+            Burgers, sides and more. Made fresh to order.
+          </p>
+        </div>
 
-      {/* Horizontal Category Navigation Bar */}
-      <div className="flex items-center gap-2.5 pb-3 mb-8 overflow-x-auto scrollbar-none scroll-smooth">
+        {/* Horizontal Category Navigation Bar (Center Aligned) */}
+        <div className="w-full flex items-center justify-start sm:justify-center gap-2.5 pb-3 mb-8 overflow-x-auto scrollbar-none scroll-smooth">
         <button
           onClick={() => setSelectedCategory('ALL')}
           className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors shrink-0 cursor-pointer border ${
@@ -227,6 +231,7 @@ export const CustomerMenu: React.FC = () => {
           onClose={() => setSelectedProduct(null)}
         />
       )}
+      </div>
     </div>
   );
 };

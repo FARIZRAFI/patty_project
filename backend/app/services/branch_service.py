@@ -254,15 +254,15 @@ def find_nearest_eligible_branch(
     for raw_d, _, b in branch_distances:
         rounded_d = round(raw_d, 2)
         candidate_outlets.append({
-            "id": b.id,
-            "name": b.name,
-            "code": b.code,
-            "address_line1": b.address_line1,
-            "city": b.city,
-            "postcode": b.postcode,
+            "id": getattr(b, "id", "") or "",
+            "name": getattr(b, "name", "") or "Branch",
+            "code": getattr(b, "code", "") or "",
+            "address_line1": getattr(b, "address_line1", "") or "",
+            "city": getattr(b, "city", "") or "London",
+            "postcode": getattr(b, "postcode", "") or "",
             "distance_miles": rounded_d,
-            "delivery_eligible": rounded_d <= MAX_DELIVERY_RADIUS_MILES and bool(b.delivery_enabled),
-            "collection_eligible": bool(b.collection_enabled)
+            "delivery_eligible": rounded_d <= MAX_DELIVERY_RADIUS_MILES and bool(getattr(b, "delivery_enabled", True)),
+            "collection_eligible": bool(getattr(b, "collection_enabled", True))
         })
 
     # Check delivery eligibility (<= 2.0 miles and delivery_enabled)

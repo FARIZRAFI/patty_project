@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", os.getenv("APP_ENV", "development"))
     PAYMENT_PROVIDER: str = os.getenv("PAYMENT_PROVIDER", "mock")
 
+    # Google Identity Services (GIS) OAuth
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "mock-google-client-id.apps.googleusercontent.com")
+
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.lower() == "production"

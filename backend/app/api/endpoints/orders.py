@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.order import Order, OrderItem, OrderStatusHistory, OrderStatus, OrderType, PaymentStatus
 from app.models.branch import Branch
+from app.models.product import Product, Inventory
 from app.schemas.order import OrderCreateRequest, OrderResponse, StatusUpdateRequest
 from app.services.pricing_service import calculate_order_totals
 from app.services.payment_service import payment_provider
@@ -145,13 +146,15 @@ def create_order(
 
     order_num = f"#PP{random.randint(1000, 9999)}"
 
-    slot_time = request.collection_slot_time
-    if isinstance(slot_time, str) and slot_time:
+    slot_time = None
+    if isinstance(request.collection_slot_time, str) and request.collection_slot_time.strip():
         try:
             from datetime import datetime as dt
-            slot_time = dt.fromisoformat(slot_time)
+            slot_time = dt.fromisoformat(request.collection_slot_time.strip())
         except Exception:
             slot_time = None
+    elif hasattr(request.collection_slot_time, "isoformat"):
+        slot_time = request.collection_slot_time
 
     order = Order(
         order_number=order_num,

@@ -40,9 +40,9 @@ export const CustomerHeader: React.FC<Props> = ({ onOpenLocationModal, onOpenMob
 
           <Link to="/" className="flex items-center group">
             <img
-              src="/logo.jpeg"
+              src="/logo.png"
               alt="Patty Project"
-              className="w-11 h-11 sm:w-14 sm:h-14 rounded-full object-cover group-hover:scale-105 transition-transform"
+              className="w-11 h-11 sm:w-14 sm:h-14 object-contain group-hover:scale-105 transition-transform"
             />
           </Link>
         </div>

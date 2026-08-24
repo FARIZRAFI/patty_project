@@ -40,7 +40,7 @@ export const AdminLogin: React.FC = () => {
       <div className="w-full max-w-md bg-[#121212] border border-[#262626] rounded-2xl p-8 shadow-2xl relative z-10">
         {/* Brand Logo Header */}
         <div className="flex flex-col items-center text-center mb-8">
-          <img src="/logo.jpeg" alt="Patty Project" className="w-24 h-24 rounded-full object-cover border-2 border-[#FF5500] mb-4 shadow-lg shadow-[#FF5500]/20" />
+          <img src="/logo.png" alt="Patty Project" className="w-24 h-24 object-contain mb-4" />
           <h1 className="text-2xl font-bold text-white tracking-wide">Admin Login</h1>
           <p className="text-[#9CA3AF] text-sm mt-1">Welcome back! Please login to your account.</p>
         </div>

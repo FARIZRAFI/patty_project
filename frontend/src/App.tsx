@@ -105,9 +105,62 @@ const CustomerLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children
   const hideBottomNavPages = ['/', '/contact', '/select-location', '/menu', '/about'];
   const showBottomNav = !hideBottomNavPages.includes(location.pathname);
 
+  // Footer only on public marketing/showcase pages
+  const publicPagesWithFooter = ['/', '/menu', '/offers', '/about', '/contact'];
+  const showFooter = publicPagesWithFooter.includes(location.pathname);
+
+  // - Selection Location: /select-location (Excluded per user request)
+  // - Menu Page (Order Now menu): /order, /product/:productId
+  // - Cart Page: /cart
+  // - Checkout Page: /checkout
+  // - Payment Pages: /mock-checkout, /payment-methods
+  // - Post-order / Account Portal: /order-confirmation, /orders, /addresses, /profile, /loyalty
+  // Explicitly EXCLUDED from:
+  // - Select location page ('/select-location')
+  // - Landing page ('/')
+  // - Public customer menu page ('/menu')
+  // - Marketing showcase pages ('/about', '/contact', '/offers')
+  const isOrderNowFlowPage =
+    location.pathname === '/order' ||
+    location.pathname.startsWith('/product/') ||
+    location.pathname === '/cart' ||
+    location.pathname === '/checkout' ||
+    location.pathname.startsWith('/mock-checkout') ||
+    location.pathname.startsWith('/order-confirmation') ||
+    location.pathname === '/payment-methods' ||
+    location.pathname === '/orders' ||
+    location.pathname === '/addresses' ||
+    location.pathname === '/profile' ||
+    location.pathname === '/loyalty';
+
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col justify-between">
-      <div className="flex-1 flex flex-col justify-between">
+    <div className="min-h-screen bg-black text-white flex flex-col justify-between relative">
+      {/* Dark Burger Watermark Graphic exclusively for Order Now flow pages */}
+      {isOrderNowFlowPage && (
+        <>
+          {/* Mobile View: Vertical / Portrait Burger Background */}
+          <div
+            className="fixed inset-0 z-0 bg-cover bg-right bg-no-repeat pointer-events-none block md:hidden"
+            style={{
+              backgroundImage: `url('/order_now_mobile_bg.png')`,
+              backgroundAttachment: 'fixed',
+            }}
+            aria-hidden="true"
+          />
+
+          {/* Desktop & Tablet View: Landscape Burger Background */}
+          <div
+            className="fixed inset-0 z-0 bg-cover bg-right-top md:bg-right bg-no-repeat pointer-events-none hidden md:block"
+            style={{
+              backgroundImage: `url('/order_now_bg.png')`,
+              backgroundAttachment: 'fixed',
+            }}
+            aria-hidden="true"
+          />
+        </>
+      )}
+
+      <div className="relative z-10 flex-1 flex flex-col justify-between">
         <div>
           {isOrderingPortal ? (
             <OrderingHeader onOpenLocationModal={() => setShowLocationModal(true)} />
@@ -120,8 +173,8 @@ const CustomerLayoutShell: React.FC<{ children: React.ReactNode }> = ({ children
           <main className={showBottomNav ? 'pb-16 md:pb-0' : ''}>{children}</main>
         </div>
 
-        {/* Global Footer on every page */}
-        <CustomerFooter />
+        {/* Footer only on public customer pages */}
+        {showFooter && <CustomerFooter />}
       </div>
 
       {showBottomNav && <MobileBottomNav />}
@@ -147,6 +200,7 @@ export function App() {
       <Router>
         <Routes>
           {/* Admin Routes */}
+          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminLayoutShell><AdminDashboard /></AdminLayoutShell>} />
           <Route path="/admin/orders" element={<AdminLayoutShell><AdminOrderBoard /></AdminLayoutShell>} />

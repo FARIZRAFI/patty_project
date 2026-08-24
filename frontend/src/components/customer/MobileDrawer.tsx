@@ -45,9 +45,9 @@ export const MobileDrawer: React.FC<Props> = ({ onClose, onOpenLocationModal }) 
           <div className="flex items-center justify-between pb-6 border-b border-[#1C1C1C] mb-6">
             <Link to="/" onClick={onClose} className="flex items-center gap-3">
               <img
-                src="/logo.jpeg"
+                src="/logo.png"
                 alt="Patty Project"
-                className="w-12 h-12 rounded-full object-cover border border-[#282828]"
+                className="w-11 h-11 object-contain"
               />
               <span className="font-hero font-black text-white text-base uppercase tracking-tight">
                 Patty Project

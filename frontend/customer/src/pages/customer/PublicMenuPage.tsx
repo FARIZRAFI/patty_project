@@ -80,7 +80,7 @@ export const PublicMenuPage: React.FC = () => {
         
         {/* Header Title & Subtitle */}
         <div className="pb-2 border-b border-[#1C1C1C]">
-          <span className="text-xs text-[#FF5500] tracking-[0.25em] font-extrabold uppercase block mb-1">
+          <span className="text-xs text-[#FF5A00] tracking-[0.25em] font-extrabold uppercase block mb-1">
             PATTY PROJECT
           </span>
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight uppercase font-hero">
@@ -91,8 +91,8 @@ export const PublicMenuPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Category Navigation Bar */}
-        <div className="flex items-center gap-2.5 pb-2 overflow-x-auto scrollbar-none scroll-smooth">
+        {/* Category Navigation Bar (Center Aligned) */}
+        <div className="w-full flex items-center justify-start sm:justify-center gap-2.5 pb-2 overflow-x-auto scrollbar-none scroll-smooth">
           <button
             onClick={() => setSelectedCategory('ALL')}
             className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors shrink-0 cursor-pointer border ${

@@ -53,9 +53,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <div className="p-4 flex items-center justify-between border-b border-[#1A1A1A] h-16 shrink-0 bg-[#0A0A0A]">
           <div className="flex items-center gap-3 min-w-0">
             <img
-              src="/logo.jpeg"
+              src="/logo.png"
               alt="Patty Project"
-              className="w-10 h-10 rounded-full object-cover border border-[#262626] shrink-0 shadow-md"
+              className="w-10 h-10 object-contain shrink-0"
             />
             <div className="min-w-0">
               <h1 className="text-white font-bold text-sm tracking-tight truncate leading-tight">
