@@ -5,29 +5,27 @@ export const CustomerAbout: React.FC = () => {
     <div className="min-h-screen bg-black text-white selection:bg-[#FF5A00] selection:text-white pb-20">
       
       {/* ========================================================================= */}
-      {/* HERO SECTION: Compact Header Banner (Matching Offers page banner height) */}
+      {/* HERO SECTION: Exact Header Banner matching about_hero_burger.jpg */}
       {/* ========================================================================= */}
-      <section aria-label="About Us Hero" className="relative w-full overflow-hidden bg-black h-[220px] sm:h-[260px] lg:h-[300px] xl:h-[320px] flex items-center">
-        {/* Background Banner Image with precise focal positioning */}
-        <div className="absolute inset-0 z-0">
+      <section aria-label="About Us Hero" className="relative w-full bg-black h-[300px] sm:h-[360px] lg:h-[400px] xl:h-[440px] overflow-hidden flex items-center">
+        {/* Right-aligned burger banner that stays fully uncropped and preserves exact proportions */}
+        <div className="absolute right-0 top-0 bottom-0 w-full sm:w-[65%] lg:w-[58%] xl:w-[54%] h-full pointer-events-none select-none z-0">
           <img
             src="/about_hero_banner.png"
             alt="Patty Project Hero Burger"
-            className="w-full h-full object-cover object-[right_center] select-none pointer-events-none"
+            className="w-full h-full object-contain object-right"
             loading="eager"
           />
-          {/* Soft dark gradient on left for guaranteed text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 lg:via-black/40 to-transparent pointer-events-none" />
         </div>
 
         {/* Hero Text Content */}
         <div className="relative z-10 w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24">
-          <div className="max-w-2xl space-y-1.5 sm:space-y-2">
+          <div className="max-w-xl space-y-2.5 sm:space-y-3">
             <span className="text-xs sm:text-[13px] font-bold uppercase tracking-[0.2em] text-[#FF5A00] block">
               ABOUT US
             </span>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[54px] font-black tracking-tight leading-[0.96] text-white font-hero">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[56px] 2xl:text-[62px] font-black tracking-tight leading-[0.98] text-white font-hero">
               <span className="block">Four mates.</span>
               <span className="block">One project.</span>
               <span className="block text-[#FF5A00]">Proper burgers.</span>
