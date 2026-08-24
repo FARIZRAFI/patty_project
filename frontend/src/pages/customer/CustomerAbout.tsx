@@ -7,36 +7,21 @@ export const CustomerAbout: React.FC = () => {
       <div className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-10 sm:pt-14 lg:pt-16">
         
         {/* ========================================================================= */}
-        {/* HERO SECTION: Split Left Title & Right Burger Visual */}
+        {/* HERO SECTION */}
         {/* ========================================================================= */}
-        <section aria-label="About Us Hero" className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 xl:gap-16 items-center">
-          {/* Left Hero Content */}
-          <div className="lg:col-span-7 space-y-4">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#FF5500] block">
-              ABOUT US
-            </span>
+        <section aria-label="About Us Hero" className="space-y-4 max-w-[1000px]">
+          <span className="text-xs font-black uppercase tracking-[0.2em] text-[#FF5500] block">
+            ABOUT US
+          </span>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[56px] font-black uppercase tracking-tight leading-[0.96] font-hero">
-              <span className="text-white block">FOUR MATES.</span>
-              <span className="text-white block">ONE PROJECT.</span>
-              <span className="text-[#FF5500] block">PROPER BURGERS.</span>
-            </h1>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[56px] font-black uppercase tracking-tight leading-[0.96] font-hero">
+            <span className="text-white block">FOUR MATES.</span>
+            <span className="text-white block">ONE PROJECT.</span>
+            <span className="text-[#FF5500] block">PROPER BURGERS.</span>
+          </h1>
 
-            {/* Orange underline accent matching mockup */}
-            <div className="w-14 h-1 bg-[#FF5500] rounded-full mt-4" />
-          </div>
-
-          {/* Right Hero Image */}
-          <div className="lg:col-span-5 flex items-center justify-center lg:justify-end">
-            <div className="relative w-full max-w-[460px] lg:max-w-[500px] aspect-4/3 sm:aspect-16/10 flex items-center justify-center">
-              <img
-                src="/hero_burger_flame.png"
-                alt="Patty Project Signature Double Smash Burger"
-                className="w-full h-full max-h-[300px] sm:max-h-[360px] lg:max-h-[380px] object-contain drop-shadow-[0_20px_40px_rgba(255,85,0,0.22)] select-none pointer-events-none"
-                loading="eager"
-              />
-            </div>
-          </div>
+          {/* Orange underline accent matching mockup */}
+          <div className="w-14 h-1 bg-[#FF5500] rounded-full mt-4" />
         </section>
 
         {/* ========================================================================= */}
