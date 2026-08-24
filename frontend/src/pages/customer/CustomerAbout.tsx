@@ -5,9 +5,9 @@ export const CustomerAbout: React.FC = () => {
     <div className="min-h-screen bg-black text-white selection:bg-[#FF5A00] selection:text-white pb-20">
       
       {/* ========================================================================= */}
-      {/* HERO SECTION: Full Desktop Width Banner with Balanced Aspect Ratio */}
+      {/* HERO SECTION: Compact Header Banner (Matching Offers page banner height) */}
       {/* ========================================================================= */}
-      <section aria-label="About Us Hero" className="relative w-full overflow-hidden bg-black h-[360px] sm:h-[440px] lg:h-[520px] xl:h-[580px] 2xl:h-[620px] flex items-center">
+      <section aria-label="About Us Hero" className="relative w-full overflow-hidden bg-black h-[220px] sm:h-[260px] lg:h-[300px] xl:h-[320px] flex items-center">
         {/* Background Banner Image with precise focal positioning */}
         <div className="absolute inset-0 z-0">
           <img
@@ -17,17 +17,17 @@ export const CustomerAbout: React.FC = () => {
             loading="eager"
           />
           {/* Soft dark gradient on left for guaranteed text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 lg:via-black/35 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 lg:via-black/40 to-transparent pointer-events-none" />
         </div>
 
-        {/* Hero Text Content aligned to Full Desktop Grid */}
+        {/* Hero Text Content */}
         <div className="relative z-10 w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24">
-          <div className="max-w-2xl space-y-3 sm:space-y-4">
+          <div className="max-w-2xl space-y-1.5 sm:space-y-2">
             <span className="text-xs sm:text-[13px] font-bold uppercase tracking-[0.2em] text-[#FF5A00] block">
               ABOUT US
             </span>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[68px] 2xl:text-[74px] font-black tracking-tight leading-[1.0] text-white font-hero">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[54px] font-black tracking-tight leading-[0.96] text-white font-hero">
               <span className="block">Four mates.</span>
               <span className="block">One project.</span>
               <span className="block text-[#FF5A00]">Proper burgers.</span>
@@ -39,7 +39,7 @@ export const CustomerAbout: React.FC = () => {
       {/* ========================================================================= */}
       {/* MAIN CONTENT: Full Desktop Container */}
       {/* ========================================================================= */}
-      <div className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-10 sm:pt-14 lg:pt-16">
+      <div className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-8 sm:pt-12">
         
         {/* Two-Column Grid: Left Story (7 cols) / Right Brand Principles (5 cols) */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-24 items-start">
