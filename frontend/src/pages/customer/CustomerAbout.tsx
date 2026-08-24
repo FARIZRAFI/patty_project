@@ -5,10 +5,10 @@ export const CustomerAbout: React.FC = () => {
     <div className="min-h-screen bg-black text-white selection:bg-[#FF5A00] selection:text-white pb-20">
       
       {/* ========================================================================= */}
-      {/* HERO SECTION: Exact Header Banner matching about_hero_burger.jpg */}
+      {/* HERO SECTION: Exact Typography & Font matching Offers Page */}
       {/* ========================================================================= */}
       <section aria-label="About Us Hero" className="relative w-full bg-black h-[360px] sm:h-[420px] lg:h-[460px] xl:h-[500px] overflow-hidden flex items-center">
-        {/* Background Banner Image with focal point at [right_25%] to display full top bun and patties */}
+        {/* Background Banner Image with focal point at [right_25%] */}
         <div className="absolute inset-0 z-0">
           <img
             src="/about_hero_banner.png"
@@ -20,17 +20,17 @@ export const CustomerAbout: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 lg:via-black/35 to-transparent pointer-events-none" />
         </div>
 
-        {/* Hero Text Content */}
+        {/* Hero Text Content using exact Offers page font & typography scale */}
         <div className="relative z-10 w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24">
-          <div className="max-w-xl space-y-3 sm:space-y-4">
-            <span className="text-xs sm:text-[13px] font-bold uppercase tracking-[0.2em] text-[#FF5A00] block">
+          <div className="max-w-xl space-y-2 sm:space-y-2.5">
+            <span className="text-[#FF5A00] text-[12px] sm:text-[13px] font-extrabold uppercase tracking-[0.1em] block mb-1.5 sm:mb-2">
               ABOUT US
             </span>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[66px] font-black tracking-tight leading-[1.0] text-white font-hero">
-              <span className="block">Four mates.</span>
-              <span className="block">One project.</span>
-              <span className="block text-[#FF5A00]">Proper burgers.</span>
+            <h1 className="text-3xl sm:text-4xl lg:text-[48px] xl:text-[56px] 2xl:text-[62px] font-black uppercase tracking-tight leading-[0.94]">
+              <span className="text-white block">FOUR MATES.</span>
+              <span className="text-white block">ONE PROJECT.</span>
+              <span className="text-[#FF5A00] block">PROPER BURGERS.</span>
             </h1>
           </div>
         </div>
