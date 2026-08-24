@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 export const CustomerContact: React.FC = () => {
@@ -31,145 +31,164 @@ export const CustomerContact: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-[#FF5500] selection:text-white pb-20">
-      <div className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-10 sm:pt-14 lg:pt-16">
+    <div className="min-h-screen bg-black text-white selection:bg-[#FF5500] selection:text-white flex flex-col justify-between">
+      {/* 1400px Apple-inspired Editorial Container */}
+      <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-12 xl:px-16 pt-16 sm:pt-20 lg:pt-24 pb-20 sm:pb-24">
         
-        {/* Main 2-Column Grid matching exact attached design */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 xl:gap-18 items-center">
+        {/* Two-Column Desktop Layout (46% Left / 54% Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-20 items-stretch">
           
           {/* ========================================================================= */}
-          {/* LEFT COLUMN: Contact Header, Info & Form */}
+          {/* LEFT COLUMN: Contact Intro & Form (Approx 46%) */}
           {/* ========================================================================= */}
-          <div className="lg:col-span-6 space-y-7 z-10">
+          <div className="lg:col-span-6 flex flex-col justify-center space-y-8">
             
-            {/* Header Info */}
-            <div className="space-y-3.5">
-              <div className="space-y-1.5">
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#FF5500] block">
-                  CONTACT US
-                </span>
-                <div className="w-8 h-0.5 bg-[#FF5500] rounded-full" />
-              </div>
+            {/* Contact Hero Intro */}
+            <div className="space-y-4">
+              <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.12em] text-[#FF5500] block">
+                CONTACT US
+              </span>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-black uppercase text-white tracking-tight font-hero leading-[0.96] pt-1">
+              <h1 className="text-4xl sm:text-5xl lg:text-[64px] xl:text-[72px] font-black uppercase text-white tracking-tight font-hero leading-[0.96]">
                 GET IN TOUCH
               </h1>
 
-              <p className="text-sm sm:text-base text-[#9CA3AF] leading-relaxed max-w-xl">
+              <p className="text-base sm:text-lg lg:text-[18px] text-[#A1A1A1] leading-[1.5] max-w-[520px]">
                 We'd love to hear from you. Whether it's a question, feedback or a custom request — drop us a message.
               </p>
 
-              {/* Location notice matching screenshot */}
-              <div className="flex items-start gap-2 text-sm text-white pt-2">
-                <MapPin className="w-4 h-4 text-[#FF5500] shrink-0 mt-1" />
-                <p className="leading-relaxed text-sm">
+              {/* Location Line */}
+              <div className="text-sm sm:text-[15px] text-[#A1A1A1] pt-1 space-y-0.5">
+                <p>
                   Find our{' '}
-                  <Link to="/select-location" className="text-[#FF5500] font-bold hover:underline">
+                  <Link to="/select-location" className="text-[#FF5500] font-semibold hover:underline">
                     store locations here
                   </Link>
-                  .<br />
+                  .
+                </p>
+                <p>
                   We're excited to welcome you to{' '}
-                  <span className="text-[#FF5500] font-bold">Patty Project</span>.
+                  <span className="text-[#FF5500] font-semibold">Patty Project</span>.
                 </p>
               </div>
             </div>
 
             {/* Contact Form */}
             {submitted ? (
-              <div className="p-8 bg-[#0D0D0D] border border-[#FF5500]/50 rounded-2xl space-y-3 animate-fadeIn">
+              <div className="p-8 bg-[#111111] border border-[#FF5500]/40 rounded-xl space-y-3 transition-all">
                 <div className="flex items-center gap-3 text-[#FF5500]">
-                  <CheckCircle2 className="w-6 h-6" />
-                  <h3 className="text-lg font-black text-white uppercase font-hero tracking-wide">
-                    Message Submitted!
+                  <CheckCircle2 className="w-6 h-6 shrink-0" />
+                  <h3 className="text-lg font-bold text-white uppercase font-hero tracking-wide">
+                    Message Sent Successfully
                   </h3>
                 </div>
-                <p className="text-sm text-[#9CA3AF] leading-relaxed">
-                  Thank you for reaching out to Patty Project. Our team has received your message and will respond shortly.
+                <p className="text-sm text-[#A1A1A1] leading-relaxed">
+                  Thank you for reaching out. Our team has received your note and will be in touch shortly.
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
+              <form onSubmit={handleSubmit} className="space-y-5 max-w-[540px]">
                 {/* Row 1: First Name & Last Name */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-[11px] font-extrabold uppercase tracking-wider text-white">
-                      FIRST NAME <span className="text-neutral-500 font-normal lowercase">(required)</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                  <div className="space-y-2">
+                    <label 
+                      htmlFor="first-name" 
+                      className="block text-xs sm:text-[13px] font-semibold text-white tracking-wide"
+                    >
+                      First Name <span className="text-neutral-500 font-normal lowercase text-xs">(required)</span>
                     </label>
                     <input
+                      id="first-name"
                       type="text"
                       required
                       placeholder="Your first name"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full bg-[#0D0D0D] border border-white/[0.08] focus:border-[#FF5500] rounded-xl py-3.5 px-4 text-sm text-white placeholder:text-neutral-600 focus:outline-none transition-colors"
+                      className="w-full h-[52px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-lg px-4 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-[11px] font-extrabold uppercase tracking-wider text-white">
-                      LAST NAME <span className="text-neutral-500 font-normal lowercase">(required)</span>
+                  <div className="space-y-2">
+                    <label 
+                      htmlFor="last-name" 
+                      className="block text-xs sm:text-[13px] font-semibold text-white tracking-wide"
+                    >
+                      Last Name <span className="text-neutral-500 font-normal lowercase text-xs">(required)</span>
                     </label>
                     <input
+                      id="last-name"
                       type="text"
                       required
                       placeholder="Your last name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="w-full bg-[#0D0D0D] border border-white/[0.08] focus:border-[#FF5500] rounded-xl py-3.5 px-4 text-sm text-white placeholder:text-neutral-600 focus:outline-none transition-colors"
+                      className="w-full h-[52px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-lg px-4 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
 
                 {/* Row 2: Email */}
-                <div className="space-y-1.5">
-                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-white">
-                    EMAIL <span className="text-neutral-500 font-normal lowercase">(required)</span>
+                <div className="space-y-2">
+                  <label 
+                    htmlFor="contact-email" 
+                    className="block text-xs sm:text-[13px] font-semibold text-white tracking-wide"
+                  >
+                    Email <span className="text-neutral-500 font-normal lowercase text-xs">(required)</span>
                   </label>
                   <input
+                    id="contact-email"
                     type="email"
                     required
                     placeholder="Your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-[#0D0D0D] border border-white/[0.08] focus:border-[#FF5500] rounded-xl py-3.5 px-4 text-sm text-white placeholder:text-neutral-600 focus:outline-none transition-colors"
+                    className="w-full h-[52px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-lg px-4 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
                   />
                 </div>
 
                 {/* Row 3: Subject */}
-                <div className="space-y-1.5">
-                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-white">
-                    SUBJECT <span className="text-neutral-500 font-normal lowercase">(required)</span>
+                <div className="space-y-2">
+                  <label 
+                    htmlFor="contact-subject" 
+                    className="block text-xs sm:text-[13px] font-semibold text-white tracking-wide"
+                  >
+                    Subject <span className="text-neutral-500 font-normal lowercase text-xs">(required)</span>
                   </label>
                   <input
+                    id="contact-subject"
                     type="text"
                     required
                     placeholder="What's this about?"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    className="w-full bg-[#0D0D0D] border border-white/[0.08] focus:border-[#FF5500] rounded-xl py-3.5 px-4 text-sm text-white placeholder:text-neutral-600 focus:outline-none transition-colors"
+                    className="w-full h-[52px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-lg px-4 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors"
                   />
                 </div>
 
                 {/* Row 4: Message */}
-                <div className="space-y-1.5">
-                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-white">
-                    MESSAGE <span className="text-neutral-500 font-normal lowercase">(required)</span>
+                <div className="space-y-2">
+                  <label 
+                    htmlFor="contact-message" 
+                    className="block text-xs sm:text-[13px] font-semibold text-white tracking-wide"
+                  >
+                    Message <span className="text-neutral-500 font-normal lowercase text-xs">(required)</span>
                   </label>
                   <textarea
-                    rows={4}
+                    id="contact-message"
                     required
+                    rows={4}
                     placeholder="Write your message here..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="w-full bg-[#0D0D0D] border border-white/[0.08] focus:border-[#FF5500] rounded-xl py-3.5 px-4 text-sm text-white placeholder:text-neutral-600 focus:outline-none transition-colors resize-none"
+                    className="w-full h-[130px] bg-[#111111] border border-[#292929] focus:border-[#FF5500] rounded-lg p-4 text-[15px] text-white placeholder:text-[#666666] focus:outline-none transition-colors resize-none"
                   />
                 </div>
 
-                {/* Row 5: Submit Button */}
+                {/* Submit Button */}
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="bg-[#FF5500] hover:bg-[#E04B00] text-white px-8 py-3.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-3 transition-all active:scale-95 shadow-lg shadow-[#FF5500]/25 cursor-pointer"
+                    className="h-[52px] px-8 bg-[#FF5500] hover:bg-[#E04B00] text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded-lg flex items-center justify-center gap-2.5 transition-all duration-200 hover:shadow-lg hover:shadow-[#FF5500]/20 active:scale-[0.98] cursor-pointer"
                   >
                     <span>SUBMIT MESSAGE</span>
                     <ArrowRight className="w-4 h-4" />
@@ -181,18 +200,17 @@ export const CustomerContact: React.FC = () => {
           </div>
 
           {/* ========================================================================= */}
-          {/* RIGHT COLUMN: Exact User Uploaded Restaurant Bar Background Image */}
+          {/* RIGHT COLUMN: Large Editorial Restaurant Interior Image (Approx 54%) */}
           {/* ========================================================================= */}
-          <div className="lg:col-span-6 relative rounded-3xl overflow-hidden shadow-2xl border border-white/[0.08] bg-[#0A0A0A] aspect-4/3 sm:aspect-16/10 lg:aspect-auto lg:h-[680px] group">
-            <img
-              src="/contact_background.jpg"
-              alt="Patty Project Restaurant Bar Interior"
-              className="w-full h-full object-cover object-center group-hover:scale-[1.02] transition-transform duration-700 select-none pointer-events-none"
-              loading="eager"
-            />
-            {/* Subtle atmospheric vignette / inner glow */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent pointer-events-none" />
+          <div className="lg:col-span-6 flex items-center justify-center">
+            <div className="w-full h-[380px] sm:h-[480px] lg:h-[650px] xl:h-[680px] rounded-[20px] overflow-hidden border border-[#222222] bg-[#111111]">
+              <img
+                src="/contact_background.jpg"
+                alt="Patty Project Restaurant Interior & Bar"
+                className="w-full h-full object-cover object-center select-none pointer-events-none transition-transform duration-500 hover:scale-[1.01]"
+                loading="eager"
+              />
+            </div>
           </div>
 
         </div>
