@@ -5,29 +5,29 @@ export const CustomerAbout: React.FC = () => {
     <div className="min-h-screen bg-black text-white selection:bg-[#FF5A00] selection:text-white pb-20">
       
       {/* ========================================================================= */}
-      {/* HERO SECTION: Header Banner with Top-Aligned Burger (Full Top Bun Visible) */}
+      {/* HERO SECTION: Exact Header Banner matching about_hero_burger.jpg */}
       {/* ========================================================================= */}
-      <section aria-label="About Us Hero" className="relative w-full overflow-hidden bg-black h-[220px] sm:h-[260px] lg:h-[300px] xl:h-[320px] flex items-center">
-        {/* Background Banner Image with top-right focal alignment to show full top bun */}
+      <section aria-label="About Us Hero" className="relative w-full bg-black h-[360px] sm:h-[420px] lg:h-[460px] xl:h-[500px] overflow-hidden flex items-center">
+        {/* Background Banner Image with focal point at [right_25%] to display full top bun and patties */}
         <div className="absolute inset-0 z-0">
           <img
             src="/about_hero_banner.png"
             alt="Patty Project Hero Burger"
-            className="w-full h-full object-cover object-right-top sm:object-[right_top] select-none pointer-events-none"
+            className="w-full h-full object-cover object-[right_25%] select-none pointer-events-none"
             loading="eager"
           />
           {/* Soft dark gradient on left for guaranteed text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 lg:via-black/40 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 lg:via-black/35 to-transparent pointer-events-none" />
         </div>
 
         {/* Hero Text Content */}
         <div className="relative z-10 w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24">
-          <div className="max-w-2xl space-y-1.5 sm:space-y-2">
+          <div className="max-w-xl space-y-3 sm:space-y-4">
             <span className="text-xs sm:text-[13px] font-bold uppercase tracking-[0.2em] text-[#FF5A00] block">
               ABOUT US
             </span>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[54px] font-black tracking-tight leading-[0.96] text-white font-hero">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[66px] font-black tracking-tight leading-[1.0] text-white font-hero">
               <span className="block">Four mates.</span>
               <span className="block">One project.</span>
               <span className="block text-[#FF5A00]">Proper burgers.</span>
@@ -39,7 +39,7 @@ export const CustomerAbout: React.FC = () => {
       {/* ========================================================================= */}
       {/* MAIN CONTENT: Full Desktop Container */}
       {/* ========================================================================= */}
-      <div className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-8 sm:pt-12">
+      <div className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-10 sm:pt-14">
         
         {/* Two-Column Grid: Left Story (7 cols) / Right Brand Principles (5 cols) */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-24 items-start">
