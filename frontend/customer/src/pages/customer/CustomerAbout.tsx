@@ -5,24 +5,15 @@ export const CustomerAbout: React.FC = () => {
     <div className="min-h-screen bg-black text-white selection:bg-[#FF5A00] selection:text-white pb-20">
       
       {/* ========================================================================= */}
-      {/* HERO SECTION: Header Banner with Top-Aligned Burger (Full Top Bun Visible) */}
+      {/* HERO SECTION: Exact Header Banner matching 2nd reference photo */}
       {/* ========================================================================= */}
-      <section aria-label="About Us Hero" className="relative w-full overflow-hidden bg-black h-[220px] sm:h-[260px] lg:h-[300px] xl:h-[320px] flex items-center">
-        {/* Background Banner Image with top-right focal alignment to show full top bun */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src="/about_hero_banner.png"
-            alt="Patty Project Hero Burger"
-            className="w-full h-full object-cover object-right-top sm:object-[right_top] select-none pointer-events-none"
-            loading="eager"
-          />
-          {/* Soft dark gradient on left for guaranteed text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 lg:via-black/40 to-transparent pointer-events-none" />
-        </div>
-
-        {/* Hero Text Content */}
-        <div className="relative z-10 w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24">
-          <div className="max-w-2xl space-y-1.5 sm:space-y-2">
+      <section aria-label="About Us Hero" className="w-full bg-black relative overflow-hidden h-[240px] sm:h-[280px] lg:h-[320px] xl:h-[340px] flex items-center">
+        
+        {/* Full-width container with flex layout */}
+        <div className="w-full max-w-[1720px] h-full mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 flex items-center justify-between relative z-10">
+          
+          {/* Left Text */}
+          <div className="max-w-xl space-y-1.5 sm:space-y-2 z-10">
             <span className="text-xs sm:text-[13px] font-bold uppercase tracking-[0.2em] text-[#FF5A00] block">
               ABOUT US
             </span>
@@ -33,6 +24,17 @@ export const CustomerAbout: React.FC = () => {
               <span className="block text-[#FF5A00]">Proper burgers.</span>
             </h1>
           </div>
+
+          {/* Right Burger Visual (Scaled to height so full top bun & patties are visible) */}
+          <div className="h-full flex items-center justify-end overflow-hidden pointer-events-none select-none">
+            <img
+              src="/about_hero_banner.png"
+              alt="Patty Project Gourmet Double Smash Burger"
+              className="h-full w-auto object-contain object-right"
+              loading="eager"
+            />
+          </div>
+
         </div>
       </section>
 
