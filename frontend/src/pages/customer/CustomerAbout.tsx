@@ -47,11 +47,11 @@ const RevealSection: React.FC<{ children: React.ReactNode; className?: string }>
 export const CustomerAbout: React.FC = () => {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-[#FF5500] selection:text-white">
-      {/* 1200px-1280px Professional Editorial Canvas */}
+      {/* 1200px–1280px Professional Editorial Canvas */}
       <div className="max-w-[1240px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20">
         
         {/* ========================================================================= */}
-        {/* SECTION 01 — HERO (Controlled 60–72px Desktop Headline & Balanced Height) */}
+        {/* SECTION 01 — HERO */}
         {/* ========================================================================= */}
         <section 
           aria-label="About Us Hero"
@@ -63,19 +63,19 @@ export const CustomerAbout: React.FC = () => {
               ABOUT US
             </span>
 
-            {/* Main Headline: 60-72px on desktop, naturally wraps in ~2 lines */}
+            {/* Main Headline: 60-72px on desktop */}
             <h1 className="text-4xl sm:text-5xl lg:text-[68px] font-black uppercase tracking-tight text-white font-hero leading-[0.96] max-w-[880px]">
-              FOUR MATES. ONE PROJECT. <br className="hidden sm:inline" />
-              <span className="text-white">PROPER BURGERS.</span>
+              Four Mates. One Project. <br className="hidden sm:inline" />
+              <span className="text-white">Proper Burgers.</span>
             </h1>
 
-            {/* Subtle accent divider line */}
+            {/* Subtle accent divider */}
             <div className="w-14 h-1 bg-[#FF5500] rounded-full mt-5" />
           </div>
         </section>
 
         {/* ========================================================================= */}
-        {/* SECTION 02 — THE OPENING STATEMENT (28–36px Introduction) */}
+        {/* SECTION 02 — THE OPENING STATEMENT */}
         {/* ========================================================================= */}
         <RevealSection className="py-14 sm:py-20 lg:py-24 border-t border-white/[0.07]">
           <div className="max-w-[780px]">
@@ -89,7 +89,7 @@ export const CustomerAbout: React.FC = () => {
         </RevealSection>
 
         {/* ========================================================================= */}
-        {/* SECTION 03 — STORY (Normalized 18–21px Body Copy & Editorial Whitespace) */}
+        {/* SECTION 03 — THE EXPERIENCE & PHILOSOPHY */}
         {/* ========================================================================= */}
         <RevealSection className="py-14 sm:py-20 lg:py-24 border-t border-white/[0.07]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -103,7 +103,7 @@ export const CustomerAbout: React.FC = () => {
         </RevealSection>
 
         {/* ========================================================================= */}
-        {/* SECTION 04 — THE TURNING POINT & PATTY PROJECT STATEMENT (56–72px) */}
+        {/* SECTION 04 — THE TURNING POINT & PATTY PROJECT STATEMENT */}
         {/* ========================================================================= */}
         <RevealSection className="py-16 sm:py-24 lg:py-28">
           <div className="space-y-6 sm:space-y-8 max-w-[800px]">
@@ -113,14 +113,14 @@ export const CustomerAbout: React.FC = () => {
             
             <div className="py-3">
               <span className="text-4xl sm:text-5xl lg:text-[68px] font-black uppercase tracking-tight text-[#FF5500] font-hero leading-[0.92] block select-none">
-                PATTY PROJECT.
+                Patty Project.
               </span>
             </div>
           </div>
         </RevealSection>
 
         {/* ========================================================================= */}
-        {/* SECTION 05 — WHAT WE'RE BUILDING (26–34px Editorial Headline) */}
+        {/* SECTION 05 — EDMONTON & FOOD PASSION */}
         {/* ========================================================================= */}
         <RevealSection className="py-14 sm:py-20 lg:py-24 border-t border-white/[0.07]">
           <div className="max-w-[780px]">
@@ -131,7 +131,7 @@ export const CustomerAbout: React.FC = () => {
         </RevealSection>
 
         {/* ========================================================================= */}
-        {/* SECTION 06 — LONDON (18–21px Body Typography) */}
+        {/* SECTION 06 — LONDON CONNECTION */}
         {/* ========================================================================= */}
         <RevealSection className="py-14 sm:py-20 lg:py-24">
           <div className="max-w-[760px]">
@@ -142,7 +142,7 @@ export const CustomerAbout: React.FC = () => {
         </RevealSection>
 
         {/* ========================================================================= */}
-        {/* SECTION 07 — THE FOUR MATES (28–40px Statement) */}
+        {/* SECTION 07 — INDEPENDENT TEAM */}
         {/* ========================================================================= */}
         <RevealSection className="py-14 sm:py-20 lg:py-24 border-t border-white/[0.07]">
           <div className="max-w-[820px]">
@@ -153,7 +153,7 @@ export const CustomerAbout: React.FC = () => {
         </RevealSection>
 
         {/* ========================================================================= */}
-        {/* SECTION 08 — THE FUTURE (48–64px / 40–56px Climax) */}
+        {/* SECTION 08 — THE FUTURE */}
         {/* ========================================================================= */}
         <RevealSection className="py-16 sm:py-24 lg:py-28 space-y-4 sm:space-y-6">
           <p className="text-3xl sm:text-4xl lg:text-[56px] font-black uppercase text-white font-hero tracking-tight leading-[0.98]">
@@ -165,7 +165,7 @@ export const CustomerAbout: React.FC = () => {
         </RevealSection>
 
         {/* ========================================================================= */}
-        {/* SECTION 09 — BRAND SIGNATURE (28–36px / 16–18px / 11–12px) */}
+        {/* SECTION 09 — BRAND SIGNATURE */}
         {/* ========================================================================= */}
         <footer className="pt-12 sm:pt-16 pb-20 sm:pb-28 border-t border-white/[0.07] space-y-1.5 text-left">
           <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-[0.1em] text-white font-hero">
