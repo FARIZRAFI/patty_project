@@ -7,6 +7,7 @@ import {
   Users,
   Star,
   Ticket,
+  Sparkles,
   Settings,
   LogOut,
   ChevronLeft
@@ -36,7 +37,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { label: 'Products & Stock', path: '/admin/products', icon: Package },
     { label: 'Customers', path: '/admin/customers', icon: Users, superAdminOnly: true },
     { label: 'Loyalty Points', path: '/admin/loyalty', icon: Star, superAdminOnly: true },
-    { label: 'Coupons & Offers', path: '/admin/coupons', icon: Ticket, superAdminOnly: true },
+    { label: 'Coupons', path: '/admin/coupons', icon: Ticket, superAdminOnly: true },
+    { label: 'Offers', path: '/admin/offers', icon: Sparkles, superAdminOnly: true },
     { label: 'Profile Settings', path: '/admin/settings', icon: Settings },
   ];
 

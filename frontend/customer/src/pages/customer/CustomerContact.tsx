@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { MapPin, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 export const CustomerContact: React.FC = () => {
@@ -33,7 +33,7 @@ export const CustomerContact: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-70px)] bg-black text-white selection:bg-[#FF5500] selection:text-white relative overflow-hidden flex flex-col justify-between">
       
-      {/* Background Image filling the right half with smooth dark fade to the left */}
+      {/* Desktop Background Image filling the right half */}
       <div className="absolute top-0 right-0 bottom-0 w-full lg:w-[55%] xl:w-[58%] pointer-events-none z-0 hidden lg:block overflow-hidden">
         <img
           src="/contact_background.jpg"
@@ -43,6 +43,16 @@ export const CustomerContact: React.FC = () => {
         {/* Soft edge gradient to blend seamlessly into solid black left half */}
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
+      </div>
+
+      {/* Mobile Background Image filling the background with dark overlay */}
+      <div className="absolute inset-0 pointer-events-none z-0 block lg:hidden overflow-hidden">
+        <img
+          src="/contact_background.jpg"
+          alt="Patty Project Restaurant Interior & Bar"
+          className="w-full h-full object-cover object-center select-none brightness-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/85 to-black" />
       </div>
 
       {/* Main Content Container */}
@@ -61,7 +71,6 @@ export const CustomerContact: React.FC = () => {
                 <span className="text-xs font-black uppercase tracking-[0.2em] text-[#FF5500] block">
                   CONTACT US
                 </span>
-                <div className="w-8 h-0.5 bg-[#FF5500] rounded-full mt-1.5" />
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-black uppercase text-white tracking-tight font-hero leading-[0.94] pt-1">
@@ -186,22 +195,11 @@ export const CustomerContact: React.FC = () => {
                   >
                     SUBMIT MESSAGE
                   </button>
-                  <ArrowRight className="w-5 h-5 text-[#FF5500]" />
                 </div>
               </form>
             )}
 
           </div>
-
-          {/* Mobile Image (Visible only on mobile below form) */}
-          <div className="lg:hidden w-full h-[360px] rounded-2xl overflow-hidden border border-[#222] mt-6">
-            <img
-              src="/contact_background.jpg"
-              alt="Patty Project Restaurant Interior"
-              className="w-full h-full object-cover"
-            />
-          </div>
-
         </div>
 
       </div>

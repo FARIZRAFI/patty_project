@@ -4,7 +4,7 @@ import { Mail, MapPin, Phone, Clock, ExternalLink } from 'lucide-react';
 
 export const CustomerFooter: React.FC = () => {
   return (
-    <footer className="w-full bg-black pt-14 pb-8 text-white border-t border-white/[0.06]">
+    <footer className="w-full bg-black pt-14 pb-8 text-white">
       {/* Full-width container spanning full desktop screen */}
       <div className="w-full px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-12">
         {/* 5-Column Grid */}
@@ -35,7 +35,7 @@ export const CustomerFooter: React.FC = () => {
             {/* Social Icons */}
             <div className="flex items-center gap-2.5 pt-2">
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/pattyprojectuk?igsi=ZGE2a2xrY3h6eWt6"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
@@ -46,7 +46,7 @@ export const CustomerFooter: React.FC = () => {
                 </svg>
               </a>
               <a
-                href="https://facebook.com"
+                href="https://www.facebook.com/share/19GqYUg1UM/"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
@@ -57,18 +57,7 @@ export const CustomerFooter: React.FC = () => {
                 </svg>
               </a>
               <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="YouTube"
-                className="w-8 h-8 rounded-full bg-[#111111] border border-white/[0.08] flex items-center justify-center text-[#9CA3AF] hover:text-[#FF5500] hover:border-[#FF5500]/50 hover:bg-[#181818] transition-all"
-              >
-                <svg className="w-4 h-4 fill-currentColor" viewBox="0 0 24 24">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                </svg>
-              </a>
-              <a
-                href="https://tiktok.com"
+                href="https://www.tiktok.com/@pattyprojectuk?_r=1&_t=ZN-998SUEBODDC"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="TikTok"
@@ -209,8 +198,8 @@ export const CustomerFooter: React.FC = () => {
         </div>
 
         {/* Sub-Footer Line & Copyright */}
-        <div className="pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between text-xs text-[#9CA3AF] gap-4">
-          <a href="#privacy" className="hover:text-white transition-colors">Privacy Policy</a>
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#9CA3AF] gap-4">
+          <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
           <p className="font-medium text-white">Patty Project © 2026. All rights reserved.</p>
           <a href="#terms" className="hover:text-white transition-colors">Terms of Service</a>
         </div>

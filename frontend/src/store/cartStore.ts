@@ -28,7 +28,7 @@ interface CartState {
   setUserCoords: (coords: { lat: number; lng: number; accuracy?: number } | null, postcode?: string | null) => void;
   setLocationErrorMsg: (msg: string | null) => void;
   setProductModalOpen: (open: boolean) => void;
-  addItem: (product: Product, quantity: number, selectedModifiers: ProductModifier[]) => void;
+  addItem: (product: Product, quantity: number, selectedModifiers: ProductModifier[], removedIngredients?: string[]) => void;
   updateQuantity: (index: number, quantity: number) => void;
   removeItem: (index: number) => void;
   applyCoupon: (code: string, discount: number) => void;
@@ -107,7 +107,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   setProductModalOpen: (open) => set({ isProductModalOpen: open }),
 
-  addItem: (product, quantity, selectedModifiers) => {
+  addItem: (product, quantity, selectedModifiers, removedIngredients = []) => {
     const isOutOfStock = product.is_available === false || (product.stock_quantity !== undefined && product.stock_quantity <= 0);
     if (isOutOfStock) return;
 
@@ -116,7 +116,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     const lineTotal = unitPrice * quantity;
 
     set((state) => ({
-      items: [...state.items, { product, quantity, selectedModifiers, lineTotal }]
+      items: [...state.items, { product, quantity, selectedModifiers, removedIngredients, lineTotal }]
     }));
   },
 

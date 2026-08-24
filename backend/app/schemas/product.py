@@ -26,6 +26,13 @@ class CategoryCreateRequest(BaseModel):
     icon: Optional[str] = None
     display_order: Optional[int] = 0
 
+class CategoryReorderItem(BaseModel):
+    id: str
+    display_order: int
+
+class CategoryReorderRequest(BaseModel):
+    orders: List[CategoryReorderItem]
+
 class ProductResponse(BaseModel):
     id: str
     category_id: str

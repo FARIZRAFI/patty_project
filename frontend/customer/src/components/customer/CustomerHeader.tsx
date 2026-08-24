@@ -32,7 +32,8 @@ export const CustomerHeader: React.FC<Props> = ({ onOpenLocationModal, onOpenMob
           <button
             onClick={onOpenMobileDrawer}
             aria-label="Open navigation menu"
-            className="md:hidden text-white p-1.5 hover:bg-[#1A1A1A] active:scale-95 rounded-xl transition-all"
+            type="button"
+            className="md:hidden text-white p-2 hover:bg-[#1A1A1A] active:scale-95 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0"
           >
             <MenuIcon className="w-6 h-6 text-white" />
           </button>

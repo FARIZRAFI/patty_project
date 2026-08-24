@@ -42,6 +42,7 @@ export interface Product {
   sku: string;
   short_description?: string;
   full_description?: string;
+  description?: string;
   allergens?: string;
   ingredients?: string[];
   image_url?: string;
@@ -73,6 +74,7 @@ export interface CartItem {
   product: Product;
   quantity: number;
   selectedModifiers: ProductModifier[];
+  removedIngredients?: string[];
   lineTotal: number;
 }
 

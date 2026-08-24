@@ -11,6 +11,7 @@ import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminCustomers } from './pages/admin/AdminCustomers';
 import { AdminLoyalty } from './pages/admin/AdminLoyalty';
 import { AdminCoupons } from './pages/admin/AdminCoupons';
+import { AdminOfferSettings } from './pages/admin/AdminOfferSettings';
 import { AdminProfileSettings } from './pages/admin/AdminProfileSettings';
 
 import { useAuthStore } from './store/authStore';
@@ -81,6 +82,7 @@ export function App() {
           <Route path="/customers" element={<AdminLayoutShell><AdminCustomers /></AdminLayoutShell>} />
           <Route path="/loyalty" element={<AdminLayoutShell><AdminLoyalty /></AdminLayoutShell>} />
           <Route path="/coupons" element={<AdminLayoutShell><AdminCoupons /></AdminLayoutShell>} />
+          <Route path="/offers" element={<AdminLayoutShell><AdminOfferSettings /></AdminLayoutShell>} />
           <Route path="/settings" element={<AdminLayoutShell><AdminProfileSettings /></AdminLayoutShell>} />
 
           {/* Root redirect to login or dashboard */}

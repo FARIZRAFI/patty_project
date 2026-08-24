@@ -1,4 +1,5 @@
 import random
+import re
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -6,7 +7,7 @@ from app.core.database import get_db
 from app.models.product import Category, Product, ProductModifier, Inventory
 from app.models.branch import Branch
 from app.schemas.product import (
-    CategoryResponse, CategoryCreateRequest,
+    CategoryResponse, CategoryCreateRequest, CategoryReorderRequest,
     ProductResponse, ProductCreateRequest, ProductUpdateRequest,
     InventoryResponse, InventoryUpdateRequest, InventoryToggleRequest
 )
@@ -26,19 +27,32 @@ def create_category(
     current_user: User = Depends(require_role([UserRole.SUPER_ADMIN])),
     db: Session = Depends(get_db)
 ):
-    """Super Admin create new menu category."""
+    """Admin create new menu category."""
     clean_name = request.name.strip()
-    slug_val = clean_name.lower().replace(" ", "-")
+    if not clean_name:
+        raise HTTPException(status_code=400, detail="Category name cannot be empty.")
+
+    slug_base = clean_name.lower().replace(" ", "-")
+    slug_val = re.sub(r'[^a-z0-9\-]', '', slug_base) or "category"
     
     existing = db.query(Category).filter(Category.slug == slug_val).first()
     if existing:
-        slug_val = f"{slug_val}-{random.randint(100, 999)}"
+        if not existing.is_active:
+            existing.is_active = True
+            existing.name = clean_name
+            db.commit()
+            db.refresh(existing)
+            return existing
+        while db.query(Category).filter(Category.slug == slug_val).first():
+            slug_val = f"{slug_base[:80]}-{random.randint(100, 999)}"
+
+    max_order = db.query(Category).count()
 
     category = Category(
         name=clean_name,
         slug=slug_val,
         icon=request.icon or "hamburger",
-        display_order=request.display_order or 0,
+        display_order=request.display_order if request.display_order is not None else max_order,
         is_active=True
     )
     db.add(category)
@@ -46,16 +60,36 @@ def create_category(
     db.refresh(category)
     return category
 
+@router.put("/categories/reorder", response_model=List[CategoryResponse])
+def reorder_categories(
+    request: CategoryReorderRequest,
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN])),
+    db: Session = Depends(get_db)
+):
+    """Admin reorder menu categories display order."""
+    for item in request.orders:
+        cat = db.query(Category).filter(Category.id == item.id).first()
+        if cat:
+            cat.display_order = item.display_order
+    db.commit()
+    return db.query(Category).filter(Category.is_active == True).order_by(Category.display_order.asc()).all()
+
 @router.delete("/categories/{category_id}")
 def delete_category(
     category_id: str,
     current_user: User = Depends(require_role([UserRole.SUPER_ADMIN])),
     db: Session = Depends(get_db)
 ):
-    """Super Admin delete category."""
+    """Admin delete category."""
     cat = db.query(Category).filter(Category.id == category_id).first()
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
+
+    prod_count = db.query(Product).filter(Product.category_id == category_id).count()
+    if prod_count > 0:
+        cat.is_active = False
+        db.commit()
+        return {"message": "Category archived successfully", "id": category_id}
 
     db.delete(cat)
     db.commit()

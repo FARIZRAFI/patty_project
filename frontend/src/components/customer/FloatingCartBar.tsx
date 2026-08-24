@@ -15,7 +15,7 @@ export const FloatingCartBar: React.FC = () => {
   const hideCartBarPages = ['/', '/menu', '/cart', '/checkout'];
   const isHidePage = hideCartBarPages.includes(location.pathname) || location.pathname.startsWith('/order-confirmation');
 
-  const hideBottomNavPages = ['/', '/contact', '/select-location', '/menu', '/about'];
+  const hideBottomNavPages = ['/', '/contact', '/select-location', '/menu', '/about', '/privacy', '/privacy-policy', '/offers'];
   const showBottomNav = !hideBottomNavPages.includes(location.pathname);
 
   // Hide completely when cart is empty, on landing/menu/cart/checkout pages, OR when Product Preview Modal is open!

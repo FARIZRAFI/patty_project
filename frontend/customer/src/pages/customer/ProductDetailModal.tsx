@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Share2, X, Check } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Share2, X, Check, Plus, Minus, ShoppingCart, Sliders } from 'lucide-react';
 import { Product, ProductModifier } from '../../types';
 import { useCartStore } from '../../store/cartStore';
 
@@ -10,7 +10,35 @@ interface Props {
 
 export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
   const [selectedModifiers, setSelectedModifiers] = useState<ProductModifier[]>([]);
-  const { addItem, setProductModalOpen } = useCartStore();
+  const [removedIngredients, setRemovedIngredients] = useState<string[]>([]);
+  const [quantity, setQuantity] = useState<number>(1);
+  const { items, addItem, setProductModalOpen } = useCartStore();
+
+  // Parse product ingredients list
+  const ingredientOptions = useMemo(() => {
+    if (!product.ingredients) return [];
+    if (Array.isArray(product.ingredients)) return product.ingredients.filter(Boolean);
+    if (typeof product.ingredients === 'string') {
+      return (product.ingredients as string)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }, [product.ingredients]);
+
+  const toggleRemoveIngredient = (ing: string) => {
+    if (removedIngredients.includes(ing)) {
+      setRemovedIngredients(removedIngredients.filter((i) => i !== ing));
+    } else {
+      setRemovedIngredients([...removedIngredients, ing]);
+    }
+  };
+
+  // Calculate how many pieces of this product are already in cart
+  const inCartQuantity = items
+    .filter((item) => item.product.id === product.id)
+    .reduce((sum, item) => sum + item.quantity, 0);
 
   // Set modal open state in store on mount, reset on unmount
   useEffect(() => {
@@ -46,13 +74,14 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
   };
 
   const modTotal = selectedModifiers.reduce((sum, m) => sum + m.price, 0);
-  const totalPrice = product.base_price + modTotal;
+  const unitPrice = product.base_price + modTotal;
+  const totalPrice = unitPrice * quantity;
 
   const isProductOutOfStock = product.is_available === false || (product.stock_quantity !== undefined && product.stock_quantity <= 0);
 
   const handleAddToCart = () => {
-    if (isProductOutOfStock) return;
-    addItem(product, 1, selectedModifiers);
+    if (isProductOutOfStock || quantity < 1) return;
+    addItem(product, quantity, selectedModifiers, removedIngredients);
     onClose();
   };
 
@@ -74,7 +103,7 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
       {/* Click Outside Backdrop Listener */}
       <div className="fixed inset-0" onClick={onClose} />
 
-      {/* Main Modal Surface (12px Radius, 1px #242424 Border, Max 90vh Height) */}
+      {/* Main Modal Surface */}
       <div className="bg-[#0D0D0D] text-[#F5F5F5] rounded-t-[12px] sm:rounded-[12px] max-w-3xl xl:max-w-4xl w-full shadow-2xl overflow-hidden relative z-10 border border-[#242424] flex flex-col md:flex-row max-h-[90vh] animate-in zoom-in-95 duration-150">
         
         {/* LEFT COLUMN: Product Image & Details */}
@@ -83,17 +112,21 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
             
             {/* Top Action Header with Share & Close buttons */}
             <div className="flex items-center justify-between pb-1">
-              {/* Veg / Non-Veg Indicator */}
-              {isVegProduct ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded border border-[#22C55E] flex items-center justify-center p-0.5">
+              {/* Dietary & Cart Status Badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {isVegProduct && (
+                  <div className="flex items-center gap-1.5 bg-[#22C55E]/10 border border-[#22C55E]/30 px-2 py-0.5 rounded-md">
                     <div className="w-2 h-2 rounded-full bg-[#22C55E]" />
+                    <span className="text-[11px] text-[#22C55E] font-semibold">Veg</span>
                   </div>
-                  <span className="text-xs text-[#A1A1AA] font-medium">Vegetarian</span>
-                </div>
-              ) : (
-                <div />
-              )}
+                )}
+                {inCartQuantity > 0 && (
+                  <div className="flex items-center gap-1.5 bg-[#FF5A00]/15 border border-[#FF5A00]/40 text-[#FF5A00] text-[11px] font-bold px-2 py-0.5 rounded-md">
+                    <ShoppingCart className="w-3 h-3" />
+                    <span>{inCartQuantity} already in cart</span>
+                  </div>
+                )}
+              </div>
 
               {/* Control Action Buttons */}
               <div className="flex items-center gap-2">
@@ -101,41 +134,49 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
                   type="button"
                   onClick={() => {
                     if (navigator.share) {
-                      navigator.share({ title: product.name, url: window.location.href }).catch(() => {});
+                      navigator.share({
+                        title: product.name,
+                        text: `Check out ${product.name} at Patty Project!`,
+                        url: window.location.href,
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(window.location.href);
                     }
                   }}
-                  className="w-9 h-9 rounded-lg bg-[#151515] border border-[#242424] text-[#A1A1AA] hover:text-[#F5F5F5] hover:border-[#FF5A00] flex items-center justify-center transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-full bg-[#181818] border border-[#2A2A2A] text-[#A1A1AA] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
                   title="Share"
-                  aria-label="Share product"
+                  aria-label="Share"
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
-
                 <button
                   type="button"
                   onClick={onClose}
-                  className="w-9 h-9 rounded-lg bg-[#151515] border border-[#242424] text-[#A1A1AA] hover:text-[#F5F5F5] hover:border-[#FF5A00] flex items-center justify-center transition-colors cursor-pointer"
-                  title="Close modal"
-                  aria-label="Close modal"
+                  className="w-8 h-8 rounded-full bg-[#181818] border border-[#2A2A2A] text-[#A1A1AA] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                  title="Close"
+                  aria-label="Close"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            {/* Product Image (4:3 Aspect Ratio) */}
-            <div className="w-full aspect-[4/3] bg-[#111111] rounded-lg overflow-hidden border border-[#1C1C1C] relative shrink-0">
+            {/* Product Image Frame */}
+            <div className="w-full h-52 sm:h-60 rounded-xl overflow-hidden bg-[#151515] border border-[#242424] relative flex items-center justify-center">
               <img
                 src={defaultImg}
                 alt={product.name}
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80';
+                  (e.currentTarget as HTMLImageElement).src =
+                    'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80';
                 }}
-                className={`w-full h-full object-cover ${isProductOutOfStock ? 'brightness-75' : ''}`}
+                className={`w-full h-full object-cover transition-transform duration-300 hover:scale-105 ${
+                  isProductOutOfStock ? 'grayscale opacity-50' : ''
+                }`}
               />
               {isProductOutOfStock && (
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-2 z-10">
-                  <span className="bg-[#18181B]/95 text-[#EF4444] border border-[#EF4444]/40 text-xs font-black px-3.5 py-1.5 rounded-lg tracking-wider uppercase shadow-xl">
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <span className="bg-[#EF4444] text-white text-xs font-bold px-3 py-1 rounded uppercase tracking-wider">
                     Out of Stock
                   </span>
                 </div>
@@ -164,10 +205,16 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
                   product.full_description ||
                   'Made fresh to order with top-tier premium ingredients.'}
               </p>
+
+              {product.allergens && (
+                <p className="text-[11px] text-[#71717A] italic pt-1">
+                  Allergens: {product.allergens}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Desktop Bottom Action CTA Bar */}
+          {/* Desktop Bottom Action CTA Bar with Quantity Stepper */}
           <div className="hidden md:block p-5 bg-[#0D0D0D] border-t border-[#242424] shrink-0">
             {isProductOutOfStock ? (
               <button
@@ -178,13 +225,42 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
                 <span className="text-[#EF4444] font-bold uppercase tracking-wider">Out of Stock</span>
               </button>
             ) : (
-              <button
-                onClick={handleAddToCart}
-                className="h-12 bg-[#FF5A00] hover:bg-[#E84F00] active:scale-[0.99] text-white rounded-lg px-5 flex items-center justify-between font-semibold text-sm transition-all cursor-pointer w-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
-              >
-                <span>£{totalPrice.toFixed(2)}</span>
-                <span>Add to cart</span>
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Quantity Stepper */}
+                <div className="flex items-center bg-[#151515] border border-[#2A2A2A] rounded-lg p-1">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                    disabled={quantity <= 1}
+                    className="w-9 h-9 rounded-md bg-[#202020] hover:bg-[#2A2A2A] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed text-white flex items-center justify-center transition-all cursor-pointer"
+                    title="Decrease quantity"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="font-bold text-sm min-w-[32px] text-center text-white select-none px-1">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((prev) => prev + 1)}
+                    className="w-9 h-9 rounded-md bg-[#202020] hover:bg-[#2A2A2A] active:scale-95 text-white flex items-center justify-center transition-all cursor-pointer"
+                    title="Increase quantity"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Add to Cart Button */}
+                <button
+                  onClick={handleAddToCart}
+                  className="flex-1 h-11 bg-[#FF5A00] hover:bg-[#E84F00] active:scale-[0.99] text-white rounded-lg px-4 flex items-center justify-between font-semibold text-sm transition-all cursor-pointer shadow-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
+                >
+                  <span className="font-bold">£{totalPrice.toFixed(2)}</span>
+                  <span>Add {quantity} {quantity === 1 ? 'piece' : 'pieces'} to cart</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -197,72 +273,146 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-base text-[#F5F5F5]">
-                  Make it a combo
+                  Customize Your Meal
                 </h3>
                 <span className="text-[11px] font-medium text-[#A1A1AA] bg-[#151515] border border-[#242424] px-2 py-0.5 rounded">
                   Optional
                 </span>
               </div>
               <p className="text-xs text-[#71717A] mt-0.5">
-                Choose options to customize your meal
+                Remove unwanted ingredients or add delicious extras
               </p>
             </div>
           </div>
 
           {/* Scrollable Option Cards List */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-2.5 bg-[#121212]">
-            {availableModifiers.map((mod) => {
-              const isSelected = selectedModifiers.some((m) => m.id === mod.id);
-              const isOutOfStock = mod.is_out_of_stock;
-
-              return (
-                <div
-                  key={mod.id}
-                  onClick={() => toggleModifier(mod)}
-                  className={`border rounded-lg p-3.5 min-h-[56px] flex items-center justify-between transition-all select-none ${
-                    isOutOfStock
-                      ? 'border-[#242424] bg-[#151515]/50 opacity-40 cursor-not-allowed'
-                      : isSelected
-                      ? 'border-[#6B2A0D] bg-[#241209] text-[#F5F5F5] cursor-pointer'
-                      : 'border-[#242424] bg-[#151515] hover:border-[#333333] hover:bg-[#181818] text-[#A1A1AA] cursor-pointer'
-                  }`}
-                >
-                  {/* Left Option Info */}
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shrink-0 ${
-                        isSelected
-                          ? 'border-[#FF5A00] bg-[#FF5A00] text-white'
-                          : 'border-[#242424] bg-[#0D0D0D]'
-                      }`}
-                    >
-                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
-                    </div>
-
-                    <div>
-                      <p className={`text-sm font-medium ${isSelected ? 'text-[#F5F5F5]' : 'text-[#F5F5F5]'}`}>
-                        {mod.name}
-                      </p>
-                      {isOutOfStock && (
-                        <span className="text-[11px] font-semibold text-[#EF4444] block mt-0.5">
-                          OUT OF STOCK
-                        </span>
-                      )}
-                    </div>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 bg-[#121212]">
+            
+            {/* 1. CUSTOMIZE / REMOVE INGREDIENTS SECTION */}
+            {ingredientOptions.length > 0 && (
+              <div className="space-y-3 pb-4 border-b border-[#242424]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-[#FF5A00]" />
+                    <h4 className="font-bold text-xs text-[#F5F5F5] uppercase tracking-wider">
+                      Ingredients (Untick to Remove)
+                    </h4>
                   </div>
-
-                  {/* Right Option Price */}
-                  {!isOutOfStock && mod.price > 0 && (
-                    <span className="text-xs font-semibold text-[#FF5A00] shrink-0">
-                      +£{mod.price.toFixed(2)}
+                  {removedIngredients.length > 0 && (
+                    <span className="text-[10px] bg-[#EF4444]/20 border border-[#EF4444]/30 text-[#FCA5A5] px-2 py-0.5 rounded font-bold">
+                      {removedIngredients.length} Removed
                     </span>
                   )}
                 </div>
-              );
-            })}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {ingredientOptions.map((ing) => {
+                    const isRemoved = removedIngredients.includes(ing);
+                    return (
+                      <button
+                        key={ing}
+                        type="button"
+                        onClick={() => toggleRemoveIngredient(ing)}
+                        className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer select-none ${
+                          isRemoved
+                            ? 'border-[#EF4444]/40 bg-[#2A1215] text-[#FCA5A5]'
+                            : 'border-[#262626] bg-[#171717] hover:border-[#3A3A3A] hover:bg-[#1E1E1E] text-[#F5F5F5]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div
+                            className={`w-4 h-4 rounded-md flex items-center justify-center border transition-colors shrink-0 ${
+                              isRemoved
+                                ? 'border-[#EF4444] bg-[#EF4444] text-white'
+                                : 'border-[#22C55E] bg-[#22C55E]/20 text-[#22C55E]'
+                            }`}
+                          >
+                            {isRemoved ? (
+                              <X className="w-3 h-3 stroke-[3]" />
+                            ) : (
+                              <Check className="w-3 h-3 stroke-[3]" />
+                            )}
+                          </div>
+                          <span className={`text-xs font-semibold truncate ${isRemoved ? 'line-through opacity-70' : ''}`}>
+                            {ing}
+                          </span>
+                        </div>
+                        {isRemoved && (
+                          <span className="text-[9px] font-bold uppercase tracking-wider bg-[#EF4444] text-white px-1.5 py-0.5 rounded ml-1 shrink-0">
+                            NO {ing}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 2. ADD-ONS / MODIFIERS SECTION */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-xs text-[#F5F5F5] uppercase tracking-wider">
+                  Add Extras & Sides
+                </h4>
+              </div>
+
+              <div className="space-y-2">
+                {availableModifiers.map((mod) => {
+                  const isSelected = selectedModifiers.some((m) => m.id === mod.id);
+                  const isOutOfStock = mod.is_out_of_stock;
+
+                  return (
+                    <div
+                      key={mod.id}
+                      onClick={() => toggleModifier(mod)}
+                      className={`border rounded-xl p-3 min-h-[50px] flex items-center justify-between transition-all select-none ${
+                        isOutOfStock
+                          ? 'border-[#242424] bg-[#151515]/50 opacity-40 cursor-not-allowed'
+                          : isSelected
+                          ? 'border-[#6B2A0D] bg-[#241209] text-[#F5F5F5] cursor-pointer'
+                          : 'border-[#242424] bg-[#151515] hover:border-[#333333] hover:bg-[#181818] text-[#A1A1AA] cursor-pointer'
+                      }`}
+                    >
+                      {/* Left Option Info */}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors shrink-0 ${
+                            isSelected
+                              ? 'border-[#FF5A00] bg-[#FF5A00] text-white'
+                              : 'border-[#242424] bg-[#0D0D0D]'
+                          }`}
+                        >
+                          {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                        </div>
+
+                        <div>
+                          <p className={`text-sm font-medium ${isSelected ? 'text-[#F5F5F5]' : 'text-[#F5F5F5]'}`}>
+                            {mod.name}
+                          </p>
+                          {isOutOfStock && (
+                            <span className="text-[11px] font-semibold text-[#EF4444] block mt-0.5">
+                              OUT OF STOCK
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right Option Price */}
+                      {!isOutOfStock && mod.price > 0 && (
+                        <span className="text-xs font-semibold text-[#FF5A00] shrink-0">
+                          +£{mod.price.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
           </div>
 
-          {/* Mobile Bottom Action CTA Bar (Pinned at bottom) */}
+          {/* Mobile Bottom Action CTA Bar (Pinned at bottom) with Quantity Stepper */}
           <div className="md:hidden p-4 bg-[#0D0D0D] border-t border-[#242424] shrink-0 sticky bottom-0 z-30">
             {isProductOutOfStock ? (
               <button
@@ -273,13 +423,42 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
                 <span className="text-[#EF4444] font-bold uppercase tracking-wider">Out of Stock</span>
               </button>
             ) : (
-              <button
-                onClick={handleAddToCart}
-                className="h-12 bg-[#FF5A00] hover:bg-[#E84F00] active:scale-[0.99] text-white rounded-lg px-5 flex items-center justify-between font-semibold text-sm transition-all cursor-pointer w-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
-              >
-                <span>£{totalPrice.toFixed(2)}</span>
-                <span>Add to cart</span>
-              </button>
+              <div className="flex items-center gap-2.5">
+                {/* Quantity Stepper */}
+                <div className="flex items-center bg-[#151515] border border-[#2A2A2A] rounded-lg p-1">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                    disabled={quantity <= 1}
+                    className="w-9 h-9 rounded-md bg-[#202020] hover:bg-[#2A2A2A] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed text-white flex items-center justify-center transition-all cursor-pointer"
+                    title="Decrease quantity"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="font-bold text-sm min-w-[28px] text-center text-white select-none px-1">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((prev) => prev + 1)}
+                    className="w-9 h-9 rounded-md bg-[#202020] hover:bg-[#2A2A2A] active:scale-95 text-white flex items-center justify-center transition-all cursor-pointer"
+                    title="Increase quantity"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Add to Cart Button */}
+                <button
+                  onClick={handleAddToCart}
+                  className="flex-1 h-11 bg-[#FF5A00] hover:bg-[#E84F00] active:scale-[0.99] text-white rounded-lg px-4 flex items-center justify-between font-semibold text-sm transition-all cursor-pointer shadow-lg focus:outline-none focus:ring-2 focus:ring-[#FF5A00]/50"
+                >
+                  <span className="font-bold">£{totalPrice.toFixed(2)}</span>
+                  <span>Add {quantity} {quantity === 1 ? 'pc' : 'pcs'}</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -288,3 +467,5 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
     </div>
   );
 };
+
+export default ProductDetailModal;

@@ -6,18 +6,65 @@ import { Product } from '../../types';
 import { ProductDetailModal } from './ProductDetailModal';
 import { CustomerFooter } from '../../components/customer/CustomerFooter';
 import { useCartStore } from '../../store/cartStore';
-import bannerImg from '../../assets/banner.png';
-import mobileBannerImg from '../../assets/delivery_mobile_banner.png';
+import categoryBannerImg from '../../assets/categories_showcase_banner.png';
+import categoryBannerMobileImg from '../../assets/categories_showcase_mobile.png';
+import offerBg1 from '../../assets/offer_bg_1.png';
+import offerBg2 from '../../assets/offer_bg_2.png';
+import offerBg3 from '../../assets/offer_bg_3.png';
 
 export const CustomerHome: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [todaysOffersData, setTodaysOffersData] = useState<any>({
+    section_title: "TODAY'S OFFERS",
+    view_all_link: "/offers",
+    view_all_text: "VIEW ALL OFFERS",
+    cards: [
+      {
+        id: "card-1",
+        title: "BURGER COMBO",
+        subtitle: "Burger + Fries + Drink",
+        badge: "SAVE 15%",
+        image_url: "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=500&q=80",
+        link_url: "/order"
+      },
+      {
+        id: "card-2",
+        title: "WING WEDNESDAY",
+        subtitle: "On All Wings",
+        badge: "20% OFF",
+        image_url: "https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&w=500&q=80",
+        link_url: "/order"
+      },
+      {
+        id: "card-3",
+        title: "STUDENT OFFER",
+        subtitle: "On All Orders",
+        badge: "10% OFF",
+        badge_type: "id_badge",
+        image_url: "",
+        link_url: "/order"
+      }
+    ]
+  });
   const navigate = useNavigate();
   const { selectedBranch, setOrderType } = useCartStore();
 
   useEffect(() => {
     fetchProducts();
+    fetchTodaysOffers();
   }, [selectedBranch?.id]);
+
+  const fetchTodaysOffers = async () => {
+    try {
+      const data = await api.get<any>('/promotions/settings/todays-offers');
+      if (data && data.cards && data.cards.length > 0) {
+        setTodaysOffersData(data);
+      }
+    } catch (err) {
+      console.error('Failed to load today offers config:', err);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -36,7 +83,7 @@ export const CustomerHome: React.FC = () => {
   const halloumiProduct = products.find(p => p.name.toLowerCase().includes('halloumi'));
 
   return (
-    <div className="pb-0 space-y-16">
+    <div className="pb-0 space-y-6 sm:space-y-16">
       {/* Hero Section matching exact reference image */}
       <section id="hero" className="relative bg-black min-h-[calc(100vh-65px)] lg:h-[calc(100vh-65px)] flex flex-col justify-between overflow-hidden px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-6 lg:pt-8 pb-6 lg:pb-8">
         
@@ -81,16 +128,6 @@ export const CustomerHome: React.FC = () => {
               className="bg-[#FF5500] hover:bg-[#E04B00] text-white px-7 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-[#FF5500]/30 flex items-center gap-2 cursor-pointer"
             >
               <span>ORDER NOW</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => {
-                setOrderType('COLLECTION');
-                navigate('/select-location');
-              }}
-              className="bg-[#070707]/60 backdrop-blur-md border border-[#333333] hover:border-white text-white px-7 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <span>COLLECTION</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -165,25 +202,29 @@ export const CustomerHome: React.FC = () => {
         </div>
       </section>
 
-      {/* DELIVERY PROMO BANNER: CRAVING IT? WE'RE ALREADY ON OUR WAY */}
-      <section className="w-full -mt-12 sm:-mt-6 lg:-my-28 xl:-my-32 overflow-hidden flex items-center justify-center">
-        {/* Mobile View: Exact Attached Mobile Banner Image */}
-        <img
-          src={mobileBannerImg}
-          alt="Hot & Special Food - Craving It? We're Already On Our Way."
-          className="w-full h-auto block select-none lg:hidden"
-        />
+      {/* CATEGORIES SHOWCASE BANNER (DIRECTLY ABOVE SIGNATURE BURGERS) */}
+      <section className="w-full max-w-[1720px] mx-auto px-4 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-2 pb-0 sm:pt-4 sm:pb-1">
+        <Link to="/order" className="block w-full overflow-hidden rounded-2xl sm:rounded-3xl hover:opacity-95 transition-opacity">
+          {/* Mobile View: 2-column + full width stack matching attached photo */}
+          <img
+            src="/categories_showcase_mobile.png"
+            alt="Menu Categories: Breakfast Buns, Burgers & Sandos, Wings & Tenders, Shakes & Drinks, Fries & Sides"
+            className="w-full h-auto object-contain sm:object-cover rounded-2xl sm:rounded-3xl shadow-2xl block md:hidden"
+            loading="eager"
+          />
 
-        {/* Desktop View: Original Desktop Banner (Unchanged) */}
-        <img
-          src={bannerImg}
-          alt="Hot & Special Food - Craving It? We're Already On Our Way."
-          className="w-full h-auto hidden lg:block select-none"
-        />
+          {/* Desktop / Tablet View: Landscape banner */}
+          <img
+            src="/categories_showcase_banner.png"
+            alt="Menu Categories: Breakfast Buns, Burgers & Sandos, Wings & Tenders, Shakes & Drinks, Fries & Sides"
+            className="w-full h-auto object-cover rounded-2xl sm:rounded-3xl shadow-2xl hidden md:block"
+            loading="eager"
+          />
+        </Link>
       </section>
 
       {/* SIGNATURE BURGERS & TODAY'S OFFERS SECTION */}
-      <section className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-12 -mt-10 sm:mt-0 lg:-mt-20">
+      <section className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 space-y-8 sm:space-y-16 pt-4 sm:pt-6 pb-2 sm:pb-16">
         {/* SIGNATURE BURGERS SHOWCASE SECTION (Full Width & Large Scale matching reference poster) */}
         <div className="space-y-10 sm:space-y-12">
           <div className="flex items-center justify-between">
@@ -337,75 +378,69 @@ export const CustomerHome: React.FC = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-widest uppercase font-hero">
-              TODAY'S OFFERS
+              {todaysOffersData.section_title || "TODAY'S OFFERS"}
             </h2>
-            <Link to="/offers" className="text-xs sm:text-sm font-extrabold text-[#FF5500] hover:underline flex items-center gap-1 uppercase tracking-wider">
-              <span>VIEW ALL OFFERS</span>
+            <Link to={todaysOffersData.view_all_link || "/offers"} className="text-xs sm:text-sm font-extrabold text-[#FF5500] hover:underline flex items-center gap-1 uppercase tracking-wider">
+              <span>{todaysOffersData.view_all_text || "VIEW ALL OFFERS"}</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
 
           {/* 3 Large Promotional Banner Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6">
-            {/* Offer Card 1: BURGER COMBO */}
-            <div className="bg-[#120B07] border border-[#2A1810] hover:border-[#FF5500]/60 rounded-3xl p-6 flex items-center justify-between relative overflow-hidden shadow-2xl transition-all hover:scale-[1.02] cursor-pointer group min-h-[180px] sm:min-h-[200px]">
-              <div className="space-y-3 relative z-10 max-w-[55%]">
-                <h3 className="font-black text-white text-xl sm:text-2xl tracking-wide uppercase font-hero leading-tight">
-                  BURGER COMBO
-                </h3>
-                <p className="text-xs sm:text-sm text-[#9CA3AF] font-medium">Burger + Fries + Drink</p>
-                <div className="pt-1">
-                  <span className="inline-block px-4 py-2 bg-[#FF5500] text-white text-xs font-extrabold rounded-xl uppercase tracking-wider shadow-lg shadow-[#FF5500]/30">
-                    SAVE 15%
-                  </span>
-                </div>
-              </div>
-              <img
-                src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=500&q=80"
-                alt="Burger Combo"
-                className="w-36 sm:w-44 lg:w-48 xl:w-52 h-32 sm:h-36 lg:h-40 object-cover rounded-2xl border border-[#262626] shadow-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
+            {todaysOffersData.cards.map((card: any, idx: number) => {
+              const bgTexture = idx === 0 ? offerBg1 : idx === 1 ? offerBg2 : offerBg3;
+              return (
+                <div 
+                  key={card.id || idx}
+                  onClick={() => navigate(card.link_url || '/order')}
+                  className="bg-[#120B07] border border-[#2A1810] hover:border-[#FF5500]/60 rounded-xl p-5 sm:p-6 flex items-center justify-between relative overflow-hidden shadow-2xl transition-all hover:scale-[1.02] cursor-pointer group min-h-[180px] sm:min-h-[200px]"
+                >
+                  {/* Background texture overlay */}
+                  <div
+                    className="absolute inset-0 bg-cover bg-center opacity-85 group-hover:opacity-95 transition-opacity pointer-events-none"
+                    style={{ backgroundImage: `url(${bgTexture})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-black/70 pointer-events-none" />
 
-            {/* Offer Card 2: WING WEDNESDAY */}
-            <div className="bg-[#120B07] border border-[#2A1810] hover:border-[#FF5500]/60 rounded-3xl p-6 flex items-center justify-between relative overflow-hidden shadow-2xl transition-all hover:scale-[1.02] cursor-pointer group min-h-[180px] sm:min-h-[200px]">
-              <div className="space-y-2 relative z-10 max-w-[55%]">
-                <h3 className="font-black text-white text-xl sm:text-2xl tracking-wide uppercase font-hero leading-tight">
-                  WING WEDNESDAY
-                </h3>
-                <p className="text-xs sm:text-sm text-[#FF5500] font-extrabold uppercase tracking-wider pt-0.5">20% OFF</p>
-                <p className="text-xs sm:text-sm text-[#9CA3AF] font-medium">On All Wings</p>
-              </div>
-              <img
-                src="https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&w=500&q=80"
-                alt="Wings"
-                className="w-36 sm:w-44 lg:w-48 xl:w-52 h-32 sm:h-36 lg:h-40 object-cover rounded-2xl border border-[#262626] shadow-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
+                  <div className="space-y-3 relative z-10 max-w-[55%]">
+                    <h3 className="font-black text-white text-xl sm:text-2xl tracking-wide uppercase font-hero leading-tight">
+                      {card.title}
+                    </h3>
+                    {card.badge && (
+                      <div className="pt-0.5">
+                        <span className="inline-block px-4 py-1.5 bg-[#FF5500] text-white text-xs font-extrabold rounded-lg uppercase tracking-wider shadow-lg shadow-[#FF5500]/30">
+                          {card.badge}
+                        </span>
+                      </div>
+                    )}
+                    <p className="text-xs sm:text-sm text-[#D1D5DB] font-medium">{card.subtitle}</p>
+                  </div>
 
-            {/* Offer Card 3: STUDENT OFFER */}
-            <div className="bg-[#120B07] border border-[#2A1810] hover:border-[#FF5500]/60 rounded-3xl p-6 flex items-center justify-between relative overflow-hidden shadow-2xl transition-all hover:scale-[1.02] cursor-pointer group min-h-[180px] sm:min-h-[200px]">
-              <div className="space-y-2 relative z-10 max-w-[55%]">
-                <h3 className="font-black text-white text-xl sm:text-2xl tracking-wide uppercase font-hero leading-tight">
-                  STUDENT OFFER
-                </h3>
-                <p className="text-xs sm:text-sm text-[#FF5500] font-extrabold uppercase tracking-wider pt-0.5">10% OFF</p>
-                <p className="text-xs sm:text-sm text-[#9CA3AF] font-medium">On All Orders</p>
-              </div>
-              <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-32 sm:h-36 lg:h-40 bg-[#161616] border border-[#262626] rounded-2xl p-3 flex flex-col items-center justify-center text-center shadow-xl shrink-0 group-hover:border-[#FF5500]/40 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-[#FF5500]/20 border border-[#FF5500]/40 flex items-center justify-center text-[#FF5500] font-extrabold text-xs mb-1.5 shadow-md">
-                  ID
+                  {card.image_url ? (
+                    <img
+                      src={card.image_url}
+                      alt={card.title}
+                      className="w-36 sm:w-44 lg:w-48 xl:w-52 h-32 sm:h-36 lg:h-40 object-cover rounded-lg border border-[#262626] shadow-xl shrink-0 group-hover:scale-105 transition-transform duration-300 relative z-10"
+                    />
+                  ) : (
+                    <div className="w-36 sm:w-48 lg:w-52 xl:w-60 h-32 sm:h-36 lg:h-40 bg-[#161616]/90 border border-[#262626] rounded-lg p-3 flex flex-col items-center justify-center text-center shadow-xl shrink-0 group-hover:border-[#FF5500]/40 transition-colors relative z-10">
+                      <div className="w-10 h-10 rounded-full bg-[#FF5500]/20 border border-[#FF5500]/40 flex items-center justify-center text-[#FF5500] font-extrabold text-xs mb-1.5 shadow-md">
+                        ID
+                      </div>
+                      <span className="text-[11px] font-extrabold text-white uppercase tracking-wider">{card.title}</span>
+                      <span className="text-[9px] text-[#9CA3AF] mt-0.5">PATTY PROJECT - LONDON</span>
+                    </div>
+                  )}
                 </div>
-                <span className="text-[11px] font-extrabold text-white uppercase tracking-wider">STUDENT OFFER</span>
-                <span className="text-[9px] text-[#6B7280] mt-0.5">PATTY PROJECT - LONDON</span>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* HUNGRY? UNLOCK YOUR PATTYPROJECT MEAL BANNER matching Screenshot */}
-      <section className="w-full max-w-[1450px] mx-auto px-6 sm:px-10 lg:px-16 py-12 text-center text-white space-y-6">
+      <section className="w-full max-w-[1450px] mx-auto px-6 sm:px-10 lg:px-16 pt-2 pb-8 sm:py-12 text-center text-white space-y-4 sm:space-y-6">
         {/* Main 2-Line Headline in Serif */}
         <h2 className="text-3xl sm:text-5xl lg:text-6xl font-serif tracking-wide leading-tight max-w-4xl mx-auto uppercase">
           <span className="text-white">HUNGRY? </span>
