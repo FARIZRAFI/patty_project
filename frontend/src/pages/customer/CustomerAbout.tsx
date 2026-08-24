@@ -5,29 +5,29 @@ export const CustomerAbout: React.FC = () => {
     <div className="min-h-screen bg-black text-white selection:bg-[#FF5A00] selection:text-white pb-20">
       
       {/* ========================================================================= */}
-      {/* HERO SECTION: Full-Width / Large Banner with Image on Right & Text on Left */}
+      {/* HERO SECTION: Full Desktop Width Banner with Balanced Aspect Ratio */}
       {/* ========================================================================= */}
-      <section aria-label="About Us Hero" className="relative w-full overflow-hidden bg-black min-h-[380px] sm:min-h-[440px] lg:min-h-[500px] flex items-center">
-        {/* Background Banner Image */}
+      <section aria-label="About Us Hero" className="relative w-full overflow-hidden bg-black h-[360px] sm:h-[440px] lg:h-[520px] xl:h-[580px] 2xl:h-[620px] flex items-center">
+        {/* Background Banner Image with precise focal positioning */}
         <div className="absolute inset-0 z-0">
           <img
             src="/about_hero_banner.png"
             alt="Patty Project Hero Burger"
-            className="w-full h-full object-cover object-right select-none pointer-events-none"
+            className="w-full h-full object-cover object-[right_center] select-none pointer-events-none"
             loading="eager"
           />
-          {/* Subtle dark gradient overlay on left for guaranteed text legibility */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 lg:via-black/40 to-transparent pointer-events-none" />
+          {/* Soft dark gradient on left for guaranteed text readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 lg:via-black/35 to-transparent pointer-events-none" />
         </div>
 
-        {/* Hero Text Content */}
-        <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14 xl:px-16 py-12 lg:py-16">
-          <div className="max-w-xl space-y-4">
+        {/* Hero Text Content aligned to Full Desktop Grid */}
+        <div className="relative z-10 w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24">
+          <div className="max-w-2xl space-y-3 sm:space-y-4">
             <span className="text-xs sm:text-[13px] font-bold uppercase tracking-[0.2em] text-[#FF5A00] block">
               ABOUT US
             </span>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[68px] font-black tracking-tight leading-[1.02] text-white font-hero">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[68px] 2xl:text-[74px] font-black tracking-tight leading-[1.0] text-white font-hero">
               <span className="block">Four mates.</span>
               <span className="block">One project.</span>
               <span className="block text-[#FF5A00]">Proper burgers.</span>
@@ -37,17 +37,17 @@ export const CustomerAbout: React.FC = () => {
       </section>
 
       {/* ========================================================================= */}
-      {/* MAIN CONTENT CONTAINER */}
+      {/* MAIN CONTENT: Full Desktop Container */}
       {/* ========================================================================= */}
-      <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14 xl:px-16 pt-12 sm:pt-16">
+      <div className="w-full max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 pt-10 sm:pt-14 lg:pt-16">
         
         {/* Two-Column Grid: Left Story (7 cols) / Right Brand Principles (5 cols) */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-20 items-start">
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-24 items-start">
           
           {/* ========================================================================= */}
           {/* LEFT COLUMN: Authentic Brand Story */}
           {/* ========================================================================= */}
-          <div className="lg:col-span-7 space-y-6 text-sm sm:text-[15px] text-[#A1A1A1] leading-[1.8]">
+          <div className="lg:col-span-7 space-y-6 text-sm sm:text-base lg:text-[16px] text-[#A1A1A1] leading-[1.8] max-w-[850px]">
             <p>
               <span className="text-[#FF5A00] font-semibold">Patty Project</span> started with four mates, years of experience in London's kitchens, and one shared idea — to build something of our own.
             </p>
@@ -60,7 +60,7 @@ export const CustomerAbout: React.FC = () => {
               So we decided to put that experience into our own project.
             </p>
 
-            <p className="text-white font-bold text-base sm:text-[17px]">
+            <p className="text-white font-bold text-base sm:text-lg">
               <span className="text-[#FF5A00]">Patty Project.</span>
             </p>
 
@@ -80,7 +80,7 @@ export const CustomerAbout: React.FC = () => {
               <p className="text-white font-semibold">
                 Now, we're building one of our own.
               </p>
-              <p className="text-base sm:text-[17px] font-bold text-[#FF5A00]">
+              <p className="text-base sm:text-lg font-bold text-[#FF5A00]">
                 And Edmonton is where it all begins.
               </p>
             </div>
@@ -94,7 +94,7 @@ export const CustomerAbout: React.FC = () => {
             {/* 01: FOUR MATES */}
             <div className="py-6 sm:py-7 flex items-center gap-6">
               <div className="text-[#FF5A00] shrink-0">
-                <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+                <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-10 sm:h-10">
                   <path d="M12 34v-3a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v3" />
                   <circle cx="20" cy="15" r="5" />
                   <path d="M6 34v-2a5 5 0 0 1 4-4.9" />
@@ -120,7 +120,7 @@ export const CustomerAbout: React.FC = () => {
             {/* 02: YEARS OF EXPERIENCE */}
             <div className="py-6 sm:py-7 flex items-center gap-6">
               <div className="text-[#FF5A00] shrink-0">
-                <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+                <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-10 sm:h-10">
                   <path d="M10 24a7 7 0 0 1 2.5-13.5 7.5 7.5 0 0 1 15 0A7 7 0 0 1 30 24v8H10v-8z" />
                   <line x1="10" y1="28" x2="30" y2="28" />
                 </svg>
@@ -142,7 +142,7 @@ export const CustomerAbout: React.FC = () => {
             {/* 03: ROOTED IN LONDON */}
             <div className="py-6 sm:py-7 flex items-center gap-6">
               <div className="text-[#FF5A00] shrink-0">
-                <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+                <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-10 sm:h-10">
                   <path d="M20 35s-10-8.889-10-16.667a10 10 0 0 1 20 0C30 26.111 20 35 20 35z" />
                   <circle cx="20" cy="18.333" r="4.167" />
                 </svg>
@@ -164,7 +164,7 @@ export const CustomerAbout: React.FC = () => {
             {/* 04: PROPER FOOD */}
             <div className="py-6 sm:py-7 flex items-center gap-6">
               <div className="text-[#FF5A00] shrink-0">
-                <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+                <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-10 sm:h-10">
                   <path d="M7 19a13 13 0 0 1 26 0H7z" />
                   <rect x="5" y="23" width="30" height="3" rx="1.5" />
                   <path d="M7 29a4 4 0 0 0 4 4h18a4 4 0 0 0 4-4H7z" />
