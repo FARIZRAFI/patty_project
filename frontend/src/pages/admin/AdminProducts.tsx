@@ -48,8 +48,18 @@ export const AdminProducts: React.FC = () => {
         api.get<Category[]>('/categories'),
         api.get<Branch[]>('/branches')
       ]);
-      setProducts(prodData || []);
-      setCategories(catData || []);
+      const standardCategories = (catData || []).filter(
+        (c) => !c.slug?.toLowerCase().includes('combo') && !c.name?.toLowerCase().includes('combo')
+      );
+      const standardProducts = (prodData || []).filter(
+        (p) =>
+          !p.sku?.startsWith('COMBO-') &&
+          !catData?.some(
+            (c) => c.id === p.category_id && (c.slug?.toLowerCase().includes('combo') || c.name?.toLowerCase().includes('combo'))
+          )
+      );
+      setProducts(standardProducts);
+      setCategories(standardCategories);
       
       let filteredBranches = branchData || [];
       if (user?.role === 'BRANCH_ADMIN' && user.branch_ids && user.branch_ids.length > 0) {

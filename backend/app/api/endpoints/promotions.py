@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from app.core.database import get_db
 from app.models.promotion import Coupon, OfferSetting
 from app.models.product import Category, Product, ProductModifier
@@ -104,65 +105,7 @@ DEFAULT_OFFERS_PAGE: Dict[str, Any] = {
 }
 
 DEFAULT_COMBO_DEALS: Dict[str, Any] = {
-    "combos": [
-        {
-            "id": "combo-1",
-            "name": "Single Smash Meal Combo",
-            "subtitle": "Single Patty Burger + Skin-on Fries + Cold Drink",
-            "badge": "SAVE 20%",
-            "description": "Our signature 3.5oz dry-aged beef smash burger served with seasoned skin-on fries and choice of soft drink.",
-            "base_price": 9.95,
-            "compare_at_price": 12.95,
-            "image_url": "/product_the_mc_project.png",
-            "category_slug": "combo-offers",
-            "is_active": True,
-            "modifiers": [
-                {"name": "Coke", "price": 0.0},
-                {"name": "Coke Zero", "price": 0.0},
-                {"name": "Fanta", "price": 0.0},
-                {"name": "Sprite", "price": 0.0},
-                {"name": "Upgrade to Milkshake", "price": 2.50},
-                {"name": "Upgrade to Peri Fries", "price": 0.80}
-            ],
-            "ingredients": "Beef Patty, American Cheese, Pickles, Signature Sauce"
-        },
-        {
-            "id": "combo-2",
-            "name": "Double Trouble Burger Combo",
-            "subtitle": "Double Smash Burger + Loaded Fries + Drink",
-            "badge": "POPULAR",
-            "description": "Double 3.5oz smash patties, double cheese, paired with skin-on rosemary fries and cold drink.",
-            "base_price": 12.95,
-            "compare_at_price": 16.50,
-            "image_url": "/product_the_outlaw_project_.png",
-            "category_slug": "combo-offers",
-            "is_active": True,
-            "modifiers": [
-                {"name": "Coke", "price": 0.0},
-                {"name": "Coke Zero", "price": 0.0},
-                {"name": "Fanta", "price": 0.0},
-                {"name": "Upgrade to Milkshake", "price": 2.50}
-            ],
-            "ingredients": "Double Beef Patty, Double Cheddar, Grilled Onions, Pickles, Smokey Mayo"
-        },
-        {
-            "id": "combo-3",
-            "name": "Patty Feast for 4 Box",
-            "subtitle": "4 Burgers + 2 Large Fries + 4 Drinks",
-            "badge": "FAMILY DEAL",
-            "description": "The ultimate party bundle! 4 classic smash burgers, 2 large seasoned fries, and 4 canned drinks.",
-            "base_price": 32.95,
-            "compare_at_price": 42.00,
-            "image_url": "/product_the_spicy_clucker.png",
-            "category_slug": "combo-offers",
-            "is_active": True,
-            "modifiers": [
-                {"name": "4x Regular Fries Included", "price": 0.0},
-                {"name": "Add 4 Dips Bundle", "price": 2.50}
-            ],
-            "ingredients": "Beef Patties, Buns, Cheese, Pickles, House Sauces"
-        }
-    ]
+    "combos": []
 }
 
 def sync_combo_deals_to_products(db: Session, combos: List[Dict[str, Any]]):
@@ -187,19 +130,25 @@ def sync_combo_deals_to_products(db: Session, combos: List[Dict[str, Any]]):
                 combo_cat.is_active = True
                 db.flush()
 
+        active_skus = set()
+        active_names = set()
+
         for item in combos:
             c_id = item.get("id") or f"combo-{uuid.uuid4().hex[:8]}"
-            name = item.get("name") or item.get("title") or "Combo Offer"
+            name = (item.get("name") or item.get("title") or "Combo Offer").strip()
             base_price = float(item.get("base_price", item.get("price", 9.99)))
             compare_at_price = float(item.get("compare_at_price")) if item.get("compare_at_price") else None
             short_desc = item.get("description") or item.get("subtitle") or "Special meal combo"
-            image_url = item.get("image_url") or item.get("image") or "/offers_combo_banner.png"
+            image_url = (item.get("image_url") or item.get("image") or "").strip() or None
             ingredients = item.get("ingredients")
             if isinstance(ingredients, list):
                 ingredients = ", ".join(ingredients)
             is_active = item.get("is_active", True)
             
             sku_code = f"COMBO-{item.get('id', name.replace(' ', '-').upper())}"
+            active_skus.add(sku_code)
+            active_names.add(name.lower())
+
             prod = db.query(Product).filter((Product.sku == sku_code) | (Product.name == name)).first()
             
             if not prod:
@@ -213,7 +162,7 @@ def sync_combo_deals_to_products(db: Session, combos: List[Dict[str, Any]]):
                     base_price=base_price,
                     compare_at_price=compare_at_price,
                     image_url=image_url,
-                    images=[image_url],
+                    images=[image_url] if image_url else [],
                     is_active=is_active,
                     is_bestseller=True
                 )
@@ -222,18 +171,19 @@ def sync_combo_deals_to_products(db: Session, combos: List[Dict[str, Any]]):
             else:
                 prod.category_id = combo_cat.id
                 prod.name = name
+                prod.sku = sku_code
                 prod.short_description = short_desc
                 prod.full_description = short_desc
                 prod.ingredients = ingredients
                 prod.base_price = base_price
                 prod.compare_at_price = compare_at_price
                 prod.image_url = image_url
-                prod.images = [image_url]
+                prod.images = [image_url] if image_url else []
                 prod.is_active = is_active
                 db.flush()
 
             mods = item.get("modifiers", [])
-            if mods and isinstance(mods, list):
+            if isinstance(mods, list):
                 db.query(ProductModifier).filter(ProductModifier.product_id == prod.id).delete()
                 for m in mods:
                     if isinstance(m, dict) and m.get("name"):
@@ -243,6 +193,13 @@ def sync_combo_deals_to_products(db: Session, combos: List[Dict[str, Any]]):
                             price=float(m.get("price", 0.0)),
                             is_active=True
                         ))
+
+        # Deactivate any combo products that were removed from the combo list
+        existing_combos = db.query(Product).filter(Product.category_id == combo_cat.id).all()
+        for ec in existing_combos:
+            if ec.sku not in active_skus and ec.name.lower() not in active_names:
+                ec.is_active = False
+
         db.commit()
     except Exception as e:
         db.rollback()
@@ -449,16 +406,17 @@ def get_todays_offers_settings(db: Session = Depends(get_db)):
 @router.put("/settings/todays-offers")
 def update_todays_offers_settings(
     payload: Dict[str, Any] = Body(...),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN])),
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.BRANCH_ADMIN])),
     db: Session = Depends(get_db)
 ):
-    """Super Admin update Today's Offers configuration."""
+    """Super Admin / Branch Admin update Today's Offers configuration."""
     setting = db.query(OfferSetting).filter(OfferSetting.key == "todays_offers").first()
     if not setting:
         setting = OfferSetting(key="todays_offers", data=payload)
         db.add(setting)
     else:
         setting.data = payload
+        flag_modified(setting, "data")
     db.commit()
     db.refresh(setting)
     return setting.data
@@ -474,16 +432,17 @@ def get_offers_page_settings(db: Session = Depends(get_db)):
 @router.put("/settings/offers-page")
 def update_offers_page_settings(
     payload: Dict[str, Any] = Body(...),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN])),
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.BRANCH_ADMIN])),
     db: Session = Depends(get_db)
 ):
-    """Super Admin update Offers Page configuration."""
+    """Super Admin / Branch Admin update Offers Page configuration."""
     setting = db.query(OfferSetting).filter(OfferSetting.key == "offers_page").first()
     if not setting:
         setting = OfferSetting(key="offers_page", data=payload)
         db.add(setting)
     else:
         setting.data = payload
+        flag_modified(setting, "data")
     db.commit()
     db.refresh(setting)
     return setting.data
@@ -499,16 +458,17 @@ def get_combo_deals_settings(db: Session = Depends(get_db)):
 @router.put("/settings/combo-deals")
 def update_combo_deals_settings(
     payload: Dict[str, Any] = Body(...),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN])),
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.BRANCH_ADMIN])),
     db: Session = Depends(get_db)
 ):
-    """Super Admin update Combo Deals configuration and sync to menu products."""
+    """Super Admin / Branch Admin update Combo Deals configuration and sync to menu products."""
     setting = db.query(OfferSetting).filter(OfferSetting.key == "combo_deals").first()
     if not setting:
         setting = OfferSetting(key="combo_deals", data=payload)
         db.add(setting)
     else:
         setting.data = payload
+        flag_modified(setting, "data")
     db.commit()
     db.refresh(setting)
     

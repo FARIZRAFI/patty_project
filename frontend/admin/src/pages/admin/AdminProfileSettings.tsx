@@ -1,25 +1,51 @@
 import React, { useState } from 'react';
-import { Lock, CheckCircle2, Key, Eye, EyeOff, Plus, Trash2, Edit } from 'lucide-react';
+import { Lock, CheckCircle2, Key, Eye, EyeOff, Plus, Trash2, Edit, AlertCircle, Loader2 } from 'lucide-react';
+import { api } from '../../api/client';
 
 export const AdminProfileSettings: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [msg, setMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   const [branches] = useState([
     { name: 'London - Central', password: '••••••••' },
     { name: 'London - Westfield', password: '••••••••' },
   ]);
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
     if (newPassword.length < 8) {
-      setMsg('Password must be at least 8 characters long');
+      setErrorMsg('New password must be at least 8 characters long');
       return;
     }
-    setMsg('Password updated successfully!');
+
+    if (newPassword !== confirmPassword) {
+      setErrorMsg('New passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post('/auth/change-password', {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      setSuccessMsg('Password updated successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to update password. Please check your current password.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -29,9 +55,17 @@ export const AdminProfileSettings: React.FC = () => {
         <p className="text-[#9CA3AF] text-sm mt-0.5">Manage your account settings and branch passwords.</p>
       </div>
 
-      {msg && (
-        <div className="p-4 bg-[#FF5500]/10 border border-[#FF5500]/30 text-[#FF5500] rounded-xl text-sm font-semibold">
-          {msg}
+      {errorMsg && (
+        <div className="p-4 bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444] rounded-xl text-sm font-semibold flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="p-4 bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E] rounded-xl text-sm font-semibold flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>{successMsg}</span>
         </div>
       )}
 
@@ -85,9 +119,11 @@ export const AdminProfileSettings: React.FC = () => {
 
             <button
               type="submit"
-              className="bg-[#FF5500] hover:bg-[#E04B00] text-white px-6 py-3 rounded-xl text-xs font-bold transition-all shadow-md shadow-[#FF5500]/20"
+              disabled={loading}
+              className="bg-[#FF5500] hover:bg-[#E04B00] text-white px-6 py-3 rounded-xl text-xs font-bold transition-all shadow-md shadow-[#FF5500]/20 flex items-center gap-2 disabled:opacity-50"
             >
-              Update Password
+              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{loading ? 'Updating Password...' : 'Update Password'}</span>
             </button>
           </form>
 

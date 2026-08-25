@@ -1,60 +1,45 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Gift, Award, TrendingUp, Sparkles, Lock, CheckCircle2, ShoppingBag, ArrowRight, X, Copy, AlertCircle } from 'lucide-react';
+import {
+  Gift,
+  Award,
+  Sparkles,
+  Lock,
+  CheckCircle2,
+  ShoppingBag,
+  ArrowRight,
+  AlertCircle,
+  Clock,
+  TrendingUp,
+  Zap,
+  RotateCcw,
+  ShieldCheck
+} from 'lucide-react';
 import { api } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
-
-interface MilestoneReward {
-  id: string;
-  title: string;
-  description: string;
-  points_required: number;
-  reward_type: string;
-  discount_value: number;
-  unlocked: boolean;
-  points_needed: number;
-}
-
-interface LoyaltyTransaction {
-  id: string;
-  points: number;
-  transaction_type: string;
-  description: string;
-  created_at: string;
-}
-
-interface LoyaltyData {
-  available_points: number;
-  lifetime_points: number;
-  tier: string;
-  next_tier_name: string;
-  next_tier_points: number;
-  points_to_next_tier: number;
-  progress_percent: number;
-  rewards: MilestoneReward[];
-  transactions: LoyaltyTransaction[];
-}
+import { LoyaltyOverview, LoyaltyTransaction } from '../../types';
 
 export const CustomerLoyaltyPortal: React.FC = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
-  const [data, setData] = useState<LoyaltyData | null>(null);
+  const [data, setData] = useState<LoyaltyOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Claim Modal State
-  const [claimedReward, setClaimedReward] = useState<{ title: string; code: string } | null>(null);
-  const [claimingId, setClaimingId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
   const fetchLoyaltyData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await api.get<LoyaltyData>('/loyalty/balance');
+      const res = await api.get<LoyaltyOverview>('/loyalty/balance');
       setData(res);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load loyalty details');
+      const detailMsg =
+        (typeof err?.detail === 'string' ? err.detail : '') ||
+        (typeof err?.detail === 'object' && err.detail ? (err.detail.message || err.detail.error || err.detail.msg) : '') ||
+        err?.message ||
+        'Failed to load loyalty details';
+      setError(detailMsg);
     } finally {
       setLoading(false);
     }
@@ -68,43 +53,96 @@ export const CustomerLoyaltyPortal: React.FC = () => {
     fetchLoyaltyData();
   }, [user, navigate, fetchLoyaltyData]);
 
-  const handleClaimOffer = async (reward: MilestoneReward) => {
-    setClaimingId(reward.id);
-    try {
-      const res: any = await api.post('/loyalty/redeem', { reward_id: reward.id });
-      setClaimedReward({
-        title: reward.title,
-        code: res.coupon_code || 'LOYALTY100',
-      });
-      fetchLoyaltyData();
-    } catch (err: any) {
-      alert(err?.message || 'Failed to claim reward');
-    } finally {
-      setClaimingId(null);
+  const getTxBadge = (type: string) => {
+    const t = type.toUpperCase();
+    if (t.includes('DOUBLE') || t.includes('TRIPLE') || t === 'BONUS') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FF5500]/20 text-[#FF5500] border border-[#FF5500]/40">
+          <Zap className="w-2.5 h-2.5" />
+          {t}
+        </span>
+      );
     }
+    if (t === 'EARN' || t === 'EARNED') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30">
+          <CheckCircle2 className="w-2.5 h-2.5" />
+          EARNED
+        </span>
+      );
+    }
+    if (t === 'REDEEM' || t === 'REDEEMED') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#3B82F6]/15 text-[#60A5FA] border border-[#3B82F6]/30">
+          <Gift className="w-2.5 h-2.5" />
+          REDEEMED
+        </span>
+      );
+    }
+    if (t.includes('REVERSE') || t.includes('REFUND')) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#EF4444]/15 text-[#F87171] border border-[#EF4444]/30">
+          <RotateCcw className="w-2.5 h-2.5" />
+          {t}
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#374151]/40 text-[#D1D5DB] border border-[#4B5563]/40">
+        {t}
+      </span>
+    );
   };
 
-  const copyCodeToClipboard = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const availablePts = data?.available_points ?? 0;
+  const rewardVal = data?.reward_value ?? (availablePts / 1000);
+  const minRequired = data?.min_redemption_points ?? 4000;
+  const isUnlocked = data?.is_redemption_available ?? (availablePts >= minRequired);
+  const pointsNeeded = data?.points_needed_for_redemption ?? Math.max(0, minRequired - availablePts);
+  const progressPercent = data?.primary_milestone?.progress_percent ?? Math.min(100, Math.round((availablePts / minRequired) * 100));
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-10 lg:px-12 py-6 sm:py-10 pb-36 text-white min-h-[85vh]">
+    <div className="w-full max-w-[1300px] mx-auto px-4 sm:px-8 lg:px-10 py-6 sm:py-10 pb-36 text-white min-h-[85vh]">
       {/* Hero Title Row */}
-      <div className="mb-10 text-center sm:text-left">
+      <div className="mb-8 text-center sm:text-left">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#FF5500]/10 border border-[#FF5500]/30 rounded-full text-xs font-bold text-[#FF5500] mb-3">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Loyalty Rewards Program</span>
+          <span>Patty Points Programme</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
           Loyalty & Rewards Portal
         </h1>
         <p className="text-sm text-[#9CA3AF] mt-1.5 font-medium max-w-2xl">
-          Earn 10 Points on every £1 spent. Reach point milestones to unlock free burgers, sides, and discount coupons!
+          1 Patty Point for every 1p spent (£1 = 100 PTS). Reach the 4,000-point milestone to unlock reward redemptions in £1 increments!
         </p>
       </div>
+
+      {/* Active Campaign Alert Banner */}
+      {data?.active_campaign && (
+        <div className="mb-8 p-4 bg-gradient-to-r from-[#FF5500]/20 via-[#FF5500]/10 to-transparent border border-[#FF5500]/40 rounded-2xl flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#FF5500] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-[#FF5500]/30">
+              <Zap className="w-5 h-5 fill-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs uppercase font-extrabold px-2 py-0.5 bg-[#FF5500] text-white rounded">Live Campaign</span>
+                <p className="text-sm font-extrabold text-white">{data.active_campaign.name}</p>
+              </div>
+              <p className="text-xs text-[#D1D5DB] mt-0.5">
+                Earn <strong className="text-[#FF5500]">{data.active_campaign.multiplier}x Patty Points</strong> on eligible completed orders!
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/menu"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-[#FF5500] hover:bg-[#E84F00] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-[#FF5500]/20 shrink-0"
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Order Now</span>
+          </Link>
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 p-4 bg-[#2A1215] border border-[#EF4444]/40 rounded-xl flex items-center gap-3 text-xs text-[#FCA5A5]">
@@ -122,13 +160,13 @@ export const CustomerLoyaltyPortal: React.FC = () => {
       ) : data ? (
         <>
           {/* Top 3 Metric Cards Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            {/* Card 1: Available Points */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            {/* Card 1: Available Points & Value */}
             <div className="bg-[#121212] border border-[#FF5500]/40 rounded-2xl p-6 relative overflow-hidden shadow-xl shadow-[#FF5500]/5 flex flex-col justify-between">
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF5500]/10 rounded-full blur-2xl pointer-events-none" />
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-[#9CA3AF]">
-                  Available Balance
+                  Patty Points Balance
                 </span>
                 <div className="w-10 h-10 rounded-xl bg-[#FF5500]/10 border border-[#FF5500]/30 flex items-center justify-center text-[#FF5500]">
                   <Gift className="w-5 h-5" />
@@ -136,300 +174,261 @@ export const CustomerLoyaltyPortal: React.FC = () => {
               </div>
               <div>
                 <div className="text-4xl font-black text-[#FF5500] tracking-tight mb-1">
-                  {data.available_points.toLocaleString()} <span className="text-lg font-bold text-white">PTS</span>
+                  {availablePts.toLocaleString()} <span className="text-lg font-bold text-white">PTS</span>
                 </div>
-                <p className="text-xs text-[#9CA3AF]">Ready to redeem for milestone rewards</p>
+                <div className="flex items-center justify-between text-xs text-[#D1D5DB] pt-2 border-t border-[#222222] mt-3">
+                  <span>Standard Reward Value:</span>
+                  <span className="font-bold text-white text-sm">£{rewardVal.toFixed(2)}</span>
+                </div>
               </div>
             </div>
 
-            {/* Card 2: Current Tier */}
+            {/* Card 2: Milestone Status */}
             <div className="bg-[#121212] border border-[#222222] rounded-2xl p-6 relative flex flex-col justify-between shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-[#9CA3AF]">
-                  Membership Tier
+                  Redemption Milestone
                 </span>
-                <div className="w-10 h-10 rounded-xl bg-[#181818] border border-[#282828] flex items-center justify-center text-[#FF5500]">
-                  <Award className="w-5 h-5" />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isUnlocked ? 'bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E]' : 'bg-[#1E1E1E] text-[#6B7280]'}`}>
+                  {isUnlocked ? <CheckCircle2 className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
                 </div>
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-2xl font-extrabold text-white uppercase tracking-wider">
-                    {data.tier} TIER
-                  </span>
-                  <span className="bg-[#FF5500] text-white text-[10px] font-black px-2 py-0.5 rounded">
-                    ACTIVE
-                  </span>
+                <div className="text-2xl font-extrabold text-white tracking-tight mb-1 flex items-center gap-2">
+                  {isUnlocked ? (
+                    <span className="text-[#22C55E] flex items-center gap-1.5 text-xl">
+                      <CheckCircle2 className="w-5 h-5 shrink-0" />
+                      Reward Unlocked!
+                    </span>
+                  ) : (
+                    <span>4,000 PTS Threshold</span>
+                  )}
                 </div>
-                <p className="text-xs text-[#9CA3AF]">Lifetime Earned: <strong className="text-white">{data.lifetime_points.toLocaleString()} PTS</strong></p>
-              </div>
-            </div>
-
-            {/* Card 3: Next Tier Milestone Progress */}
-            <div className="bg-[#121212] border border-[#222222] rounded-2xl p-6 flex flex-col justify-between shadow-xl">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-[#9CA3AF]">
-                  Progress to {data.next_tier_name}
-                </span>
-                <div className="w-10 h-10 rounded-xl bg-[#181818] border border-[#282828] flex items-center justify-center text-[#FF5500]">
-                  <TrendingUp className="w-5 h-5" />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between text-xs font-extrabold text-white mb-2">
-                  <span>{data.lifetime_points} / {data.next_tier_points} PTS</span>
-                  <span className="text-[#FF5500]">{data.progress_percent}%</span>
-                </div>
-                {/* Progress Bar */}
-                <div className="w-full h-3 bg-[#181818] border border-[#282828] rounded-full overflow-hidden mb-2">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#FF5500] to-[#FF7733] transition-all duration-500 rounded-full"
-                    style={{ width: `${data.progress_percent}%` }}
-                  />
-                </div>
-                <p className="text-xs text-[#9CA3AF]">
-                  {data.points_to_next_tier > 0
-                    ? `${data.points_to_next_tier.toLocaleString()} PTS remaining to unlock ${data.next_tier_name}`
-                    : `Maximum Tier Unlocked! 🎉`}
+                <p className="text-xs text-[#9CA3AF] mt-1">
+                  {isUnlocked
+                    ? `Eligible to redeem £${Math.floor(availablePts / 1000)} in whole £1 increments at checkout.`
+                    : `Earn ${pointsNeeded.toLocaleString()} more points to unlock your £4.00 reward.`}
                 </p>
               </div>
             </div>
+
+            {/* Card 3: Account Stats Summary */}
+            <div className="bg-[#121212] border border-[#222222] rounded-2xl p-6 relative flex flex-col justify-between shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-[#9CA3AF]">
+                  Lifetime Statistics
+                </span>
+                <div className="w-10 h-10 rounded-xl bg-[#1E1E1E] border border-[#2A2A2A] flex items-center justify-center text-[#A1A1AA]">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between items-center text-[#9CA3AF]">
+                  <span>Total Points Earned:</span>
+                  <span className="font-bold text-white text-sm">{data.lifetime_points.toLocaleString()} PTS</span>
+                </div>
+                <div className="flex justify-between items-center text-[#9CA3AF]">
+                  <span>Total Points Redeemed:</span>
+                  <span className="font-bold text-[#60A5FA]">{data.total_redeemed_points.toLocaleString()} PTS</span>
+                </div>
+                {data.total_reversed_points > 0 && (
+                  <div className="flex justify-between items-center text-[#9CA3AF]">
+                    <span>Points Reversed/Refunded:</span>
+                    <span className="font-bold text-[#F87171]">-{data.total_reversed_points.toLocaleString()} PTS</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Section: Milestone Offers & Rewards */}
-          <div className="mb-14">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 border-b border-[#1C1C1C] pb-4">
+          {/* Milestone Progress Bar Section */}
+          <div className="bg-[#121212] border border-[#222222] rounded-2xl p-6 sm:p-8 mb-10 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-xl font-extrabold text-white">Milestone Offers & Rewards</h2>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">Reach points targets to claim exclusive food items and vouchers.</p>
+                <div className="flex items-center gap-2">
+                  <Award className="w-5 h-5 text-[#FF5500]" />
+                  <h3 className="text-lg font-extrabold text-white">First Redemption Milestone (4,000 PTS)</h3>
+                </div>
+                <p className="text-xs text-[#9CA3AF] mt-1">
+                  Customers must reach at least 4,000 Patty Points before redemption becomes active.
+                </p>
               </div>
-              <span className="text-xs font-bold text-[#FF5500]">Auto-unlocked at milestone targets</span>
+              <div className="text-left sm:text-right">
+                <span className="text-2xl font-black text-[#FF5500]">
+                  {availablePts.toLocaleString()} <span className="text-sm font-semibold text-[#9CA3AF]">/ 4,000 PTS</span>
+                </span>
+                <p className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-wider mt-0.5">
+                  {isUnlocked ? 'Milestone Achieved (100%)' : `${progressPercent}% Progress`}
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {data.rewards.map((reward) => (
-                <div
-                  key={reward.id}
-                  className={`bg-[#121212] rounded-2xl p-6 border transition-all flex flex-col justify-between h-full relative ${
-                    reward.unlocked
-                      ? 'border-[#FF5500] shadow-lg shadow-[#FF5500]/10'
-                      : 'border-[#222222] opacity-80 hover:opacity-100'
-                  }`}
-                >
+            {/* Visual Progress Bar */}
+            <div className="w-full bg-[#1A1A1A] h-4 rounded-full overflow-hidden p-0.5 border border-[#2A2A2A] relative mb-4">
+              <div
+                className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-[#FF5500] to-[#FFA000]"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+
+            {/* Unlocked Reward Increments Showcase */}
+            {isUnlocked ? (
+              <div className="mt-6 p-4 sm:p-5 bg-[#171717] border border-[#282828] rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    {/* Top Tag & Points Requirement */}
-                    <div className="flex items-center justify-between mb-4">
-                      {reward.unlocked ? (
-                        <span className="bg-[#10B981]/20 border border-[#10B981]/40 text-[#34D399] text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
-                          UNLOCKED
-                        </span>
-                      ) : (
-                        <span className="bg-[#1F1F1F] border border-[#2A2A2A] text-[#9CA3AF] text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                          <Lock className="w-3 h-3 text-[#9CA3AF]" />
-                          LOCKED
-                        </span>
-                      )}
-
-                      <span className="text-xs font-extrabold text-[#FF5500] bg-[#FF5500]/10 px-2.5 py-1 rounded-lg border border-[#FF5500]/20">
-                        {reward.points_required} PTS
-                      </span>
-                    </div>
-
-                    <h3 className="text-base font-extrabold text-white mb-1.5">{reward.title}</h3>
-                    <p className="text-xs text-[#9CA3AF] leading-relaxed mb-4">
-                      {reward.description}
+                    <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-ping" />
+                      Available Redemptions Ready at Checkout
+                    </h4>
+                    <p className="text-xs text-[#9CA3AF] mt-1">
+                      You can redeem your points in whole £1 (1,000-point) increments on your next order:
                     </p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {data.redeemable_increments && data.redeemable_increments.length > 0 ? (
+                        data.redeemable_increments.map((inc) => (
+                          <div
+                            key={inc}
+                            className="px-3.5 py-1.5 bg-[#1F1F1F] border border-[#FF5500]/30 rounded-lg text-xs font-extrabold text-white flex items-center gap-2"
+                          >
+                            <span className="text-[#FF5500]">£{inc / 1000}.00 OFF</span>
+                            <span className="text-[#71717A] font-normal">({inc.toLocaleString()} pts)</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-3.5 py-1.5 bg-[#1F1F1F] border border-[#FF5500]/30 rounded-lg text-xs font-extrabold text-white">
+                          £4.00 OFF (4,000 pts)
+                        </div>
+                      )}
+                    </div>
                   </div>
-
-                  {/* Action CTA */}
-                  <div className="pt-4 border-t border-[#1C1C1C]">
-                    {reward.unlocked ? (
-                      <button
-                        onClick={() => handleClaimOffer(reward)}
-                        disabled={claimingId === reward.id}
-                        className="w-full bg-[#FF5500] hover:bg-[#FF6611] text-white text-xs font-extrabold py-2.5 rounded-xl transition-all shadow-md shadow-[#FF5500]/20 cursor-pointer flex items-center justify-center gap-2"
-                      >
-                        <Gift className="w-4 h-4" />
-                        <span>{claimingId === reward.id ? 'Claiming...' : 'Redeem Offer'}</span>
-                      </button>
-                    ) : (
-                      <div className="text-center">
-                        <p className="text-[11px] font-semibold text-[#9CA3AF] mb-2">
-                          {reward.points_needed} PTS away from unlocking
-                        </p>
-                        <button
-                          disabled
-                          className="w-full bg-[#181818] border border-[#282828] text-[#555555] text-xs font-bold py-2.5 rounded-xl cursor-not-allowed"
-                        >
-                          Earn More Points
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <Link
+                    to="/menu"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#FF5500] hover:bg-[#E84F00] text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-[#FF5500]/20 shrink-0"
+                  >
+                    <span>Use Points at Checkout</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
                 </div>
-              ))}
+              </div>
+            ) : (
+              <div className="mt-4 flex items-center gap-3 p-3 bg-[#171717] rounded-xl text-xs text-[#9CA3AF]">
+                <Lock className="w-4 h-4 text-[#FF5500] shrink-0" />
+                <span>
+                  Earn <strong className="text-white">{pointsNeeded.toLocaleString()} more points</strong> (£{(pointsNeeded / 100).toFixed(2)} eligible spend) to unlock £4.00 in order rewards.
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* How Patty Points Works Informational Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="bg-[#121212] border border-[#222222] rounded-2xl p-6 space-y-3">
+              <div className="w-9 h-9 rounded-xl bg-[#FF5500]/10 border border-[#FF5500]/30 flex items-center justify-center text-[#FF5500] font-bold text-sm">
+                1
+              </div>
+              <h4 className="font-extrabold text-sm text-white">1p Spend = 1 Patty Point</h4>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Order your favourite burgers online. Every 1p spent on eligible food automatically credits 1 Patty Point (£10 = 1,000 PTS).
+              </p>
+            </div>
+
+            <div className="bg-[#121212] border border-[#222222] rounded-2xl p-6 space-y-3">
+              <div className="w-9 h-9 rounded-xl bg-[#FF5500]/10 border border-[#FF5500]/30 flex items-center justify-center text-[#FF5500] font-bold text-sm">
+                2
+              </div>
+              <h4 className="font-extrabold text-sm text-white">4,000 Points Milestone</h4>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Reach 4,000 points to unlock reward redemption. 1,000 Patty Points equals £1 in real discount value (10% reward value).
+              </p>
+            </div>
+
+            <div className="bg-[#121212] border border-[#222222] rounded-2xl p-6 space-y-3">
+              <div className="w-9 h-9 rounded-xl bg-[#FF5500]/10 border border-[#FF5500]/30 flex items-center justify-center text-[#FF5500] font-bold text-sm">
+                3
+              </div>
+              <h4 className="font-extrabold text-sm text-white">Redeem in Whole £1 Steps</h4>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Select your reward (£4, £5, £6...) during checkout for instant savings. Never worry about losing fractional points.
+              </p>
             </div>
           </div>
 
-          {/* Section: How It Works */}
-          <div className="mb-14 bg-[#121212] border border-[#222222] rounded-2xl p-6 sm:p-8">
-            <h2 className="text-xl font-extrabold text-white mb-6 text-center sm:text-left">
-              How Loyalty Earning Works
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex items-start gap-4 p-4 bg-[#181818] border border-[#282828] rounded-xl">
-                <div className="w-10 h-10 rounded-xl bg-[#FF5500]/20 border border-[#FF5500]/40 text-[#FF5500] font-black text-lg flex items-center justify-center shrink-0">
-                  1
-                </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-white mb-1">Order Favorite Meals</h3>
-                  <p className="text-xs text-[#9CA3AF]">
-                    Order online at Patty Project. Every £1 spent earns 10 Loyalty Points automatically.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-4 bg-[#181818] border border-[#282828] rounded-xl">
-                <div className="w-10 h-10 rounded-xl bg-[#FF5500]/20 border border-[#FF5500]/40 text-[#FF5500] font-black text-lg flex items-center justify-center shrink-0">
-                  2
-                </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-white mb-1">Automatic Points Credit</h3>
-                  <p className="text-xs text-[#9CA3AF]">
-                    Points are automatically added to your profile balance immediately after payment.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-4 bg-[#181818] border border-[#282828] rounded-xl">
-                <div className="w-10 h-10 rounded-xl bg-[#FF5500]/20 border border-[#FF5500]/40 text-[#FF5500] font-black text-lg flex items-center justify-center shrink-0">
-                  3
-                </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-white mb-1">Claim Milestone Offers</h3>
-                  <p className="text-xs text-[#9CA3AF]">
-                    Reach points milestones to claim free burgers, sides, and discount voucher codes!
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Need Help Banner linking to /contact */}
-            <div className="mt-6 pt-6 border-t border-[#222222] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* Immutable Transaction History Ledger */}
+          <div className="bg-[#121212] border border-[#222222] rounded-2xl overflow-hidden shadow-xl">
+            <div className="p-6 border-b border-[#222222] flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-extrabold text-white">Have questions about your loyalty points or rewards?</h4>
-                <p className="text-xs text-[#9CA3AF]">Our customer support team is available to assist you with your loyalty account.</p>
+                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-[#FF5500]" />
+                  Loyalty Transaction History
+                </h3>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Auditable record of all points earned, redeemed, and reversed.</p>
               </div>
-              <Link
-                to="/contact"
-                className="inline-flex items-center justify-center gap-2 bg-[#FF5500] hover:bg-[#FF6611] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-[#FF5500]/20 shrink-0"
-              >
-                <span>Contact Loyalty Support</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
             </div>
-          </div>
-
-          {/* Section: Points Activity History */}
-          <div>
-            <h2 className="text-xl font-extrabold text-white mb-4">Points Activity Log</h2>
 
             {data.transactions.length === 0 ? (
-              <p className="text-xs text-[#9CA3AF] bg-[#121212] border border-[#222222] p-6 rounded-2xl text-center">
-                No loyalty transactions recorded yet. Place an order to earn points!
-              </p>
+              <div className="p-12 text-center text-xs text-[#71717A] space-y-3">
+                <Gift className="w-8 h-8 mx-auto text-[#374151]" />
+                <p>No loyalty transactions recorded yet. Place an eligible order to earn points!</p>
+                <Link
+                  to="/menu"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#FF5500] hover:underline"
+                >
+                  <span>Explore the Menu</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             ) : (
-              <div className="bg-[#121212] border border-[#222222] rounded-2xl overflow-hidden divide-y divide-[#1C1C1C]">
-                {data.transactions.map((tx) => {
-                  const isEarned = tx.points > 0;
-                  return (
-                    <div key={tx.id} className="p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-[#181818] transition-colors">
-                      <div className="flex items-center gap-3.5">
-                        <div
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 ${
-                            isEarned
-                              ? 'bg-[#10B981]/10 text-[#34D399] border border-[#10B981]/30'
-                              : 'bg-[#EF4444]/10 text-[#FCA5A5] border border-[#EF4444]/30'
-                          }`}
-                        >
-                          {isEarned ? '+' : '-'}
-                        </div>
-                        <div>
-                          <p className="text-xs font-extrabold text-white mb-0.5">{tx.description || 'Loyalty Activity'}</p>
-                          <p className="text-[10px] text-[#9CA3AF]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#171717] text-[#9CA3AF] uppercase text-[11px] font-semibold border-b border-[#222222]">
+                    <tr>
+                      <th className="px-6 py-4">Date</th>
+                      <th className="px-6 py-4">Type</th>
+                      <th className="px-6 py-4">Activity / Description</th>
+                      <th className="px-6 py-4 text-right">Points Delta</th>
+                      <th className="px-6 py-4 text-right">Resulting Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1F1F1F]">
+                    {data.transactions.map((tx: LoyaltyTransaction) => {
+                      const isPositive = tx.points > 0;
+                      return (
+                        <tr key={tx.id} className="hover:bg-[#171717] transition-colors">
+                          <td className="px-6 py-4 text-[#9CA3AF] whitespace-nowrap">
                             {new Date(tx.created_at).toLocaleDateString('en-GB', {
-                              day: 'numeric',
+                              day: '2-digit',
                               month: 'short',
                               year: 'numeric',
                               hour: '2-digit',
                               minute: '2-digit'
                             })}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div
-                        className={`text-sm font-black tracking-tight ${
-                          isEarned ? 'text-[#34D399]' : 'text-[#EF4444]'
-                        }`}
-                      >
-                        {isEarned ? `+${tx.points}` : tx.points} PTS
-                      </div>
-                    </div>
-                  );
-                })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {getTxBadge(tx.transaction_type)}
+                          </td>
+                          <td className="px-6 py-4 font-medium text-white max-w-xs truncate">
+                            {tx.description || 'Loyalty activity'}
+                          </td>
+                          <td className="px-6 py-4 text-right font-bold whitespace-nowrap">
+                            <span className={isPositive ? 'text-[#22C55E]' : 'text-[#EF4444]'}>
+                              {isPositive ? `+${tx.points.toLocaleString()}` : tx.points.toLocaleString()} PTS
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right text-[#D1D5DB] font-semibold whitespace-nowrap">
+                            {tx.resulting_balance !== undefined && tx.resulting_balance !== null
+                              ? `${tx.resulting_balance.toLocaleString()} PTS`
+                              : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
         </>
       ) : null}
-
-      {/* Claimed Offer Modal */}
-      {claimedReward && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#121212] border border-[#FF5500] rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl text-center relative animate-fadeIn">
-            <button
-              onClick={() => setClaimedReward(null)}
-              className="absolute top-4 right-4 text-[#9CA3AF] hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="w-16 h-16 bg-[#FF5500]/20 border border-[#FF5500] rounded-full flex items-center justify-center mx-auto mb-4 text-[#FF5500]">
-              <Sparkles className="w-8 h-8" />
-            </div>
-
-            <h3 className="text-2xl font-extrabold text-white mb-1">Congratulations!</h3>
-            <p className="text-xs text-[#9CA3AF] mb-6">
-              You claimed <strong className="text-white">{claimedReward.title}</strong>! Use your promo code below at checkout.
-            </p>
-
-            <div className="bg-[#181818] border border-[#FF5500]/40 rounded-xl p-4 flex items-center justify-between mb-6">
-              <span className="text-lg font-mono font-black text-[#FF5500] tracking-widest">
-                {claimedReward.code}
-              </span>
-              <button
-                onClick={() => copyCodeToClipboard(claimedReward.code)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FF5500] hover:bg-[#FF6611] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                <span>{copied ? 'Copied!' : 'Copy Code'}</span>
-              </button>
-            </div>
-
-            <Link
-              to="/menu"
-              onClick={() => setClaimedReward(null)}
-              className="block w-full bg-[#FF5500] hover:bg-[#FF6611] text-white text-xs font-bold py-3 rounded-xl transition-all shadow-lg shadow-[#FF5500]/20"
-            >
-              Order Now & Apply Code
-            </Link>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

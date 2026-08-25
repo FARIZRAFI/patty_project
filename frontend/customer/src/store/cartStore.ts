@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { CartItem, Product, ProductModifier, Branch } from '../types';
 
+export const MIN_DELIVERY_SUBTOTAL = 15.00;
+
 interface CartState {
   items: CartItem[];
   orderType: 'DELIVERY' | 'COLLECTION';
@@ -39,41 +41,69 @@ interface CartState {
   getDeliveryFee: () => number;
   getServiceFee: () => number;
   getTotal: () => number;
+  isDeliverySubtotalEligible: () => boolean;
+  getDeliveryShortfall: () => number;
 }
 
-const getInitialBranch = (): Branch | null => {
+const safeGetStorage = <T>(key: string, fallback: T): T => {
   try {
-    const raw = localStorage.getItem('patty_selected_branch');
-    return raw ? JSON.parse(raw) : null;
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
   } catch {
-    return null;
+    return fallback;
   }
 };
 
-const initialBranch = getInitialBranch();
+const safeSetStorage = (key: string, value: any) => {
+  try {
+    if (value === null || value === undefined) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+  } catch {}
+};
+
+const initialBranch = safeGetStorage<Branch | null>('patty_selected_branch', null);
+const initialItems = safeGetStorage<CartItem[]>('patty_cart_items', []);
+const initialOrderType = safeGetStorage<'DELIVERY' | 'COLLECTION'>('patty_order_type', 'COLLECTION');
+const initialCoords = safeGetStorage<{ lat: number; lng: number; accuracy?: number } | null>('patty_user_coords', null);
+const initialPostcode = safeGetStorage<string | null>('patty_user_postcode', null);
 
 export const useCartStore = create<CartState>((set, get) => ({
-  items: [],
-  orderType: 'COLLECTION', // FAIL-CLOSED DEFAULT: Starts on COLLECTION until <= 2.0 miles is verified
+  items: initialItems,
+  orderType: initialOrderType,
   selectedBranch: initialBranch,
   nearestBranchForCollection: initialBranch,
   deliveryDistanceMiles: null,
   isDeliveryEligible: false,
-  userCoords: null,
-  userPostcode: null,
+  userCoords: initialCoords,
+  userPostcode: initialPostcode,
   locationErrorMsg: null,
   couponCode: null,
   discountAmount: 0,
   isProductModalOpen: false,
 
   setOrderType: (type) => {
-    const { isDeliveryEligible, deliveryDistanceMiles } = get();
-    // Non-negotiable rule: Delivery can ONLY be selected if isDeliveryEligible is true AND distance <= 2.0 miles
+    const { isDeliveryEligible, deliveryDistanceMiles, isDeliverySubtotalEligible, getDeliveryShortfall } = get();
+    // Non-negotiable rule 1: Distance radius <= 2.0 miles
     if (type === 'DELIVERY' && (!isDeliveryEligible || (deliveryDistanceMiles !== null && deliveryDistanceMiles > 2.0))) {
-      set({ orderType: 'COLLECTION' });
+      safeSetStorage('patty_order_type', 'COLLECTION');
+      set({ orderType: 'COLLECTION', locationErrorMsg: 'WE PROVIDE DELIVERY UP TO 2 MILES ONLY' });
       return;
     }
-    set({ orderType: type });
+    // Non-negotiable rule 2: Minimum cart subtotal >= €15.00 OR valid promotion applied
+    if (type === 'DELIVERY' && !isDeliverySubtotalEligible()) {
+      const shortfall = getDeliveryShortfall();
+      safeSetStorage('patty_order_type', 'COLLECTION');
+      set({
+        orderType: 'COLLECTION',
+        locationErrorMsg: `Add €${shortfall.toFixed(2)} more to unlock delivery.`
+      });
+      return;
+    }
+    safeSetStorage('patty_order_type', type);
+    set({ orderType: type, locationErrorMsg: null });
   },
 
   setSelectedBranch: (branch, distanceMiles, isEligible, nearestBranch, locationMsg, coords, postcode) => {
@@ -81,13 +111,9 @@ export const useCartStore = create<CartState>((set, get) => ({
     const eligible = Boolean(isEligible ?? (dist !== null && dist <= 2.0));
     const effectiveBranch = branch ?? nearestBranch ?? null;
 
-    try {
-      if (effectiveBranch) {
-        localStorage.setItem('patty_selected_branch', JSON.stringify(effectiveBranch));
-      } else {
-        localStorage.removeItem('patty_selected_branch');
-      }
-    } catch {}
+    safeSetStorage('patty_selected_branch', effectiveBranch);
+    if (coords !== undefined) safeSetStorage('patty_user_coords', coords);
+    if (postcode !== undefined) safeSetStorage('patty_user_postcode', postcode);
 
     set({
       selectedBranch: effectiveBranch,
@@ -101,7 +127,11 @@ export const useCartStore = create<CartState>((set, get) => ({
     });
   },
 
-  setUserCoords: (coords, postcode) => set({ userCoords: coords, userPostcode: postcode ?? get().userPostcode }),
+  setUserCoords: (coords, postcode) => {
+    safeSetStorage('patty_user_coords', coords);
+    if (postcode !== undefined) safeSetStorage('patty_user_postcode', postcode);
+    set({ userCoords: coords, userPostcode: postcode ?? get().userPostcode });
+  },
 
   setLocationErrorMsg: (msg) => set({ locationErrorMsg: msg }),
 
@@ -115,9 +145,9 @@ export const useCartStore = create<CartState>((set, get) => ({
     const unitPrice = product.base_price + modCost;
     const lineTotal = unitPrice * quantity;
 
-    set((state) => ({
-      items: [...state.items, { product, quantity, selectedModifiers, removedIngredients, lineTotal }]
-    }));
+    const newItems = [...get().items, { product, quantity, selectedModifiers, removedIngredients, lineTotal }];
+    safeSetStorage('patty_cart_items', newItems);
+    set({ items: newItems });
   },
 
   updateQuantity: (index, quantity) => {
@@ -125,39 +155,41 @@ export const useCartStore = create<CartState>((set, get) => ({
       get().removeItem(index);
       return;
     }
-    set((state) => {
-      const newItems = [...state.items];
-      const item = newItems[index];
-      const modCost = item.selectedModifiers.reduce((acc, m) => acc + m.price, 0);
-      const unitPrice = item.product.base_price + modCost;
-      newItems[index] = {
-        ...item,
-        quantity,
-        lineTotal: unitPrice * quantity
-      };
-      return { items: newItems };
-    });
+    const newItems = [...get().items];
+    const item = newItems[index];
+    if (!item) return;
+    const modCost = item.selectedModifiers.reduce((acc, m) => acc + m.price, 0);
+    const unitPrice = item.product.base_price + modCost;
+    newItems[index] = {
+      ...item,
+      quantity,
+      lineTotal: unitPrice * quantity
+    };
+    safeSetStorage('patty_cart_items', newItems);
+    set({ items: newItems });
   },
 
   removeItem: (index) => {
-    set((state) => ({
-      items: state.items.filter((_, i) => i !== index)
-    }));
+    const newItems = get().items.filter((_, i) => i !== index);
+    safeSetStorage('patty_cart_items', newItems);
+    set({ items: newItems });
   },
 
   applyCoupon: (code, discount) => set({ couponCode: code, discountAmount: discount }),
   removeCoupon: () => set({ couponCode: null, discountAmount: 0 }),
-  clearCart: () => set({ items: [], couponCode: null, discountAmount: 0 }),
+  clearCart: () => {
+    safeSetStorage('patty_cart_items', []);
+    set({ items: [], couponCode: null, discountAmount: 0 });
+  },
 
   getSubtotal: () => {
     return get().items.reduce((acc, item) => acc + item.lineTotal, 0);
   },
 
   getDeliveryFee: () => {
-    // Patty Project delivery is FREE (£0.00). 2-mile radius is purely an eligibility check.
+    // Patty Project delivery is FREE (£0.00 / €0.00). Radius and subtotal are eligibility checks.
     return 0.0;
   },
-
 
   getServiceFee: () => {
     return get().items.length > 0 ? 0.99 : 0.0;
@@ -169,5 +201,18 @@ export const useCartStore = create<CartState>((set, get) => ({
     const service = get().getServiceFee();
     const discount = get().discountAmount;
     return Math.max(0, subtotal - discount + delivery + service);
+  },
+
+  isDeliverySubtotalEligible: () => {
+    const subtotal = get().getSubtotal();
+    const hasValidPromo = Boolean(get().couponCode && get().discountAmount > 0);
+    return subtotal >= MIN_DELIVERY_SUBTOTAL || hasValidPromo;
+  },
+
+  getDeliveryShortfall: () => {
+    const subtotal = get().getSubtotal();
+    const hasValidPromo = Boolean(get().couponCode && get().discountAmount > 0);
+    if (hasValidPromo || subtotal >= MIN_DELIVERY_SUBTOTAL) return 0.0;
+    return Math.max(0, MIN_DELIVERY_SUBTOTAL - subtotal);
   }
-}));
+}));;

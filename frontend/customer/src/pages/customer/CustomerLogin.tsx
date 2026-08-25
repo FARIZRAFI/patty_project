@@ -90,7 +90,7 @@ export const CustomerLogin: React.FC = () => {
         state_token: googleStateRef.current.state_token,
       });
       if (data && data.access_token && data.user) {
-        setAuth(data.access_token, data.user);
+        setAuth(data.access_token, data.user, data.refresh_token);
         navigate(redirectPath, { replace: true });
       } else {
         setError('Unable to complete sign in with Google. Please use your standard login method.');
@@ -137,7 +137,7 @@ export const CustomerLogin: React.FC = () => {
       });
 
       if (response && response.access_token && response.user) {
-        setAuth(response.access_token, response.user);
+        setAuth(response.access_token, response.user, response.refresh_token);
         navigate(redirectPath, { replace: true });
       } else {
         setError('Invalid response from authentication server.');
@@ -184,7 +184,7 @@ export const CustomerLogin: React.FC = () => {
       });
 
       if (response && response.access_token && response.user) {
-        setAuth(response.access_token, response.user);
+        setAuth(response.access_token, response.user, response.refresh_token);
         navigate('/loyalty', { replace: true });
       } else {
         setError('Registration completed, please login to continue.');

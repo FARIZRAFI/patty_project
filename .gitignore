@@ -50,3 +50,14 @@ dist-ssr/
 *.swo
 .DS_Store
 Thumbs.db
+
+# Databases & SQLite
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+patty_project.db
+backend/patty_project.db
+

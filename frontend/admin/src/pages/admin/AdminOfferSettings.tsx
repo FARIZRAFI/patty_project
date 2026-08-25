@@ -179,65 +179,7 @@ const DEFAULT_OFFERS_PAGE_CONFIG: OffersPageConfig = {
 };
 
 const DEFAULT_COMBO_DEALS_CONFIG: ComboDealsConfig = {
-  combos: [
-    {
-      id: "combo-1",
-      name: "Single Smash Meal Combo",
-      subtitle: "Single Patty Burger + Skin-on Fries + Cold Drink",
-      badge: "SAVE 20%",
-      description: "Our signature 3.5oz dry-aged beef smash burger served with seasoned skin-on fries and choice of soft drink.",
-      base_price: 9.95,
-      compare_at_price: 12.95,
-      image_url: "/product_the_mc_project.png",
-      category_slug: "combo-offers",
-      is_active: true,
-      modifiers: [
-        { name: "Coke", price: 0.0 },
-        { name: "Coke Zero", price: 0.0 },
-        { name: "Fanta", price: 0.0 },
-        { name: "Sprite", price: 0.0 },
-        { name: "Upgrade to Milkshake", price: 2.50 },
-        { name: "Upgrade to Peri Fries", price: 0.80 }
-      ],
-      ingredients: "Beef Patty, American Cheese, Pickles, Signature Sauce"
-    },
-    {
-      id: "combo-2",
-      name: "Double Trouble Burger Combo",
-      subtitle: "Double Smash Burger + Loaded Fries + Drink",
-      badge: "POPULAR",
-      description: "Double 3.5oz smash patties, double cheese, paired with skin-on rosemary fries and cold drink.",
-      base_price: 12.95,
-      compare_at_price: 16.50,
-      image_url: "/product_the_outlaw_project_.png",
-      category_slug: "combo-offers",
-      is_active: true,
-      modifiers: [
-        { name: "Coke", price: 0.0 },
-        { name: "Coke Zero", price: 0.0 },
-        { name: "Fanta", price: 0.0 },
-        { name: "Upgrade to Milkshake", price: 2.50 }
-      ],
-      ingredients: "Double Beef Patty, Double Cheddar, Grilled Onions, Pickles, Smokey Mayo"
-    },
-    {
-      id: "combo-3",
-      name: "Patty Feast for 4 Box",
-      subtitle: "4 Burgers + 2 Large Fries + 4 Drinks",
-      badge: "FAMILY DEAL",
-      description: "The ultimate party bundle! 4 classic smash burgers, 2 large seasoned fries, and 4 canned drinks.",
-      base_price: 32.95,
-      compare_at_price: 42.00,
-      image_url: "/product_the_spicy_clucker.png",
-      category_slug: "combo-offers",
-      is_active: true,
-      modifiers: [
-        { name: "4x Regular Fries Included", price: 0.0 },
-        { name: "Add 4 Dips Bundle", price: 2.50 }
-      ],
-      ingredients: "Beef Patties, Buns, Cheese, Pickles, House Sauces"
-    }
-  ]
+  combos: []
 };
 
 export const AdminOfferSettings: React.FC = () => {
@@ -375,8 +317,10 @@ export const AdminOfferSettings: React.FC = () => {
     setSuccessMsg(null);
     try {
       const updated = await api.put<ComboDealsConfig>('/promotions/settings/combo-deals', comboDealsConfig);
-      setComboDealsConfig(updated);
-      showNotification("Combo settings saved! All combo deals synced to the 'Combo Offers' menu category.");
+      if (updated && Array.isArray(updated.combos)) {
+        setComboDealsConfig(updated);
+      }
+      showNotification("Combo settings saved! All combo deals synced to the Customer Menu.");
     } catch (err: any) {
       console.error(err);
       showNotification(err?.message || "Failed to save Combo Deals.", true);
@@ -435,10 +379,14 @@ export const AdminOfferSettings: React.FC = () => {
 
     // Auto sync to backend
     try {
-      await api.put('/promotions/settings/combo-deals', { combos: newCombos });
-      showNotification("Combo deal saved & synced to Customer Menu under 'Combo Offers'!");
-    } catch (err) {
+      const updated = await api.put<ComboDealsConfig>('/promotions/settings/combo-deals', { combos: newCombos });
+      if (updated && Array.isArray(updated.combos)) {
+        setComboDealsConfig(updated);
+      }
+      showNotification("Combo deal saved & synced to Customer Menu under 'Combo Deals (Offer)'!");
+    } catch (err: any) {
       console.error('Failed to sync combo deal:', err);
+      showNotification(err?.message || "Failed to sync combo deal to menu.", true);
     }
   };
 
@@ -446,19 +394,28 @@ export const AdminOfferSettings: React.FC = () => {
     const newCombos = comboDealsConfig.combos.filter(c => c.id !== id);
     setComboDealsConfig({ combos: newCombos });
     try {
-      await api.put('/promotions/settings/combo-deals', { combos: newCombos });
+      const updated = await api.put<ComboDealsConfig>('/promotions/settings/combo-deals', { combos: newCombos });
+      if (updated && Array.isArray(updated.combos)) {
+        setComboDealsConfig(updated);
+      }
       showNotification("Combo deal removed from menu.");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      showNotification(err?.message || "Failed to remove combo deal.", true);
     }
   };
 
   const handleOpenEditCombo = (combo: ComboDealItem) => {
-    setEditingCombo(combo);
+    setEditingCombo({
+      ...combo,
+      modifiers: Array.isArray(combo.modifiers) ? [...combo.modifiers] : []
+    });
     setIsAddingNewCombo(false);
     let ingList: string[] = [];
     if (typeof combo.ingredients === 'string') {
       ingList = combo.ingredients.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (Array.isArray(combo.ingredients)) {
+      ingList = combo.ingredients;
     }
     setEditingComboIngredients(ingList);
   };
@@ -468,24 +425,19 @@ export const AdminOfferSettings: React.FC = () => {
       id: `combo-${Date.now()}`,
       name: '',
       subtitle: '',
-      badge: 'SAVE 20%',
+      badge: '',
       description: '',
-      base_price: 9.99,
-      compare_at_price: 12.99,
-      image_url: '/product_the_mc_project.png',
+      base_price: 0,
+      compare_at_price: undefined,
+      image_url: '',
       category_slug: 'combo-offers',
       is_active: true,
-      modifiers: [
-        { name: 'Coke', price: 0.0 },
-        { name: 'Coke Zero', price: 0.0 },
-        { name: 'Fanta', price: 0.0 },
-        { name: 'Upgrade to Shake', price: 2.50 }
-      ],
-      ingredients: 'Beef Patty, American Cheese, Pickles, Sauce'
+      modifiers: [],
+      ingredients: ''
     };
     setEditingCombo(newCombo);
     setIsAddingNewCombo(true);
-    setEditingComboIngredients(['Beef Patty', 'American Cheese', 'Pickles', 'Sauce']);
+    setEditingComboIngredients([]);
   };
 
   if (loading) {
@@ -1062,7 +1014,7 @@ export const AdminOfferSettings: React.FC = () => {
                     {/* Image Area */}
                     <div className="relative h-44 bg-black overflow-hidden border-b border-[#262626]">
                       <img
-                        src={combo.image_url}
+                        src={combo.image_url || '/placeholder-burger.svg'}
                         alt={combo.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 select-none"
                         onError={(e) => {

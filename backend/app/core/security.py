@@ -1,3 +1,5 @@
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Union
 from jose import jwt
@@ -29,3 +31,12 @@ def create_access_token(subject: Union[str, Any], roles: list = None, expires_de
     }
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
+def generate_refresh_token() -> str:
+    """Generates a cryptographically secure 256-bit URL-safe refresh token."""
+    return secrets.token_urlsafe(48)
+
+def hash_token(token: str) -> str:
+    """Computes SHA-256 hash of a token for secure, indexed database lookup."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+

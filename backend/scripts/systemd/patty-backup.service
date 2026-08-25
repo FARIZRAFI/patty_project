@@ -1,0 +1,20 @@
+[Unit]
+Description=Patty Project UK - Production PostgreSQL Daily Business Backup & Retention
+After=postgresql.service network.target
+Wants=postgresql.service
+
+[Service]
+Type=oneshot
+User=patty
+Group=patty
+WorkingDirectory=/opt/pattyproject/backend
+EnvironmentFile=-/opt/pattyproject/backend/.env
+ExecStart=/bin/bash /opt/pattyproject/backend/scripts/backup_postgresql.sh
+StandardOutput=append:/var/log/patty/backup.log
+StandardError=append:/var/log/patty/backup.log
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

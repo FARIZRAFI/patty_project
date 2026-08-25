@@ -9,6 +9,11 @@ from app.models.payment import Payment, PaymentStatus, PaymentProvider, PaymentE
 from app.models.order import Order, OrderStatus, OrderStatusHistory
 from app.models.loyalty import LoyaltyAccount, LoyaltyTransaction
 from app.models.user import User
+from app.services.loyalty_service import (
+    award_order_loyalty_points as svc_award_loyalty,
+    reverse_order_loyalty_points,
+    restore_redeemed_loyalty_points
+)
 
 logger = logging.getLogger("pattyproject.payment")
 
@@ -505,16 +510,24 @@ def transition_payment_status(
             )
             db.add(history)
 
-        elif target_status == PaymentStatus.REFUNDED:
-            order.payment_status = PaymentStatus.REFUNDED
-            order.status = OrderStatus.REFUNDED
-            history = OrderStatusHistory(
-                order_id=order.id,
-                from_status=order.status,
-                to_status=OrderStatus.REFUNDED,
-                notes="Payment fully refunded"
-            )
-            db.add(history)
+        elif target_status in [PaymentStatus.REFUNDED, PaymentStatus.PARTIALLY_REFUNDED]:
+            if target_status == PaymentStatus.REFUNDED:
+                order.payment_status = PaymentStatus.REFUNDED
+                order.status = OrderStatus.REFUNDED
+                history = OrderStatusHistory(
+                    order_id=order.id,
+                    from_status=order.status,
+                    to_status=OrderStatus.REFUNDED,
+                    notes=f"Payment fully refunded: {raw_response.get('reason') if raw_response else 'Refund processed'}"
+                )
+                db.add(history)
+            
+            # Loyalty Refund / Cancellation Reversals
+            ref_amt = raw_response.get("refund_amount") if raw_response else None
+            reason_txt = raw_response.get("reason") if raw_response else "Payment refund"
+            reverse_order_loyalty_points(db=db, order=order, refund_amount=ref_amt, reason=reason_txt)
+            if target_status == PaymentStatus.REFUNDED:
+                restore_redeemed_loyalty_points(db=db, order=order, reason=reason_txt)
 
     db.commit()
     db.refresh(payment)
@@ -555,51 +568,7 @@ def process_payment_refund(
 
 
 def award_order_loyalty_points(db: Session, order: Order) -> None:
-    """Awards loyalty points for paid order if not already credited."""
-    existing_tx = db.query(LoyaltyTransaction).filter(
-        LoyaltyTransaction.order_id == order.id,
-        LoyaltyTransaction.transaction_type == "EARNED"
-    ).first()
-    if existing_tx:
-        return  # Already awarded
-
-    user = None
-    if order.customer_id:
-        user = db.query(User).filter(User.id == order.customer_id).first()
-    elif order.customer_email:
-        user = db.query(User).filter(User.email == order.customer_email.strip().lower()).first()
-
-    if not user:
-        return
-
-    loyalty = db.query(LoyaltyAccount).filter(LoyaltyAccount.user_id == user.id).first()
-    if not loyalty:
-        loyalty = LoyaltyAccount(user_id=user.id, available_points=0, lifetime_points=0, tier="BRONZE")
-        db.add(loyalty)
-        db.flush()
-
-    pts = order.points_earned if order.points_earned and order.points_earned > 0 else int(order.total_amount * 10)
-    if pts <= 0:
-        return
-
-    loyalty.available_points += pts
-    loyalty.lifetime_points += pts
-
-    if loyalty.lifetime_points >= 5000:
-        loyalty.tier = "PLATINUM"
-    elif loyalty.lifetime_points >= 2500:
-        loyalty.tier = "GOLD"
-    elif loyalty.lifetime_points >= 1000:
-        loyalty.tier = "SILVER"
-    else:
-        loyalty.tier = "BRONZE"
-
-    tx = LoyaltyTransaction(
-        loyalty_account_id=loyalty.id,
-        order_id=order.id,
-        points=pts,
-        transaction_type="EARNED",
-        description=f"Points earned from Order {order.order_number}"
-    )
-    db.add(tx)
+    """Awards loyalty points for paid order using authoritative loyalty service."""
+    from app.services.loyalty_service import award_order_loyalty_points as svc_award
+    svc_award(db=db, order=order)
 

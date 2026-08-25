@@ -14,7 +14,7 @@ from app.main import app
 from app.core.database import Base, get_db
 import app.models as _all_models_registered
 from app.models import (
-    User, UserRole, CustomerAddress, UserAuthIdentity, AuthProvider, AuthConsumedJti,
+    User, UserRole, CustomerAddress, UserAuthIdentity, AuthProvider, AuthConsumedJti, AuthSession,
     Branch, BranchUser,
     Category, Product, ProductModifier,
     Order, OrderItem, OrderStatusHistory, OrderStatus, OrderType,
@@ -24,7 +24,9 @@ from app.models import (
 )
 from app.core.security import get_password_hash
 
-# Single shared in-memory SQLite database
+import threading
+
+# Single shared in-memory SQLite database with thread-safe session lock
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -32,14 +34,17 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+_db_lock = threading.RLock()
 
 
 def override_get_db():
-    db = TestingSessionLocal()
+    with _db_lock:
+        db = TestingSessionLocal()
     try:
         yield db
     finally:
-        db.close()
+        with _db_lock:
+            db.close()
 
 
 app.dependency_overrides[get_db] = override_get_db
@@ -116,7 +121,7 @@ def reset_test_db():
         category_id="cat-burgers",
         name="Mc Project",
         sku="BURG001",
-        base_price=8.95,
+        base_price=16.00,
         rating=4.8,
         reviews_count=100,
         is_active=True

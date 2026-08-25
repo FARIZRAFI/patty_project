@@ -1,6 +1,6 @@
 import random, uuid, logging
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.order import Order, OrderItem, OrderStatusHistory, OrderStatus, OrderType, PaymentStatus
@@ -20,6 +20,13 @@ from app.services.branch_service import (
     MAX_DELIVERY_RADIUS_MILES
 )
 
+from app.services.loyalty_service import (
+    award_order_loyalty_points,
+    reverse_order_loyalty_points,
+    restore_redeemed_loyalty_points,
+    validate_and_redeem_points
+)
+
 logger = logging.getLogger("pattyproject.orders")
 router = APIRouter()
 
@@ -27,11 +34,13 @@ router = APIRouter()
 @router.post("/", response_model=OrderResponse)
 def create_order(
     request: OrderCreateRequest,
+    current_user: Optional[User] = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Creates a new order with server-side pricing recalculation, inventory check, and initial PENDING_PAYMENT status.
     Mandatory backend enforcement of 2-mile delivery radius rule (<= 2.0 miles).
+    Authoritatively validates loyalty points redemptions and eligible spend calculations.
     """
     order_type_clean = request.order_type.strip().upper()
     if order_type_clean not in ["DELIVERY", "COLLECTION"]:
@@ -117,6 +126,51 @@ def create_order(
 
         branch_to_use = branch
 
+    # 1. Authoritative Identity & Redemption Pre-Validation
+    if request.redeem_points and request.redeem_points > 0:
+        # SEC-LOYALTY-01: Points redemption strictly requires authenticated session
+        if current_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required to redeem loyalty points."
+            )
+        
+        # Authenticated user cannot redeem on behalf of another user's email
+        normalized_req_email = request.customer_email.strip().lower() if request.customer_email else ""
+        normalized_curr_email = current_user.email.strip().lower() if current_user.email else ""
+        if normalized_req_email and normalized_req_email != normalized_curr_email:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only redeem loyalty points for your own account."
+            )
+
+        resolved_user = current_user
+        
+        if request.redeem_points < 4000:
+            raise HTTPException(
+                status_code=400,
+                detail="Minimum 4,000 Patty Points required for reward redemption."
+            )
+        if request.redeem_points % 1000 != 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Loyalty points can only be redeemed in whole 1,000-point increments (£1 per 1,000 points)."
+            )
+        
+        # Authoritative loyalty account resolved strictly via current_user.id
+        loyalty_acc = db.query(LoyaltyAccount).filter(LoyaltyAccount.user_id == current_user.id).first()
+        if not loyalty_acc or loyalty_acc.available_points < request.redeem_points:
+            avail = loyalty_acc.available_points if loyalty_acc else 0
+            raise HTTPException(
+                status_code=400,
+                detail=f"Insufficient loyalty points. You have {avail:,} points but requested {request.redeem_points:,}."
+            )
+    else:
+        # Normal guest or authenticated order without points redemption
+        resolved_user = current_user
+        if not resolved_user and request.customer_email:
+            resolved_user = db.query(User).filter(User.email == request.customer_email.strip().lower()).first()
+
     # Calculate authoritative server totals
     items_input = [{"product_id": item.product_id, "quantity": item.quantity, "selected_modifiers": item.selected_modifiers} for item in request.items]
     totals = calculate_order_totals(
@@ -124,8 +178,32 @@ def create_order(
         items=items_input,
         order_type=request.order_type,
         coupon_code=request.coupon_code,
-        redeem_reward_id=request.redeem_reward_id
+        redeem_reward_id=request.redeem_reward_id,
+        redeem_points=request.redeem_points
     )
+
+    if not totals["items"]:
+        raise HTTPException(status_code=400, detail="Cart contains no valid items")
+
+    # NON-NEGOTIABLE BACKEND ENFORCEMENT: €15.00 Minimum Delivery Subtotal Rule + Offer/Coupon Exception
+    if order_type_clean == "DELIVERY":
+        if not totals.get("is_delivery_subtotal_eligible", True):
+            shortfall = totals.get("delivery_shortfall", 0.0)
+            current_sub = totals.get("subtotal", 0.0)
+            logger.warning(
+                f"[BUSINESS_RULE] Delivery order rejected: subtotal €{current_sub:.2f} < €15.00 without valid promotion."
+            )
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "success": False,
+                    "code": "MINIMUM_DELIVERY_ORDER_REQUIRED",
+                    "message": f"Minimum order value of €15.00 required for delivery. Add €{shortfall:.2f} more to qualify.",
+                    "min_threshold": 15.00,
+                    "current_subtotal": current_sub,
+                    "amount_needed": shortfall
+                }
+            )
 
     # Check branch stock availability
     for item in request.items:
@@ -141,9 +219,6 @@ def create_order(
                 detail=f"'{prod_name}' is currently out of stock at {branch_to_use.name}."
             )
 
-    if not totals["items"]:
-        raise HTTPException(status_code=400, detail="Cart contains no valid items")
-
     order_num = f"#PP{random.randint(1000, 9999)}"
 
     slot_time = None
@@ -156,8 +231,12 @@ def create_order(
     elif hasattr(request.collection_slot_time, "isoformat"):
         slot_time = request.collection_slot_time
 
+    if resolved_user and not resolved_user.phone and request.customer_phone:
+        resolved_user.phone = request.customer_phone
+
     order = Order(
         order_number=order_num,
+        customer_id=resolved_user.id if resolved_user else None,
         customer_name=request.customer_name,
         customer_email=request.customer_email.strip().lower(),
         customer_phone=request.customer_phone,
@@ -177,10 +256,23 @@ def create_order(
         payment_method="Client Payment Gateway",
         payment_status=PaymentStatus.PENDING,
         coupon_code=request.coupon_code,
-        points_earned=totals["points_earned"]
+        points_earned=totals["points_earned"],
+        points_redeemed=totals.get("points_redeemed", 0)
     )
     db.add(order)
     db.flush()
+
+    # Process points deduction if points were redeemed
+    if order.points_redeemed > 0 and current_user:
+        ok, msg, tx = validate_and_redeem_points(
+            db=db,
+            user_id=current_user.id,
+            points_to_redeem=order.points_redeemed,
+            order_id=order.id
+        )
+        if not ok:
+            db.rollback()
+            raise HTTPException(status_code=400, detail=msg)
 
     for item_data in totals["items"]:
         oi = OrderItem(
@@ -222,23 +314,53 @@ def get_my_orders(
 @router.get("/{order_number}", response_model=OrderResponse)
 def get_order_by_number(
     order_number: str,
+    email: Optional[str] = Query(None),
+    guest_email: Optional[str] = Query(None),
     current_user: Optional[User] = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
-    """Customer live status tracking or admin order inspection."""
+    """
+    Customer order inspection / status tracking or admin inspection.
+    Enforces strict ownership & role authorization to prevent IDOR / PII enumeration.
+    """
     order = db.query(Order).filter(
         (Order.order_number == order_number) | (Order.id == order_number)
     ).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    # If accessed by a Branch Admin, verify branch authorization
+    # 1. Super Admin -> Full Access
+    if current_user and current_user.role == UserRole.SUPER_ADMIN:
+        return order
+
+    # 2. Branch Admin -> Assigned Branch Isolation Check
     if current_user and current_user.role == UserRole.BRANCH_ADMIN:
         assigned_ids = [bu.branch_id for bu in current_user.branch_assignments]
         if order.branch_id not in assigned_ids:
             raise HTTPException(status_code=403, detail="Access denied to order outside assigned branch")
+        return order
 
-    return order
+    # 3. Authenticated Customer -> Must own the order
+    if current_user and current_user.role == UserRole.CUSTOMER:
+        is_owner = (
+            (order.customer_id and order.customer_id == current_user.id) or
+            (order.customer_email and order.customer_email.strip().lower() == current_user.email.strip().lower())
+        )
+        if not is_owner:
+            raise HTTPException(status_code=403, detail="Access denied: You do not have permission to view this order")
+        return order
+
+    # 4. Unauthenticated Guest Tracking -> Requires verification with customer email
+    check_email = (email or guest_email or "").strip().lower()
+    if check_email and order.customer_email and check_email == order.customer_email.strip().lower():
+        return order
+
+    # 5. Unauthenticated Caller without proof of ownership -> Denied
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication or customer email verification required to access order details",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
 
 
 @router.get("", response_model=List[OrderResponse])
@@ -246,7 +368,7 @@ def get_order_by_number(
 def list_admin_orders(
     branch_id: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.BRANCH_ADMIN])),
     db: Session = Depends(get_db)
 ):
     """
@@ -256,7 +378,7 @@ def list_admin_orders(
     """
     query = db.query(Order)
 
-    if current_user and current_user.role == UserRole.BRANCH_ADMIN:
+    if current_user.role == UserRole.BRANCH_ADMIN:
         assigned_ids = [bu.branch_id for bu in current_user.branch_assignments]
         if branch_id and branch_id not in assigned_ids:
             raise HTTPException(status_code=403, detail="Access denied to this branch's orders")
@@ -273,7 +395,7 @@ def list_admin_orders(
 def update_order_status(
     order_id: str,
     request: StatusUpdateRequest,
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.BRANCH_ADMIN])),
     db: Session = Depends(get_db)
 ):
     """Trigger order status transition with audit log and branch isolation."""
@@ -282,7 +404,7 @@ def update_order_status(
         raise HTTPException(status_code=404, detail="Order not found")
 
     # Branch Admin Isolation check
-    if current_user and current_user.role == UserRole.BRANCH_ADMIN:
+    if current_user.role == UserRole.BRANCH_ADMIN:
         assigned_ids = [bu.branch_id for bu in current_user.branch_assignments]
         if order.branch_id not in assigned_ids:
             raise HTTPException(status_code=403, detail="Cannot manage order outside assigned branch")
@@ -293,6 +415,18 @@ def update_order_status(
     order.status = new_status
     if new_status in [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY, OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED, OrderStatus.COLLECTED, OrderStatus.PAID]:
         order.payment_status = PaymentStatus.PAID
+        try:
+            award_order_loyalty_points(db, order)
+        except Exception as e:
+            logger.warning(f"Loyalty award note for order {order.order_number}: {e}")
+    elif new_status in [OrderStatus.CANCELLED, OrderStatus.REFUNDED, OrderStatus.REJECTED]:
+        if new_status == OrderStatus.REFUNDED:
+            order.payment_status = PaymentStatus.REFUNDED
+        try:
+            restore_redeemed_loyalty_points(db, order, reason=request.notes or f"Order status transitioned to {new_status}")
+            reverse_order_loyalty_points(db, order, reason=request.notes or f"Order status transitioned to {new_status}")
+        except Exception as e:
+            logger.warning(f"Loyalty reversal note for order {order.order_number}: {e}")
 
     history = OrderStatusHistory(
         order_id=order.id,

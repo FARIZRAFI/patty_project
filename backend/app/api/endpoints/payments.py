@@ -23,6 +23,8 @@ from app.services.payment_service import (
     InvalidPaymentTransitionError
 )
 from app.services.branch_service import calculate_haversine_miles, MAX_DELIVERY_RADIUS_MILES
+from app.api.endpoints.auth import require_role, get_current_user
+from app.models.user import UserRole, User
 
 router = APIRouter()
 
@@ -216,12 +218,31 @@ async def mock_simulate_payment(request: Request, db: Session = Depends(get_db))
 def verify_transaction_status(transaction_id: str, db: Session = Depends(get_db)):
     """
     Retrieves authoritative status for mock checkout polling and confirmation.
+    Supports flexible lookup by transaction ID, payment UUID, order ID, or order number.
     """
     check_mock_gateway_allowed()
 
+    # 1. Direct transaction_id lookup
     payment = db.query(Payment).filter(Payment.transaction_id == transaction_id).first()
+
+    # 2. Fallback: Payment UUID lookup
     if not payment:
-        raise HTTPException(status_code=404, detail="Transaction not found")
+        payment = db.query(Payment).filter(Payment.id == transaction_id).first()
+
+    # 3. Fallback: Order ID lookup
+    if not payment:
+        payment = db.query(Payment).filter(Payment.order_id == transaction_id).order_by(Payment.created_at.desc()).first()
+
+    # 4. Fallback: Order Number lookup (e.g. #PP1234)
+    if not payment:
+        order_match = db.query(Order).filter(
+            (Order.order_number == transaction_id) | (Order.id == transaction_id)
+        ).first()
+        if order_match:
+            payment = db.query(Payment).filter(Payment.order_id == order_match.id).order_by(Payment.created_at.desc()).first()
+
+    if not payment:
+        raise HTTPException(status_code=404, detail="Transaction or order payment record not found")
 
     order = db.query(Order).filter(Order.id == payment.order_id).first()
     if not order:
@@ -229,7 +250,7 @@ def verify_transaction_status(transaction_id: str, db: Session = Depends(get_db)
 
     return {
         "payment_id": payment.id,
-        "transaction_id": payment.transaction_id,
+        "transaction_id": payment.transaction_id or payment.id,
         "order_id": order.id,
         "order_number": order.order_number,
         "customer_name": order.customer_name,
@@ -238,25 +259,77 @@ def verify_transaction_status(transaction_id: str, db: Session = Depends(get_db)
         "currency": payment.currency,
         "payment_status": payment.status,
         "order_status": order.status,
-        "created_at": payment.created_at
+        "created_at": payment.created_at.isoformat() if hasattr(payment.created_at, "isoformat") else str(payment.created_at) if payment.created_at else None
     }
 
 
 @router.get("/order/{order_id}", response_model=List[PaymentResponse])
-def get_order_payments(order_id: str, db: Session = Depends(get_db)):
+def get_order_payments(
+    order_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Retrieves all payment transactions and audit ledger for an order."""
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    # Super Admin -> Full Access
+    if current_user.role == UserRole.SUPER_ADMIN:
+        return order.payments
+
+    # Branch Admin -> Assigned branch isolation
+    if current_user.role == UserRole.BRANCH_ADMIN:
+        assigned_ids = [bu.branch_id for bu in current_user.branch_assignments]
+        if order.branch_id not in assigned_ids:
+            raise HTTPException(status_code=403, detail="Access denied to payment records outside assigned branch")
+        return order.payments
+
+    # Customer -> Must own the order
+    is_owner = (
+        (order.customer_id and order.customer_id == current_user.id) or
+        (order.customer_email and order.customer_email.strip().lower() == current_user.email.strip().lower())
+    )
+    if not is_owner:
+        raise HTTPException(status_code=403, detail="Access denied to payment records for this order")
+
     return order.payments
 
 
 @router.get("/{payment_id}", response_model=PaymentResponse)
-def get_payment_details(payment_id: str, db: Session = Depends(get_db)):
+def get_payment_details(
+    payment_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Fetches details of a specific payment transaction."""
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment record not found")
+
+    order = payment.order
+
+    # Super Admin -> Full Access
+    if current_user.role == UserRole.SUPER_ADMIN:
+        return payment
+
+    # Branch Admin -> Assigned branch isolation
+    if current_user.role == UserRole.BRANCH_ADMIN:
+        if order:
+            assigned_ids = [bu.branch_id for bu in current_user.branch_assignments]
+            if order.branch_id not in assigned_ids:
+                raise HTTPException(status_code=403, detail="Access denied to payment outside assigned branch")
+        return payment
+
+    # Customer -> Must own the associated order
+    if order:
+        is_owner = (
+            (order.customer_id and order.customer_id == current_user.id) or
+            (order.customer_email and order.customer_email.strip().lower() == current_user.email.strip().lower())
+        )
+        if not is_owner:
+            raise HTTPException(status_code=403, detail="Access denied to this payment record")
+
     return payment
 
 
@@ -264,9 +337,10 @@ def get_payment_details(payment_id: str, db: Session = Depends(get_db)):
 def refund_payment(
     payment_id: str,
     request: PaymentRefundRequest,
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN])),
     db: Session = Depends(get_db)
 ):
-    """Processes a full or partial refund for a completed payment."""
+    """Processes a full or partial refund for a completed payment (Super Admin only)."""
     payment = db.query(Payment).filter(Payment.id == payment_id).first()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment record not found")

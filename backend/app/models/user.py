@@ -33,6 +33,7 @@ class User(Base):
     orders = relationship("Order", back_populates="customer")
     loyalty_account = relationship("LoyaltyAccount", back_populates="user", uselist=False)
     auth_identities = relationship("UserAuthIdentity", back_populates="user", cascade="all, delete-orphan")
+    sessions = relationship("AuthSession", back_populates="user", cascade="all, delete-orphan")
 
 class UserAuthIdentity(Base):
     __tablename__ = "user_auth_identities"
@@ -88,4 +89,22 @@ class AuthConsumedJti(Base):
     jti = Column(String(64), primary_key=True)
     expires_at = Column(DateTime, nullable=False, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class AuthSession(Base):
+    __tablename__ = "auth_sessions"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    refresh_token_hash = Column(String(64), nullable=False, unique=True, index=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    is_revoked = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    last_used_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    user_agent = Column(String(255), nullable=True)
+    ip_address = Column(String(45), nullable=True)
+
+    # Relationships
+    user = relationship("User", back_populates="sessions")
+
 

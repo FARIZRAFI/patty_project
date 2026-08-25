@@ -154,7 +154,7 @@ export const MobileDrawer: React.FC<Props> = ({ onClose }) => {
                 <p className="text-[11px] text-[#9CA3AF] group-hover:text-[#D1D5DB] font-normal truncate mt-0.5 leading-snug transition-colors">
                   {selectedBranch 
                     ? `${selectedBranch.address_line1}, ${selectedBranch.postcode}` 
-                    : '45 Camden High Street, NW1 7JE'}
+                    : '4 Market Parade, N9 9HF'}
                 </p>
               </div>
             </div>

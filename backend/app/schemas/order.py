@@ -19,6 +19,7 @@ class OrderCreateRequest(BaseModel):
     items: List[OrderItemCreate]
     coupon_code: Optional[str] = None
     redeem_reward_id: Optional[str] = None
+    redeem_points: Optional[int] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     delivery_postcode: Optional[str] = None

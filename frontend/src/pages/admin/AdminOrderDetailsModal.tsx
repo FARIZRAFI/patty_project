@@ -79,21 +79,35 @@ export const AdminOrderDetailsModal: React.FC<Props> = ({ order, onClose, onUpda
               <User className="w-4 h-4" />
               <span>Customer Information</span>
             </div>
-            <div className="flex justify-between"><span className="text-[#A1A1AA]">Name</span><span className="text-[#F5F5F5] font-semibold">{order.customer_name}</span></div>
-            <div className="flex justify-between"><span className="text-[#A1A1AA]">Phone</span><span className="text-[#F5F5F5]">{order.customer_phone}</span></div>
-            <div className="flex justify-between"><span className="text-[#A1A1AA]">Email</span><span className="text-[#F5F5F5] truncate max-w-[140px]">{order.customer_email}</span></div>
-            <div className="flex justify-between"><span className="text-[#A1A1AA]">Loyalty Points</span><span className="text-[#FF5A00] font-semibold">150 Points</span></div>
+            <div className="flex justify-between"><span className="text-[#A1A1AA]">Name</span><span className="text-[#F5F5F5] font-semibold">{order.customer_name || 'Guest Customer'}</span></div>
+            <div className="flex justify-between"><span className="text-[#A1A1AA]">Phone</span><span className="text-[#F5F5F5]">{order.customer_phone || 'No phone provided'}</span></div>
+            <div className="flex justify-between"><span className="text-[#A1A1AA]">Email</span><span className="text-[#F5F5F5] truncate max-w-[140px]" title={order.customer_email}>{order.customer_email || 'No email provided'}</span></div>
+            <div className="flex justify-between"><span className="text-[#A1A1AA]">Points Earned</span><span className="text-[#FF5A00] font-semibold">+{order.points_earned ? order.points_earned.toLocaleString() : 0} pts</span></div>
+            {order.points_redeemed ? (
+              <div className="flex justify-between"><span className="text-[#A1A1AA]">Points Redeemed</span><span className="text-[#10B981] font-semibold">-{order.points_redeemed.toLocaleString()} pts</span></div>
+            ) : null}
           </div>
 
-          {/* Card 3: Delivery Address */}
+          {/* Card 3: Delivery / Collection Details */}
           <div className="bg-[#151515] border border-[#242424] p-4 rounded-lg space-y-2 text-xs">
             <div className="flex items-center gap-2 text-[#FF5A00] font-semibold mb-2">
               <MapPin className="w-4 h-4" />
-              <span>Delivery Address</span>
+              <span>{order.order_type === 'COLLECTION' ? 'Collection Details' : 'Delivery Address'}</span>
             </div>
-            <p className="text-[#F5F5F5] font-medium">{order.delivery_address?.address_line1 || '123 Baker Street'}</p>
-            <p className="text-[#A1A1AA]">{order.delivery_address?.postcode || 'London W1U 6EP, United Kingdom'}</p>
-            <p className="text-xs text-[#FF5A00] mt-2 font-medium">Instructions: {order.delivery_instructions || 'Leave at the door'}</p>
+            {order.order_type === 'COLLECTION' ? (
+              <>
+                <p className="text-[#F5F5F5] font-medium">Customer Collection at Branch</p>
+                {order.collection_slot_time && (
+                  <p className="text-[#A1A1AA]">Slot: {new Date(order.collection_slot_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-[#F5F5F5] font-medium">{order.delivery_address?.address_line1 || 'No address line 1'}</p>
+                <p className="text-[#A1A1AA]">{[order.delivery_address?.city, order.delivery_address?.postcode].filter(Boolean).join(', ') || 'London, United Kingdom'}</p>
+                <p className="text-xs text-[#FF5A00] mt-2 font-medium">Instructions: {order.delivery_instructions || 'None'}</p>
+              </>
+            )}
           </div>
         </div>
 
@@ -102,7 +116,7 @@ export const AdminOrderDetailsModal: React.FC<Props> = ({ order, onClose, onUpda
           {/* Ordered Items Table */}
           <div className="bg-[#151515] border border-[#242424] p-4 rounded-lg space-y-3.5">
             <h3 className="text-xs font-semibold text-[#F5F5F5] uppercase tracking-wider">Ordered Items</h3>
-            <div className="space-y-2.5">
+            <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
               {order.items && order.items.length > 0 ? (
                 order.items.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between text-xs pb-2.5 border-b border-[#242424] last:border-0">
@@ -114,11 +128,7 @@ export const AdminOrderDetailsModal: React.FC<Props> = ({ order, onClose, onUpda
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-[#F5F5F5] space-y-2">
-                  <div className="flex justify-between"><span>Classic Beef Burger</span><span>£8.99</span></div>
-                  <div className="flex justify-between"><span>French Fries (Regular)</span><span>£2.49</span></div>
-                  <div className="flex justify-between"><span>Coca Cola 500ml x 2</span><span>£3.18</span></div>
-                </div>
+                <p className="text-xs text-[#71717A] py-2">No item details recorded for this order.</p>
               )}
             </div>
 

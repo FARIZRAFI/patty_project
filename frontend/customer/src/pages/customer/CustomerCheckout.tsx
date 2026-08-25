@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Truck, ShoppingBag, MapPin, Clock, Lock, CheckCircle2, Building2, Plus, Star, ShieldCheck, Check } from 'lucide-react';
+import { Truck, ShoppingBag, MapPin, Clock, Lock, CheckCircle2, Building2, Plus, Star, ShieldCheck, Check, AlertTriangle } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { api } from '../../api/client';
@@ -9,7 +9,23 @@ import { CustomerCard } from '../../types/card';
 
 export const CustomerCheckout: React.FC = () => {
   const [step, setStep] = useState<1 | 2>(1);
-  const { items, orderType, setOrderType, selectedBranch, getTotal, getSubtotal, getDeliveryFee, getServiceFee, discountAmount, clearCart } = useCartStore();
+  const {
+    items,
+    orderType,
+    setOrderType,
+    selectedBranch,
+    nearestBranchForCollection,
+    isDeliveryEligible,
+    deliveryDistanceMiles,
+    userCoords,
+    getTotal,
+    getSubtotal,
+    getDeliveryFee,
+    getServiceFee,
+    couponCode,
+    discountAmount,
+    clearCart
+  } = useCartStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
@@ -36,8 +52,49 @@ export const CustomerCheckout: React.FC = () => {
   const [savedCards, setSavedCards] = useState<CustomerCard[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
+  // Loyalty Points State
+  const [loyaltyData, setLoyaltyData] = useState<any>(null);
+  const [redeemPoints, setRedeemPoints] = useState<number>(0);
+
   React.useEffect(() => {
+    // Populate user profile details into input fields
     if (user) {
+      if (user.full_name) setCustomerName((prev) => prev || user.full_name);
+      if (user.email) setCustomerEmail((prev) => prev || user.email);
+      if (user.phone) {
+        const cleanPhone = user.phone.replace(/\D/g, '');
+        if (cleanPhone) setPhoneDigits((prev) => prev || cleanPhone.slice(-11));
+      }
+    } else {
+      const rawUser = localStorage.getItem('patty_user');
+      if (rawUser) {
+        try {
+          const parsed = JSON.parse(rawUser);
+          if (parsed?.full_name) setCustomerName((prev) => prev || parsed.full_name);
+          if (parsed?.email) setCustomerEmail((prev) => prev || parsed.email);
+          if (parsed?.phone) {
+            const cleanPhone = parsed.phone.replace(/\D/g, '');
+            if (cleanPhone) setPhoneDigits((prev) => prev || cleanPhone.slice(-11));
+          }
+        } catch {}
+      }
+    }
+
+    const token = localStorage.getItem('patty_token');
+    if (token || user) {
+      api.get<any>('/auth/me')
+        .then((userData) => {
+          if (userData) {
+            if (userData.full_name) setCustomerName((prev) => prev || userData.full_name);
+            if (userData.email) setCustomerEmail((prev) => prev || userData.email);
+            if (userData.phone) {
+              const cleanPhone = userData.phone.replace(/\D/g, '');
+              if (cleanPhone) setPhoneDigits((prev) => prev || cleanPhone.slice(-11));
+            }
+          }
+        })
+        .catch(() => {});
+
       api.get<CustomerAddress[]>('/addresses')
         .then((addrs) => {
           setSavedAddresses(addrs);
@@ -55,6 +112,12 @@ export const CustomerCheckout: React.FC = () => {
             const defaultCard = cardsList.find((c) => c.is_default) || cardsList[0];
             setSelectedCardId(defaultCard.id);
           }
+        })
+        .catch(() => {});
+
+      api.get<any>('/loyalty/balance')
+        .then((res) => {
+          setLoyaltyData(res);
         })
         .catch(() => {});
     }
@@ -76,7 +139,9 @@ export const CustomerCheckout: React.FC = () => {
 
   const subtotal = getSubtotal();
   const delivery = getDeliveryFee();
-  const total = getTotal();
+  const loyaltyDiscount = redeemPoints > 0 ? redeemPoints / 1000 : 0;
+  const effectiveDiscount = Math.min(subtotal, discountAmount + loyaltyDiscount);
+  const total = Math.max(0, subtotal - effectiveDiscount + delivery + getServiceFee());
 
   const handleContinueToPayment = () => {
     setError('');
@@ -138,10 +203,15 @@ export const CustomerCheckout: React.FC = () => {
           address_line2: addressLine2,
           city: city || 'London',
           postcode,
-          country: country || 'United Kingdom'
+          country: country || 'United Kingdom',
+          latitude: userCoords?.lat ?? null,
+          longitude: userCoords?.lng ?? null
         } : null,
         delivery_instructions: instructions,
-        delivery_postcode: postcode || undefined,
+        latitude: userCoords?.lat ?? null,
+        longitude: userCoords?.lng ?? null,
+        coupon_code: couponCode || undefined,
+        redeem_points: redeemPoints > 0 ? redeemPoints : undefined,
         items: items.map((i) => ({
           product_id: i.product.id,
           quantity: i.quantity,
@@ -259,29 +329,50 @@ export const CustomerCheckout: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Delivery Option */}
                   <div
-                    onClick={() => setOrderType('DELIVERY')}
-                    className={`p-4 rounded-lg border cursor-pointer flex items-center justify-between transition-all ${
-                      orderType === 'DELIVERY'
-                        ? 'bg-[#241209] border-[#6B2A0D] text-[#F5F5F5]'
-                        : 'bg-[#151515] border-[#242424] text-[#A1A1AA] hover:border-[#333333]'
+                    onClick={() => {
+                      if (isDeliveryEligible && (deliveryDistanceMiles === null || deliveryDistanceMiles <= 2.0)) {
+                        setOrderType('DELIVERY');
+                      }
+                    }}
+                    className={`p-4 rounded-lg border transition-all ${
+                      isDeliveryEligible && (deliveryDistanceMiles === null || deliveryDistanceMiles <= 2.0)
+                        ? orderType === 'DELIVERY'
+                          ? 'bg-[#241209] border-[#6B2A0D] text-[#F5F5F5] cursor-pointer'
+                          : 'bg-[#151515] border-[#242424] text-[#A1A1AA] hover:border-[#333333] cursor-pointer'
+                        : 'bg-[#121212]/60 border-[#222222] opacity-50 cursor-not-allowed select-none'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-[#FF5A00]/10 border border-[#FF5A00]/30 flex items-center justify-center text-[#FF5A00] shrink-0">
-                        <Truck className="w-4.5 h-4.5" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                          isDeliveryEligible ? 'bg-[#FF5A00]/10 border border-[#FF5A00]/30 text-[#FF5A00]' : 'bg-[#1A1A1A] text-[#71717A]'
+                        }`}>
+                          <Truck className="w-4.5 h-4.5" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm text-[#F5F5F5]">Delivery</p>
+                          <p className="text-xs text-[#A1A1AA]">
+                            {isDeliveryEligible ? 'Direct home delivery' : 'Unavailable'}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-sm text-[#F5F5F5]">Delivery</p>
-                        <p className="text-xs text-[#A1A1AA]">Direct home delivery</p>
+
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                        orderType === 'DELIVERY' && isDeliveryEligible ? 'border-[#FF5A00]' : 'border-[#242424]'
+                      }`}>
+                        {orderType === 'DELIVERY' && isDeliveryEligible && <div className="w-2 h-2 rounded-full bg-[#FF5A00]" />}
                       </div>
                     </div>
 
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                      orderType === 'DELIVERY' ? 'border-[#FF5A00]' : 'border-[#242424]'
-                    }`}>
-                      {orderType === 'DELIVERY' && <div className="w-2 h-2 rounded-full bg-[#FF5A00]" />}
-                    </div>
+                    {(!isDeliveryEligible || (deliveryDistanceMiles !== null && deliveryDistanceMiles > 2.0)) && (
+                      <div className="mt-2.5 pt-2 border-t border-[#222222]">
+                        <span className="text-[10px] font-extrabold text-[#FF5500] uppercase tracking-wider block">
+                          WE PROVIDE DELIVERY UP TO 2 MILES ONLY
+                        </span>
+                      </div>
+                    )}
                   </div>
+
 
                   {/* Collection Option */}
                   <div
@@ -309,6 +400,21 @@ export const CustomerCheckout: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Red Color Delivery Disclaimer when Subtotal < 15.00 */}
+                {subtotal < 15.00 && !(couponCode && discountAmount > 0) && (
+                  <div className="bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg p-3 text-xs text-[#EF4444] font-medium flex items-start gap-2.5">
+                    <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-bold text-[#EF4444]">
+                        Disclaimer: For the delivery service you must cart at least €15.
+                      </p>
+                      <p className="text-[11px] text-[#F87171]">
+                        Add €{(15.00 - subtotal).toFixed(2)} more to reach €15.00 or choose Collection for store pickup.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Contact Details Card */}
@@ -695,6 +801,38 @@ export const CustomerCheckout: React.FC = () => {
                 </div>
               )}
 
+              {/* Loyalty Points Redemption Selector for Logged-In Customers */}
+              {user && loyaltyData && loyaltyData.available_points >= 4000 && (
+                <div className="p-4 rounded-lg border border-[#FF5A00]/30 bg-[#241209]/40 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-[#FF5A00] fill-[#FF5A00]" />
+                      <span className="text-xs font-bold text-white">Redeem Patty Points</span>
+                    </div>
+                    <span className="text-xs font-extrabold text-[#FF5A00]">
+                      {loyaltyData.available_points.toLocaleString()} PTS Available
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#A1A1AA]">
+                    Redeem your rewards in whole £1 increments (1,000 pts = £1 discount).
+                  </p>
+                  <select
+                    value={redeemPoints}
+                    onChange={(e) => setRedeemPoints(Number(e.target.value))}
+                    className="w-full h-10 bg-[#151515] border border-[#333333] focus:border-[#FF5A00] rounded-lg px-3 text-xs text-[#F5F5F5] focus:outline-none cursor-pointer"
+                  >
+                    <option value={0}>Do not use points (£0.00)</option>
+                    {(loyaltyData.redeemable_increments || [4000])
+                      .filter((pts: number) => pts / 1000 <= subtotal)
+                      .map((pts: number) => (
+                        <option key={pts} value={pts}>
+                          Redeem {pts.toLocaleString()} Points (-£{(pts / 1000).toFixed(2)})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
               <div className="flex items-center gap-2 text-xs text-[#22C55E] font-medium pt-1">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>All payments are secure and encrypted</span>
@@ -708,7 +846,6 @@ export const CustomerCheckout: React.FC = () => {
                 <Lock className="w-4 h-4" />
                 <span>{loading ? 'Creating Payment...' : `Pay Securely • £${total.toFixed(2)}`}</span>
               </button>
-
 
               <button
                 onClick={() => setStep(1)}
@@ -794,8 +931,14 @@ export const CustomerCheckout: React.FC = () => {
               )}
               {discountAmount > 0 && (
                 <div className="flex justify-between text-[#22C55E] font-medium">
-                  <span>Discount</span>
+                  <span>Coupon Discount</span>
                   <span>-£{discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+              {loyaltyDiscount > 0 && (
+                <div className="flex justify-between text-[#FF5A00] font-medium">
+                  <span>Loyalty Reward ({redeemPoints.toLocaleString()} PTS)</span>
+                  <span>-£{loyaltyDiscount.toFixed(2)}</span>
                 </div>
               )}
             </div>
@@ -805,10 +948,10 @@ export const CustomerCheckout: React.FC = () => {
               <span className="text-xl font-bold text-[#FF5A00]">£{total.toFixed(2)}</span>
             </div>
 
-            {/* Loyalty Points Badge */}
+            {/* Loyalty Points Badge (Authoritative 1p = 1pt) */}
             <div className="bg-[#151515] border border-[#242424] text-[#A1A1AA] text-xs font-medium py-2 px-3 rounded-lg text-center flex items-center justify-center gap-1.5">
               <Star className="w-3.5 h-3.5 fill-[#FF5A00] text-[#FF5A00]" />
-              <span>Earn <strong className="text-[#F5F5F5]">{Math.round(total)}</strong> loyalty points on this order</span>
+              <span>Earn <strong className="text-[#F5F5F5]">{Math.round(Math.max(0, subtotal - effectiveDiscount) * 100).toLocaleString()}</strong> Patty Points on this order</span>
             </div>
 
             {/* Secure Checkout Notice */}

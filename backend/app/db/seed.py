@@ -1,3 +1,5 @@
+import os
+from app.core.config import settings
 from app.core.database import SessionLocal, engine, Base
 from app.core.security import get_password_hash
 from app.models import (
@@ -10,8 +12,31 @@ from app.models import (
     Coupon, Printer
 )
 
+DEV_DEFAULT_ADMIN_PWD = "dev_admin_password_123!"
+DEV_DEFAULT_BRANCH_PWD = "dev_branch_password_123!"
+DEV_DEFAULT_CUST_PWD = "dev_customer_password_123!"
+
+def ensure_schema_up_to_date(eng):
+    from sqlalchemy import inspect, text
+    try:
+        inspector = inspect(eng)
+        existing_tables = inspector.get_table_names()
+        with eng.begin() as conn:
+            for table_name, table in Base.metadata.tables.items():
+                if table_name in existing_tables:
+                    existing_cols = {c['name']: c for c in inspector.get_columns(table_name)}
+                    for col in table.columns:
+                        if col.name not in existing_cols:
+                            col_type = col.type.compile(eng.dialect)
+                            sql = f'ALTER TABLE {table_name} ADD COLUMN {col.name} {col_type}'
+                            conn.execute(text(sql))
+    except Exception as e:
+        print(f"Warning during schema migration check: {e}")
+
 def seed_db():
-    Base.metadata.create_all(bind=engine)
+    if not settings.is_production:
+        Base.metadata.create_all(bind=engine)
+    ensure_schema_up_to_date(engine)
     db = SessionLocal()
     
     # Check if database is already seeded
@@ -40,63 +65,87 @@ def seed_db():
         db.close()
         return
 
-    print("Seeding database with Patty Project UK production data...")
+    print("Seeding database with Patty Project UK initial data...")
 
-    # 1. Create Super Admin User
-    admin = User(
-        email="admin@pattyproject.co.uk",
-        password_hash=get_password_hash("Admin123!"),
-        full_name="Super Admin",
-        phone="+44 20 7946 0912",
-        role=UserRole.SUPER_ADMIN,
-        is_active=True
-    )
-    db.add(admin)
+    if settings.is_production:
+        admin_pwd = os.getenv("SEED_ADMIN_PASSWORD")
+        if not admin_pwd or len(admin_pwd) < 12:
+            print("Production environment: Skipping default user creation. Create administrative accounts via CLI or environment variables.")
+        else:
+            admin_email = os.getenv("SEED_ADMIN_EMAIL", "admin@pattyproject.co.uk")
+            if not db.query(User).filter(User.email == admin_email).first():
+                admin = User(
+                    email=admin_email,
+                    password_hash=get_password_hash(admin_pwd),
+                    full_name="Super Admin",
+                    role=UserRole.SUPER_ADMIN,
+                    is_active=True
+                )
+                db.add(admin)
+                db.commit()
+                print(f"Production Super Admin '{admin_email}' seeded securely from environment.")
+        db.close()
+        return
+    else:
+        # Development Seeding with environment-overridable credentials
+        admin_pwd = os.getenv("SEED_ADMIN_PASSWORD", DEV_DEFAULT_ADMIN_PWD)
+        branch_pwd = os.getenv("SEED_BRANCH_PASSWORD", DEV_DEFAULT_BRANCH_PWD)
+        cust_pwd = os.getenv("SEED_CUSTOMER_PASSWORD", DEV_DEFAULT_CUST_PWD)
 
-    # 2. Create Branch Admins
-    central_admin = User(
-        email="central@pattyproject.co.uk",
-        password_hash=get_password_hash("Central123!"),
-        full_name="London Central Admin",
-        phone="+44 7700 900111",
-        role=UserRole.BRANCH_ADMIN,
-        is_active=True
-    )
-    westfield_admin = User(
-        email="westfield@pattyproject.co.uk",
-        password_hash=get_password_hash("Westfield123!"),
-        full_name="London Westfield Admin",
-        phone="+44 7700 900222",
-        role=UserRole.BRANCH_ADMIN,
-        is_active=True
-    )
-    db.add_all([central_admin, westfield_admin])
+        # 1. Create Super Admin User
+        admin = User(
+            email="admin@pattyproject.co.uk",
+            password_hash=get_password_hash(admin_pwd),
+            full_name="Super Admin",
+            phone="+44 20 7946 0912",
+            role=UserRole.SUPER_ADMIN,
+            is_active=True
+        )
+        db.add(admin)
 
-    # 3. Create Sample Customer Users
-    customer = User(
-        email="john.smith@email.com",
-        password_hash=get_password_hash("Customer123!"),
-        full_name="John Smith",
-        phone="+44 7123 456789",
-        role=UserRole.CUSTOMER,
-        is_active=True
-    )
-    customer2 = User(
-        email="johnsmith@email.com",
-        password_hash=get_password_hash("Customer123!"),
-        full_name="John Smith",
-        phone="+44 7123 456789",
-        role=UserRole.CUSTOMER,
-        is_active=True
-    )
-    db.add_all([customer, customer2])
-    db.flush()
+        # 2. Create Branch Admins
+        central_admin = User(
+            email="central@pattyproject.co.uk",
+            password_hash=get_password_hash(branch_pwd),
+            full_name="London Central Admin",
+            phone="+44 7700 900111",
+            role=UserRole.BRANCH_ADMIN,
+            is_active=True
+        )
+        westfield_admin = User(
+            email="westfield@pattyproject.co.uk",
+            password_hash=get_password_hash(branch_pwd),
+            full_name="London Westfield Admin",
+            phone="+44 7700 900222",
+            role=UserRole.BRANCH_ADMIN,
+            is_active=True
+        )
+        db.add_all([central_admin, westfield_admin])
+
+        # 3. Create Sample Customer Users
+        customer = User(
+            email="john.smith@email.com",
+            password_hash=get_password_hash(cust_pwd),
+            full_name="John Smith",
+            phone="+44 7123 456789",
+            role=UserRole.CUSTOMER,
+            is_active=True
+        )
+        customer2 = User(
+            email="johnsmith@email.com",
+            password_hash=get_password_hash(cust_pwd),
+            full_name="John Smith",
+            phone="+44 7123 456789",
+            role=UserRole.CUSTOMER,
+            is_active=True
+        )
+        db.add_all([customer, customer2])
+        db.flush()
 
     # 4. Create Saved Delivery Addresses for Customers
     addr1 = CustomerAddress(
         user_id=customer.id,
-        door_number="123",
-        address_line1="Baker Street",
+        address_line1="123 Baker Street",
         address_line2="Flat 4B",
         city="London",
         postcode="NW1 6XE",
@@ -105,8 +154,7 @@ def seed_db():
     )
     addr2 = CustomerAddress(
         user_id=customer.id,
-        door_number="45",
-        address_line1="Oxford Street",
+        address_line1="45 Oxford Street",
         address_line2="",
         city="London",
         postcode="W1D 2DZ",

@@ -1,6 +1,45 @@
 const API_BASE = '/api/v1';
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = localStorage.getItem('patty_refresh_token');
+  if (!refreshToken) return null;
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!res.ok) {
+      localStorage.removeItem('patty_token');
+      localStorage.removeItem('patty_refresh_token');
+      localStorage.removeItem('patty_user');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('patty:auth_session_expired'));
+      }
+      return null;
+    }
+
+    const data = await res.json();
+    if (data.access_token) {
+      localStorage.setItem('patty_token', data.access_token);
+      if (data.refresh_token) {
+        localStorage.setItem('patty_refresh_token', data.refresh_token);
+      }
+      return data.access_token;
+    }
+    return null;
+  } catch {
+    return null;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
+async function request<T>(endpoint: string, options: RequestInit = {}, isRetry = false): Promise<T> {
   const token = localStorage.getItem('patty_token');
   
   const headers: Record<string, string> = {
@@ -18,6 +57,20 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       headers,
     });
 
+    // If 401 and we have a refresh token and this is not already a retry or an auth endpoint
+    if (response.status === 401 && !isRetry && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh') && !endpoint.includes('/auth/register')) {
+      const refreshToken = localStorage.getItem('patty_refresh_token');
+      if (refreshToken) {
+        if (!refreshPromise) {
+          refreshPromise = refreshAccessToken();
+        }
+        const newToken = await refreshPromise;
+        if (newToken) {
+          return request<T>(endpoint, options, true);
+        }
+      }
+    }
+
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
@@ -30,13 +83,13 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
         detailMsg = data.detail.map((e: any) => (typeof e === 'string' ? e : e.msg || e.message || JSON.stringify(e))).join(', ');
       }
 
-      if (!detailMsg && typeof data.message === 'string') {
+      if (response.status === 401) {
+        detailMsg = 'Session expired. Please log out and log in again to continue.';
+      } else if (!detailMsg && typeof data.message === 'string') {
         detailMsg = data.message;
-      }
-      if (!detailMsg && typeof data.error === 'string') {
+      } else if (!detailMsg && typeof data.error === 'string') {
         detailMsg = data.error;
-      }
-      if (!detailMsg) {
+      } else if (!detailMsg) {
         detailMsg = response.statusText ? `Error: ${response.status} ${response.statusText}` : 'An unexpected error occurred';
       }
 
@@ -46,7 +99,6 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       customErr.status = response.status;
       throw customErr;
     }
-
 
     return data as T;
   } catch (err: any) {

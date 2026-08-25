@@ -22,7 +22,11 @@ export const AdminLogin: React.FC = () => {
 
     try {
       const res: any = await api.post('/auth/login', { email, password });
-      setAuth(res.access_token, res.user);
+      if (res.user?.role !== 'SUPER_ADMIN' && res.user?.role !== 'BRANCH_ADMIN') {
+        setError('Access denied. Admin privileges required to access this portal.');
+        return;
+      }
+      setAuth(res.access_token, res.user, res.refresh_token);
       navigate('/admin/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check credentials.');

@@ -31,8 +31,24 @@ export const AdminOrderBoard: React.FC = () => {
     }
   }, [user]);
 
-  const fetchOrders = useCallback(async () => {
-    setLoading(true);
+  const mergeAndReconcileOrders = (incomingOrders: Order[]) => {
+    setOrders((prevOrders) => {
+      const incomingMap = new Map(incomingOrders.map((o) => [o.id, o]));
+      const updatedExisting = prevOrders.map((existing) => {
+        const incoming = incomingMap.get(existing.id);
+        if (incoming) {
+          incomingMap.delete(existing.id);
+          return incoming;
+        }
+        return existing;
+      });
+      const brandNew = Array.from(incomingMap.values());
+      return [...brandNew, ...updatedExisting];
+    });
+  };
+
+  const fetchOrders = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       let url = '/orders';
       const params = [];
@@ -45,11 +61,13 @@ export const AdminOrderBoard: React.FC = () => {
       if (params.length) url += `?${params.join('&')}`;
 
       const data: Order[] = await api.get(url);
-      setOrders(data || []);
+      if (data) {
+        mergeAndReconcileOrders(data);
+      }
     } catch (err) {
       console.error('Failed to load orders', err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, [filterBranch, filterStatus, user]);
 
@@ -58,8 +76,22 @@ export const AdminOrderBoard: React.FC = () => {
   }, [fetchBranches]);
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(false);
+    // Realtime authoritative polling synchronization every 5 seconds
+    const interval = setInterval(() => {
+      fetchOrders(true);
+    }, 5000);
+    return () => clearInterval(interval);
   }, [fetchOrders]);
+
+  useEffect(() => {
+    if (selectedOrder) {
+      const currentInList = orders.find((o) => o.id === selectedOrder.id);
+      if (currentInList && currentInList.status !== selectedOrder.status) {
+        setSelectedOrder(currentInList);
+      }
+    }
+  }, [orders, selectedOrder]);
 
   const handleQuickStatusChange = async (orderId: string, newStatus: string) => {
     setUpdatingOrderId(orderId);
@@ -68,9 +100,14 @@ export const AdminOrderBoard: React.FC = () => {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update status', err);
-      alert('Failed to update order status. Please try again.');
+      const detailMsg =
+        (typeof err?.detail === 'string' ? err.detail : '') ||
+        (typeof err?.detail === 'object' && err.detail ? (err.detail.message || err.detail.error || err.detail.msg) : '') ||
+        err?.message ||
+        'Failed to update order status. Please try again.';
+      alert(detailMsg);
     } finally {
       setUpdatingOrderId(null);
     }
@@ -158,7 +195,7 @@ export const AdminOrderBoard: React.FC = () => {
           </div>
 
           <button
-            onClick={fetchOrders}
+            onClick={() => fetchOrders(false)}
             className="h-10 px-3.5 bg-[#151515] border border-[#242424] hover:border-[#333333] rounded-lg text-xs font-medium text-[#A1A1AA] hover:text-[#F5F5F5] flex items-center gap-2 transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#FF5A00]' : 'text-[#FF5A00]'}`} />

@@ -26,7 +26,6 @@ export interface Branch {
   is_active: boolean;
 }
 
-
 export interface ProductModifier {
   id: string;
   name: string;
@@ -46,7 +45,6 @@ export interface Product {
   allergens?: string;
   ingredients?: string[];
   image_url?: string;
-
   images?: string[];
   base_price: number;
   compare_at_price?: number;
@@ -144,4 +142,104 @@ export interface LoyaltyReward {
   reward_type: string;
   discount_value?: number;
   product_id?: string;
+}
+
+export interface LoyaltyTransaction {
+  id: string;
+  points: number;
+  transaction_type: string;
+  description?: string;
+  order_id?: string;
+  campaign_id?: string;
+  resulting_balance?: number;
+  admin_email?: string;
+  created_at: string;
+}
+
+export interface LoyaltyMilestone {
+  milestone_id: string;
+  milestone_name: string;
+  points_required: number;
+  points_needed: number;
+  is_unlocked: boolean;
+  progress_percent: number;
+  reward_value: number;
+  description?: string;
+}
+
+export interface LoyaltyCampaign {
+  id: string;
+  name: string;
+  campaign_type: string;
+  multiplier: number;
+  bonus_points: number;
+  start_date?: string;
+  end_date?: string;
+  is_active: boolean;
+  eligible_products?: string[];
+  excluded_products?: string[];
+  eligible_categories?: string[];
+  excluded_categories?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface LoyaltyOverview {
+  available_points: number;
+  lifetime_points: number;
+  total_redeemed_points: number;
+  total_reversed_points: number;
+  reward_value: number;
+  is_redemption_available: boolean;
+  min_redemption_points: number;
+  points_needed_for_redemption: number;
+  max_redeemable_reward: number;
+  redeemable_increments: number[];
+  active_campaign?: {
+    id: string;
+    name: string;
+    campaign_type: string;
+    multiplier: number;
+    bonus_points: number;
+  };
+  primary_milestone: LoyaltyMilestone;
+  transactions: LoyaltyTransaction[];
+}
+
+export interface LoyaltyProgramConfig {
+  id: string;
+  is_enabled: boolean;
+  earning_rate_pence_per_point: number;
+  points_per_pound_reward: number;
+  min_redemption_points: number;
+  redemption_increment_points: number;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export interface LoyaltyMemberSummary {
+  user_id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+  available_points: number;
+  lifetime_points: number;
+  total_redeemed: number;
+  total_reversed: number;
+  reward_value: number;
+  is_redemption_eligible: boolean;
+  created_at: string;
+}
+
+export interface LoyaltyAnalytics {
+  total_members: number;
+  total_active_points: number;
+  total_points_issued: number;
+  total_points_redeemed: number;
+  total_points_reversed: number;
+  total_reward_value_issued: number;
+  total_reward_value_redeemed: number;
+  total_outstanding_liability_pounds: number;
+  active_campaigns_count: number;
+  is_programme_active: boolean;
 }

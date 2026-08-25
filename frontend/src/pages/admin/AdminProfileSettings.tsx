@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Lock, CheckCircle2, Key, Trash2, Edit, Check } from 'lucide-react';
+import { Lock, CheckCircle2, Key, Trash2, Edit, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { api } from '../../api/client';
 import { AdminBranchPasswordModal } from './AdminBranchPasswordModal';
 
 export const AdminProfileSettings: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [msg, setMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [selectedBranchForPassword, setSelectedBranchForPassword] = useState<string | null>(null);
 
   const [branches] = useState([
@@ -14,13 +17,36 @@ export const AdminProfileSettings: React.FC = () => {
     { name: 'London - Westfield', password: '••••••••' },
   ]);
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
     if (newPassword.length < 8) {
-      setMsg('Password must be at least 8 characters long');
+      setErrorMsg('New password must be at least 8 characters long');
       return;
     }
-    setMsg('Password updated successfully!');
+
+    if (newPassword !== confirmPassword) {
+      setErrorMsg('New passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post('/auth/change-password', {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      setSuccessMsg('Password updated successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to update password. Please check your current password.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -31,10 +57,17 @@ export const AdminProfileSettings: React.FC = () => {
         <p className="text-sm text-[#A1A1AA] font-normal mt-1">Manage your account settings and branch passwords.</p>
       </div>
 
-      {msg && (
+      {errorMsg && (
+        <div className="p-3.5 bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444] rounded-lg text-xs font-semibold flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {successMsg && (
         <div className="p-3.5 bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E] rounded-lg text-xs font-semibold flex items-center gap-2">
-          <Check className="w-4 h-4" />
-          <span>{msg}</span>
+          <Check className="w-4 h-4 shrink-0" />
+          <span>{successMsg}</span>
         </div>
       )}
 
@@ -90,9 +123,11 @@ export const AdminProfileSettings: React.FC = () => {
 
             <button
               type="submit"
-              className="h-10 px-5 bg-[#FF5A00] hover:bg-[#E84F00] text-white text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
+              disabled={loading}
+              className="h-10 px-5 bg-[#FF5A00] hover:bg-[#E84F00] text-white text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50"
             >
-              Update Password
+              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{loading ? 'Updating Password...' : 'Update Password'}</span>
             </button>
           </form>
 
@@ -182,7 +217,7 @@ export const AdminProfileSettings: React.FC = () => {
           branchName={selectedBranchForPassword}
           onClose={() => setSelectedBranchForPassword(null)}
           onSuccess={() => {
-            setMsg(`Password updated for ${selectedBranchForPassword}`);
+            setSuccessMsg(`Password updated for ${selectedBranchForPassword}`);
             setSelectedBranchForPassword(null);
           }}
         />

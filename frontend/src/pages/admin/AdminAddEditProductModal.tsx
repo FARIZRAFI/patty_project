@@ -263,11 +263,13 @@ export const AdminAddEditProductModal: React.FC<Props> = ({ categories, product,
                       onChange={(e) => setCategoryId(e.target.value)}
                       className="w-full bg-[#121212] border border-[#262626] rounded-xl py-2.5 px-3 text-xs text-white focus:outline-none focus:border-[#FF5500]"
                     >
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
+                      {categories
+                        .filter((c) => !c.slug?.toLowerCase().includes('combo') && !c.name?.toLowerCase().includes('combo'))
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
                     </select>
                   </div>
 

@@ -35,6 +35,7 @@ from app.services.payment_service import (
     VALID_PAYMENT_TRANSITIONS
 )
 
+from app.core.security import create_access_token
 from app.tests.db import engine, TestingSessionLocal, client as payment_client
 
 
@@ -112,7 +113,7 @@ def test_fake_delivery_fee_and_total_price_tampering_overridden():
     assert res.status_code == 200, res.text
     data = res.json()
     assert data["delivery_fee"] == 0.0
-    expected_total = round(8.95 + 0.99, 2)
+    expected_total = round(16.00 + 0.99, 2)
     assert data["total_amount"] == expected_total
 
 
@@ -386,8 +387,9 @@ def test_payment_webhook_idempotency_and_loyalty_points():
     assert wb2.status_code == 200, wb2.text
     assert wb2.json()["payment_status"] == PaymentStatus.PAID
 
-    # Verify order ledger
-    ledger_res = payment_client.get(f"/api/v1/payments/order/{order_id}")
+    # Verify order ledger with Super Admin token
+    admin_token = create_access_token(subject="user-superadmin-001", roles=["SUPER_ADMIN"])
+    ledger_res = payment_client.get(f"/api/v1/payments/order/{order_id}", headers={"Authorization": f"Bearer {admin_token}"})
     assert ledger_res.status_code == 200, ledger_res.text
     ledger_items = ledger_res.json()
     assert len(ledger_items) == 1
@@ -406,7 +408,12 @@ def test_create_session_for_non_existent_order():
 
 def test_refund_for_non_existent_payment():
     """Verify 404 is returned when attempting to refund non-existent payment."""
-    res = payment_client.post("/api/v1/payments/non-existent-payment-id/refund", json={"amount": 5.0})
+    admin_token = create_access_token(subject="user-superadmin-001", roles=["SUPER_ADMIN"])
+    res = payment_client.post(
+        "/api/v1/payments/non-existent-payment-id/refund",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"amount": 5.0}
+    )
     assert res.status_code == 404
 
 
@@ -1345,8 +1352,8 @@ def test_phase16_05_payment_success_and_order_confirmation():
     })
     assert sim_res.status_code == 200
 
-    # Fetch confirmation data via order_number (URL-encoded) and UUID
-    conf_res = payment_client.get(f"/api/v1/orders/{urllib.parse.quote(order['order_number'])}")
+    # Fetch confirmation data via order_number (URL-encoded) and UUID with guest email verification
+    conf_res = payment_client.get(f"/api/v1/orders/{urllib.parse.quote(order['order_number'])}?email={order['customer_email']}")
     assert conf_res.status_code == 200
     conf_data = conf_res.json()
     assert conf_data["status"] == OrderStatus.INCOMING
@@ -1354,7 +1361,7 @@ def test_phase16_05_payment_success_and_order_confirmation():
     assert conf_data["total_amount"] == order["total_amount"]
 
     # Also verify UUID lookup
-    conf_uuid_res = payment_client.get(f"/api/v1/orders/{order['id']}")
+    conf_uuid_res = payment_client.get(f"/api/v1/orders/{order['id']}?email={order['customer_email']}")
     assert conf_uuid_res.status_code == 200
     assert conf_uuid_res.json()["status"] == OrderStatus.INCOMING
 
@@ -1376,7 +1383,7 @@ def test_phase16_06_payment_failure_retry_without_duplicate_order():
     assert sim_fail.json()["payment_status"] == PaymentStatus.FAILED
 
     # Order must remain unpaid
-    ord_check = payment_client.get(f"/api/v1/orders/{order['id']}").json()
+    ord_check = payment_client.get(f"/api/v1/orders/{order['id']}?email={order['customer_email']}").json()
     assert ord_check["status"] == OrderStatus.PENDING_PAYMENT
     assert ord_check["payment_status"] == PaymentStatus.FAILED
 
@@ -1406,7 +1413,7 @@ def test_phase16_07_payment_cancellation_order_remains_unpaid():
     assert sim_cancel.status_code == 200
     assert sim_cancel.json()["payment_status"] == PaymentStatus.CANCELLED
 
-    ord_check = payment_client.get(f"/api/v1/orders/{order['id']}").json()
+    ord_check = payment_client.get(f"/api/v1/orders/{order['id']}?email={order['customer_email']}").json()
     assert ord_check["payment_status"] == PaymentStatus.CANCELLED
     assert ord_check["status"] == OrderStatus.PENDING_PAYMENT
 
@@ -1424,7 +1431,7 @@ def test_phase16_08_pending_payment_order_unpaid():
     assert sim_pending.status_code == 200
     assert sim_pending.json()["payment_status"] == PaymentStatus.PENDING
 
-    ord_check = payment_client.get(f"/api/v1/orders/{order['id']}").json()
+    ord_check = payment_client.get(f"/api/v1/orders/{order['id']}?email={order['customer_email']}").json()
     assert ord_check["status"] == OrderStatus.PENDING_PAYMENT
 
 
@@ -1579,8 +1586,9 @@ def test_phase16_16_admin_order_visibility_after_payment():
         "status": "SUCCESS"
     })
 
-    # Admin query for INCOMING orders
-    admin_res = payment_client.get("/api/v1/orders?status=INCOMING")
+    # Admin query for INCOMING orders with Super Admin token
+    admin_token = create_access_token(subject="user-superadmin-001", roles=["SUPER_ADMIN"])
+    admin_res = payment_client.get("/api/v1/orders?status=INCOMING", headers={"Authorization": f"Bearer {admin_token}"})
     assert admin_res.status_code == 200
     incoming_orders = admin_res.json()
     matching = [o for o in incoming_orders if o["id"] == order["id"]]

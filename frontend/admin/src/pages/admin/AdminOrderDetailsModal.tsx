@@ -75,21 +75,35 @@ export const AdminOrderDetailsModal: React.FC<Props> = ({ order, onClose, onUpda
               <User className="w-4 h-4" />
               <span>Customer Information</span>
             </div>
-            <div className="flex justify-between"><span className="text-[#9CA3AF]">Name</span><span className="text-white font-semibold">{order.customer_name}</span></div>
-            <div className="flex justify-between"><span className="text-[#9CA3AF]">Phone</span><span className="text-white">{order.customer_phone}</span></div>
-            <div className="flex justify-between"><span className="text-[#9CA3AF]">Email</span><span className="text-white truncate max-w-[150px]">{order.customer_email}</span></div>
-            <div className="flex justify-between"><span className="text-[#9CA3AF]">Loyalty Points</span><span className="text-[#FF5500] font-bold">150 Points</span></div>
+            <div className="flex justify-between"><span className="text-[#9CA3AF]">Name</span><span className="text-white font-semibold">{order.customer_name || 'Guest Customer'}</span></div>
+            <div className="flex justify-between"><span className="text-[#9CA3AF]">Phone</span><span className="text-white">{order.customer_phone || 'No phone provided'}</span></div>
+            <div className="flex justify-between"><span className="text-[#9CA3AF]">Email</span><span className="text-white truncate max-w-[150px]" title={order.customer_email}>{order.customer_email || 'No email provided'}</span></div>
+            <div className="flex justify-between"><span className="text-[#9CA3AF]">Points Earned</span><span className="text-[#FF5500] font-bold">+{order.points_earned ? order.points_earned.toLocaleString() : 0} pts</span></div>
+            {order.points_redeemed ? (
+              <div className="flex justify-between"><span className="text-[#9CA3AF]">Points Redeemed</span><span className="text-[#10B981] font-bold">-{order.points_redeemed.toLocaleString()} pts</span></div>
+            ) : null}
           </div>
 
-          {/* Card 3: Delivery Address */}
+          {/* Card 3: Delivery / Collection Details */}
           <div className="bg-[#1A1A1A] border border-[#262626] p-4 rounded-xl space-y-2 text-xs">
             <div className="flex items-center gap-2 text-[#FF5500] font-semibold mb-2">
               <MapPin className="w-4 h-4" />
-              <span>Delivery Address</span>
+              <span>{order.order_type === 'COLLECTION' ? 'Collection Details' : 'Delivery Address'}</span>
             </div>
-            <p className="text-white font-medium">{order.delivery_address?.address_line1 || '123 Baker Street'}</p>
-            <p className="text-[#9CA3AF]">{order.delivery_address?.postcode || 'London W1U 6EP, United Kingdom'}</p>
-            <p className="text-xs text-[#FF5500] mt-2 font-medium">Instructions: {order.delivery_instructions || 'Leave at the door'}</p>
+            {order.order_type === 'COLLECTION' ? (
+              <>
+                <p className="text-white font-medium">Customer Collection at Branch</p>
+                {order.collection_slot_time && (
+                  <p className="text-[#9CA3AF]">Slot: {new Date(order.collection_slot_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-white font-medium">{order.delivery_address?.address_line1 || 'No address line 1'}</p>
+                <p className="text-[#9CA3AF]">{[order.delivery_address?.city, order.delivery_address?.postcode].filter(Boolean).join(', ') || 'London, United Kingdom'}</p>
+                <p className="text-xs text-[#FF5500] mt-2 font-medium">Instructions: {order.delivery_instructions || 'None'}</p>
+              </>
+            )}
           </div>
         </div>
 
@@ -98,23 +112,19 @@ export const AdminOrderDetailsModal: React.FC<Props> = ({ order, onClose, onUpda
           {/* Ordered Items Table */}
           <div className="bg-[#1A1A1A] border border-[#262626] p-4 rounded-xl space-y-4">
             <h3 className="text-xs font-bold text-white uppercase tracking-wider">Ordered Items</h3>
-            <div className="space-y-3">
+            <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
               {order.items && order.items.length > 0 ? (
                 order.items.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs pb-3 border-b border-[#262626] last:border-0">
+                  <div key={idx} className="flex items-center justify-between text-xs pb-2.5 border-b border-[#262626] last:border-0">
                     <div>
-                      <p className="font-semibold text-white">{item.product_name}</p>
-                      <p className="text-[10px] text-[#9CA3AF]">Qty: {item.quantity}</p>
+                      <p className="font-bold text-white">{item.product_name}</p>
+                      <p className="text-[11px] text-[#9CA3AF]">Qty: {item.quantity}</p>
                     </div>
                     <p className="font-bold text-white">£{item.total_price.toFixed(2)}</p>
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-white space-y-2">
-                  <div className="flex justify-between"><span>Classic Beef Burger (No onion, extra cheese)</span><span>£8.99</span></div>
-                  <div className="flex justify-between"><span>French Fries (Regular)</span><span>£2.49</span></div>
-                  <div className="flex justify-between"><span>Coca Cola 500ml x 2</span><span>£3.18</span></div>
-                </div>
+                <p className="text-xs text-[#6B7280] py-2">No item details recorded for this order.</p>
               )}
             </div>
 

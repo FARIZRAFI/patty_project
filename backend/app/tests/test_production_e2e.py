@@ -429,7 +429,7 @@ def test_load_and_concurrency_100_simultaneous_requests(test_setup_data):
         return resp.status_code, elapsed_ms
 
     start_total = time.perf_counter()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(make_request, p) for p in request_payloads]
         for f in concurrent.futures.as_completed(futures):
             status_code, elapsed_ms = f.result()

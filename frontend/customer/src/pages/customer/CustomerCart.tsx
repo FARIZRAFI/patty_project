@@ -11,7 +11,8 @@ import {
   ChevronUp,
   Check,
   Copy,
-  X
+  X,
+  AlertCircle
 } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { api } from '../../api/client';
@@ -95,7 +96,10 @@ export const CustomerCart: React.FC = () => {
     getSubtotal,
     getDeliveryFee,
     getServiceFee,
-    getTotal
+    getTotal,
+    orderType,
+    isDeliverySubtotalEligible,
+    getDeliveryShortfall
   } = useCartStore();
 
   const [promoInput, setPromoInput] = useState('');
@@ -573,6 +577,29 @@ export const CustomerCart: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {/* Delivery Minimum Order Disclaimer & Promotion Exemption */}
+              {subtotal < 15.00 && !(couponCode && discountAmount > 0) ? (
+                <div className="bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg p-3 text-xs text-[#EF4444] font-medium flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-[#EF4444] shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold text-[#EF4444] leading-snug">
+                      Disclaimer: For the delivery service you must cart at least €15.
+                    </p>
+                    {subtotal > 0 && (
+                      <p className="text-[11px] text-[#F87171] font-normal">
+                        Add €{(15.00 - subtotal).toFixed(2)} more to reach the delivery minimum.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                couponCode && discountAmount > 0 && subtotal < 15.00 && (
+                  <div className="bg-[#22C55E]/10 border border-[#22C55E]/30 rounded-lg p-2.5 text-xs text-[#22C55E] flex items-center justify-center font-medium text-center">
+                    <span>✓ Delivery unlocked via applied offer ({couponCode})</span>
+                  </div>
+                )
+              )}
 
               <button
                 disabled={hasOutOfStockItems}

@@ -46,7 +46,12 @@ export const MockCheckoutPage: React.FC = () => {
       const data: MockPaymentData = await api.get(`/payments/verify/${txId}`);
       setPaymentData(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to load transaction details from development gateway.');
+      const detailMsg =
+        (typeof err?.detail === 'string' ? err.detail : '') ||
+        (typeof err?.detail === 'object' && err.detail ? (err.detail.message || err.detail.error || err.detail.msg) : '') ||
+        err?.message ||
+        'Failed to load transaction details from development gateway.';
+      setError(detailMsg);
     } finally {
       setLoading(false);
     }
@@ -75,7 +80,6 @@ export const MockCheckoutPage: React.FC = () => {
       const res: any = await api.post('/payments/mock-simulate', payload);
 
       if (status === 'SUCCESS') {
-
         clearCart();
         setActionMessage({
           type: 'success',
@@ -104,38 +108,49 @@ export const MockCheckoutPage: React.FC = () => {
         await fetchPaymentDetails();
       }
     } catch (err: any) {
-      setError(err.message || `Failed to simulate ${status} event on backend.`);
+      const detailMsg =
+        (typeof err?.detail === 'string' ? err.detail : '') ||
+        (typeof err?.detail === 'object' && err.detail ? (err.detail.message || err.detail.error || err.detail.msg) : '') ||
+        err?.message ||
+        `Failed to simulate ${status} event on backend.`;
+      setError(detailMsg);
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleRetryPayment = async () => {
-    if (!paymentData) return;
     setActionLoading(true);
     setError('');
     setActionMessage(null);
     try {
-      const retryIdempotencyKey = `idemp_retry_${paymentData.order_id}_${Date.now()}`;
-      const newSession: any = await api.post(
-        '/payments/create-session',
-        {
-          order_id: paymentData.order_id,
-          payment_method_type: 'CARD'
-        },
-        {
-          headers: {
-            'Idempotency-Key': retryIdempotencyKey
+      if (paymentData?.order_id) {
+        const retryIdempotencyKey = `idemp_retry_${paymentData.order_id}_${Date.now()}`;
+        const newSession: any = await api.post(
+          '/payments/create-session',
+          {
+            order_id: paymentData.order_id,
+            payment_method_type: 'CARD'
+          },
+          {
+            headers: {
+              'Idempotency-Key': retryIdempotencyKey
+            }
           }
+        );
+        if (newSession && newSession.transaction_id) {
+          navigate(`/mock-checkout/${newSession.transaction_id}`);
+          return;
         }
-      );
-      if (newSession && newSession.transaction_id) {
-        navigate(`/mock-checkout/${newSession.transaction_id}`);
-      } else {
-        await fetchPaymentDetails();
       }
+      await fetchPaymentDetails();
     } catch (err: any) {
-      setError(err.message || 'Failed to re-initiate payment session.');
+      const detailMsg =
+        (typeof err?.detail === 'string' ? err.detail : '') ||
+        (typeof err?.detail === 'object' && err.detail ? (err.detail.message || err.detail.error || err.detail.msg) : '') ||
+        err?.message ||
+        'Failed to re-initiate payment session.';
+      setError(detailMsg);
     } finally {
       setActionLoading(false);
     }

@@ -17,9 +17,13 @@ export const AdminCategoryModal: React.FC<Props> = ({ categories, onClose, onRef
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Sync categoryList when parent categories prop changes
+  // Sync categoryList when parent categories prop changes (excluding combo categories)
   useEffect(() => {
-    setCategoryList([...categories].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)));
+    setCategoryList(
+      [...categories]
+        .filter((c) => !c.slug?.toLowerCase().includes('combo') && !c.name?.toLowerCase().includes('combo'))
+        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+    );
   }, [categories]);
 
   const showFeedback = (msg: string, isError = false) => {

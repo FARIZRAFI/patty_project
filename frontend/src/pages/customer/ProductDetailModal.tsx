@@ -93,10 +93,7 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
     product.name.toLowerCase().includes('drink') ||
     product.name.toLowerCase().includes('coke');
 
-  const defaultImg =
-    product.image_url && !product.image_url.includes('placeholder')
-      ? product.image_url
-      : 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80';
+  const defaultImg = product.image_url || '/placeholder-burger.svg';
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto animate-in fade-in duration-150">
@@ -167,8 +164,7 @@ export const ProductDetailModal: React.FC<Props> = ({ product, onClose }) => {
                 src={defaultImg}
                 alt={product.name}
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src =
-                    'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80';
+                  (e.currentTarget as HTMLImageElement).src = '/placeholder-burger.svg';
                 }}
                 className={`w-full h-full object-cover transition-transform duration-300 hover:scale-105 ${
                   isProductOutOfStock ? 'grayscale opacity-50' : ''

@@ -71,6 +71,8 @@ POSTCODE_COORDS: Dict[str, Tuple[float, float]] = {
     "SE11": (51.4900, -0.1140),  # Kennington
     "N1": (51.5380, -0.1030),    # Islington
     "N1C": (51.5340, -0.1250),   # King's Cross
+    "N9": (51.626371, -0.064566), # Edmonton / Market Parade
+    "N99HF": (51.626371, -0.064566), # 4 Market Parade, London N9 9HF
     "E1": (51.5150, -0.0630),    # Whitechapel / Aldgate
     "E2": (51.5290, -0.0610),    # Bethnal Green
 }

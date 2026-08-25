@@ -35,7 +35,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Orders', path: '/orders', icon: ClipboardList },
     { label: 'Products & Stock', path: '/products', icon: Package },
-    { label: 'Customers', path: '/customers', icon: Users, superAdminOnly: true },
+    { label: 'Customers', path: '/customers', icon: Users },
     { label: 'Loyalty Points', path: '/loyalty', icon: Star, superAdminOnly: true },
     { label: 'Coupons', path: '/coupons', icon: Ticket, superAdminOnly: true },
     { label: 'Offers', path: '/offers', icon: Sparkles, superAdminOnly: true },

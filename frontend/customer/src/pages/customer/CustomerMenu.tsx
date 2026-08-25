@@ -25,70 +25,14 @@ interface OfferCard {
   isCombo?: boolean;
 }
 
-const DEFAULT_OFFERS: OfferCard[] = [
-  {
-    id: 'combo-1',
-    title: 'Single Smash Meal Combo',
-    subtitle: 'Single Patty Burger + Fries + Drink',
-    badge: 'SAVE 20%',
-    price: 9.95,
-    image_url: '/product_the_mc_project.png',
-    isCombo: true
-  },
-  {
-    id: 'combo-2',
-    title: 'Double Trouble Burger Combo',
-    subtitle: 'Double Smash Burger + Loaded Fries + Drink',
-    badge: 'POPULAR',
-    price: 12.95,
-    image_url: '/product_the_outlaw_project_.png',
-    isCombo: true
-  },
-  {
-    id: 'combo-3',
-    title: 'Patty Feast for 4 Box',
-    subtitle: '4 Burgers + 2 Large Fries + 4 Drinks',
-    badge: 'FAMILY DEAL',
-    price: 32.95,
-    image_url: '/product_the_spicy_clucker.png',
-    isCombo: true
-  },
-  {
-    id: 'deal-lunch',
-    title: 'LUNCH SPECIAL',
-    subtitle: 'Mon - Fri, 12pm - 4pm',
-    badge: '£5.99 ONLY',
-    image_url: '/product_pastrami_burger_.png'
-  },
-  {
-    id: 'deal-wings',
-    title: 'WING WEDNESDAY',
-    subtitle: 'On All Wings & Strips',
-    badge: '20% OFF',
-    image_url: '/product_the_spicy_clucker.png'
-  },
-  {
-    id: 'deal-student',
-    title: 'STUDENT OFFER',
-    subtitle: '10% Off On All Orders',
-    badge: '10% OFF',
-    image_url: '/product_pastrami_burger_.png'
-  },
-  {
-    id: 'deal-shake',
-    title: 'FREE SHAKE UPGRADE',
-    subtitle: 'With Any Burger & Fries Order',
-    badge: 'LIMITED TIME',
-    image_url: '/product_the_mc_project.png'
-  }
-];
+const DEFAULT_OFFERS: OfferCard[] = [];
 
 export const CustomerMenu: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [offerCards, setOfferCards] = useState<OfferCard[]>(DEFAULT_OFFERS);
+  const [offerCards, setOfferCards] = useState<OfferCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const { selectedBranch, setSelectedBranch } = useCartStore();
@@ -127,14 +71,79 @@ export const CustomerMenu: React.FC = () => {
 
         if (!isMounted) return;
 
-        if (Array.isArray(catData) && catData.length > 0) {
-          setCategories(catData);
-        }
-        if (Array.isArray(prodData) && prodData.length > 0) {
-          setProducts(prodData);
+        let currentCategories = Array.isArray(catData) ? [...catData] : [];
+        let currentProducts = Array.isArray(prodData) ? [...prodData] : [];
+
+        // Find or create Combo category
+        let comboCategory = currentCategories.find(c => c.slug?.includes('combo') || c.name?.toLowerCase().includes('combo'));
+        if (!comboCategory && comboData?.combos && comboData.combos.length > 0) {
+          comboCategory = {
+            id: 'category-combo-offers',
+            name: 'Combo Offers',
+            slug: 'combo-offers',
+            display_order: 0
+          };
+          currentCategories.unshift(comboCategory);
         }
 
-        // Aggregate All Offers
+        // Merge active combo deals into menu products list
+        if (comboData?.combos && Array.isArray(comboData.combos)) {
+          const activeCombos = comboData.combos.filter((c: any) => c.is_active !== false);
+          
+          activeCombos.forEach((c: any) => {
+            const existingIdx = currentProducts.findIndex(
+              p => p.id === c.id || p.sku === `COMBO-${c.id}` || p.name.trim().toLowerCase() === c.name.trim().toLowerCase()
+            );
+
+            const comboProd: Product = {
+              id: c.id || `combo-${Date.now()}`,
+              name: c.name,
+              sku: `COMBO-${c.id || c.name.replace(/\s+/g, '-').toUpperCase()}`,
+              short_description: c.subtitle || c.description || 'Special combo deal',
+              full_description: c.description || c.subtitle || '',
+              description: c.description || c.subtitle || '',
+              ingredients: Array.isArray(c.ingredients)
+                ? c.ingredients
+                : typeof c.ingredients === 'string'
+                ? c.ingredients.split(',').map((s: string) => s.trim()).filter(Boolean)
+                : [],
+              base_price: Number(c.base_price || c.price || 0),
+              compare_at_price: c.compare_at_price ? Number(c.compare_at_price) : undefined,
+              rating: 5.0,
+              reviews_count: 24,
+              has_tax: true,
+              has_service_charge: false,
+              vat_category: 'STANDARD',
+              image_url: c.image_url || '/placeholder-burger.svg',
+              images: [c.image_url || '/placeholder-burger.svg'],
+              category_id: comboCategory?.id || 'category-combo-offers',
+              is_active: true,
+              is_bestseller: true,
+              modifiers: Array.isArray(c.modifiers) ? c.modifiers.map((m: any, mIdx: number) => ({
+                id: `mod-${c.id}-${mIdx}`,
+                name: m.name,
+                price: Number(m.price || 0),
+                is_required: false,
+                is_active: true
+              })) : []
+            };
+
+            if (existingIdx >= 0) {
+              currentProducts[existingIdx] = { ...currentProducts[existingIdx], ...comboProd };
+            } else {
+              currentProducts.push(comboProd);
+            }
+          });
+        }
+
+        if (currentCategories.length > 0) {
+          setCategories(currentCategories);
+        }
+        if (currentProducts.length > 0) {
+          setProducts(currentProducts);
+        }
+
+        // Aggregate All Offers for top sliding strip
         const allOffers: OfferCard[] = [];
         const seenTitles = new Set<string>();
 
@@ -148,7 +157,7 @@ export const CustomerMenu: React.FC = () => {
                 title: c.name,
                 subtitle: c.subtitle || c.description,
                 badge: c.badge || 'COMBO',
-                image_url: c.image_url || '/product_the_mc_project.png',
+                image_url: c.image_url || '',
                 price: c.base_price,
                 isCombo: true
               });
@@ -165,7 +174,7 @@ export const CustomerMenu: React.FC = () => {
                 title: o.title,
                 subtitle: o.tag || o.description,
                 badge: o.badge || (o.code ? `CODE: ${o.code}` : 'OFFER'),
-                image_url: o.image || '/product_the_mc_project.png',
+                image_url: o.image || '',
                 code: o.code,
                 isCombo: o.category?.includes('combos') || o.title.toLowerCase().includes('combo')
               });
@@ -183,7 +192,7 @@ export const CustomerMenu: React.FC = () => {
                 title: c.title,
                 subtitle: c.subtitle,
                 badge: c.badge || 'TODAY',
-                image_url: c.image_url || '/product_the_mc_project.png',
+                image_url: c.image_url || '',
                 isCombo: c.title?.toLowerCase().includes('combo')
               });
             }
@@ -208,7 +217,7 @@ export const CustomerMenu: React.FC = () => {
   }, [selectedBranch?.id]);
 
   const handleOfferClick = (offer: OfferCard) => {
-    if (offer.isCombo || offer.title.toLowerCase().includes('combo') || offer.title.toLowerCase().includes('feast')) {
+    if (offer.isCombo || offer.title.toLowerCase().includes('combo') || offer.title.toLowerCase().includes('feast') || offer.title.toLowerCase().includes('deal')) {
       setSelectedCategory('COMBO_DEALS');
     } else {
       const match = products.find(p => p.name.toLowerCase().includes(offer.title.toLowerCase().split(' ')[0]));
@@ -224,13 +233,13 @@ export const CustomerMenu: React.FC = () => {
     const cat = categories.find((c) => c.id === p.category_id);
     const catSlug = (cat?.slug || (p as any).category?.slug || '').toLowerCase();
     const catName = (cat?.name || (p as any).category?.name || '').toLowerCase();
-    const prodName = p.name.toLowerCase();
+    const sku = (p.sku || '').toUpperCase();
     return (
       catSlug.includes('combo') ||
       catName.includes('combo') ||
-      prodName.includes('combo') ||
-      prodName.includes('feast') ||
-      prodName.includes('meal')
+      sku.startsWith('COMBO-') ||
+      p.category_id === 'category-combo-offers' ||
+      (p as any).is_combo === true
     );
   };
 
@@ -537,7 +546,11 @@ export const CustomerMenu: React.FC = () => {
         {/* Empty State */}
         {!isLoading && filteredProducts.length === 0 && (
           <div className="py-16 text-center space-y-3">
-            <p className="text-sm text-[#71717A]">No items available in this category.</p>
+            <p className="text-sm text-[#71717A]">
+              {selectedCategory === 'COMBO_DEALS'
+                ? 'No published combo deals available at the moment.'
+                : 'No items available in this category.'}
+            </p>
             <button
               onClick={() => setSelectedCategory('ALL')}
               className="text-xs font-bold text-[#FF5A00] hover:underline cursor-pointer"

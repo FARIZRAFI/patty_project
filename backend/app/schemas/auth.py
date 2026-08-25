@@ -3,8 +3,15 @@ from pydantic import BaseModel, EmailStr
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
     user: "UserResponse"
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+class LogoutRequest(BaseModel):
+    refresh_token: Optional[str] = None
 
 class LoginRequest(BaseModel):
     email: str
@@ -44,5 +51,9 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
 
 Token.model_rebuild()
